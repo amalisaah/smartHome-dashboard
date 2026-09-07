@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import SButton from '../components/atoms/SButton.vue'
-import SBadge from '../components/atoms/SBadge.vue'
-import SInput from '../components/atoms/SInput.vue'
-import SToggle from '../components/atoms/SToggle.vue'
-import SCheckbox from '../components/atoms/SCheckbox.vue'
-import SCard from '../components/atoms/SCard.vue'
-import SSegmented from '../components/atoms/SSegmented.vue'
-import SSelect from '../components/atoms/SSelect.vue'
-import SCombobox from '../components/atoms/SCombobox.vue'
-import SText from '../components/atoms/SText.vue'
+import {
+  SBadge,
+  SButton,
+  SCard,
+  SCheckbox,
+  SCombobox,
+  SInput,
+  SSegmented,
+  SSelect,
+  SText,
+  SToggle,
+} from '@/components/atoms'
 
 const inputVal = ref('')
 const prefixedVal = ref('')

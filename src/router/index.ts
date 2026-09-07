@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import CatalogueListView from '../views/CatalogueListView.vue'
-import DesignSystemView from '../views/DesignSystemView.vue'
+import CatalogueListView from '@/views/CatalogueListView.vue'
+import DesignSystemView from '@/views/DesignSystemView.vue'
 
 export const router = createRouter({
   history: createWebHistory(),

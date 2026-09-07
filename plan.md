@@ -24,10 +24,22 @@ Tasks are in dependency order. Tick them off as they land.
 
 ---
 
-## Task 0 — Scaffolding: router + design tokens
+## Task 0 — Scaffolding: router + design tokens ✅ done
 
-- [ ] Install `vue-router`; add `src/router/index.ts`; wire `main.ts` and `App.vue` to `<RouterView />`
-- [ ] Add the tokens the screen needs to `@theme` in `src/style.css`
+- [x] Install `vue-router`; add `src/router/index.ts`; wire `main.ts` and `App.vue` to `<RouterView />`
+- [x] Add the tokens the screen needs to `@theme` in `src/style.css`
+- [x] Correct `--color-muted-dark` to `oklch(0.80 0.006 250)`; update the CLAUDE.md token list
+- [x] Placeholder `src/views/CatalogueListView.vue` so the route resolves (tasks 8–10 replace it)
+- [x] Verified: `vue-tsc -b` clean, `npm run build` clean, both routes serve 200, all ten
+      tokens present in the built CSS
+
+**Answers:** Q0.1 → only the real routes (`/` and `/design-system`); out-of-scope destinations
+stay typed no-ops. Q0.2 → `--color-micro`. Q0.3 → changed `--color-muted-dark` to 0.80.
+
+**Also decided:** imports stay **relative**, matching `DesignSystemView.vue`. CLAUDE.md's
+`@/components/...` paths don't work — no alias is configured in `tsconfig.app.json` or
+`vite.config.ts` — and adding one is build config the README doesn't ask for. Logged as
+contradiction 11.
 
 Tokens to add — all named in `tokens.css` or the README, none invented:
 
@@ -409,3 +421,4 @@ where it bites; collected here so none get quietly resolved.
 | 8 | Reference buttons are Space Grotesk; `SButton` is IBM Plex Sans | Task 8 |
 | 9 | Reference laptop button is `min-height: 44px`; `SButton md` is a hard `height: 40px` | Task 8 |
 | 10 | Summary figure is 24px mono; the documented scale has money-lg 30 and money 13–14, nothing between | Q4.1 (role 3) |
+| 11 | CLAUDE.md documents `@/components/atoms/SText.vue` imports, but no `@/` alias exists in `tsconfig.app.json` or `vite.config.ts` and the existing view imports relatively | Task 0 — using relative; alias not added |

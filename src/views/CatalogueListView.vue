@@ -2,7 +2,7 @@
 // Placeholder — the catalogue list is built in tasks 8 (laptop frame), 9 (phone frame)
 // and 10 (responsive composition) of plan.md. Task 0 registers the route so the rest
 // of the scaffolding can be wired and verified.
-import SText from '../components/atoms/SText.vue'
+import { SText } from '@/components/atoms'
 </script>
 
 <template>
