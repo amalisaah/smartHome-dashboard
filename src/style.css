@@ -20,13 +20,31 @@
   --color-risk: oklch(0.55 0.13 45);
   --color-risk-hover: oklch(0.48 0.13 45);
   --color-inverse: oklch(0.98 0.002 250);
-  --color-muted-dark: oklch(0.82 0.006 250);
+  --color-muted-dark: oklch(0.80 0.006 250);
   --color-very-muted-dark: oklch(0.75 0.006 250);
   --color-disabled-text: oklch(0.72 0.006 250);
   --color-chrome: oklch(0.93 0.004 90);
 
+  /* Micro ink — the third neutral, between fg-2 (0.40) and fg-3 (0.58).
+     Micro labels, the `/ 6` denominator in low-stock counts, table footer. */
+  --color-micro: oklch(0.50 0.01 260);
+
+  /* Row backgrounds. The tints mark state; the hovers are the interaction. */
+  --color-row-hover: oklch(0.97 0.003 250);
+  --color-row-hover-risk: oklch(0.97 0.012 45);
+  --color-row-risk-tint: oklch(0.985 0.008 45);
+  --color-row-action-tint: oklch(0.985 0.008 255);
+
+  /* Search match background */
+  --color-match-highlight: oklch(0.90 0.05 255);
+
+  /* Fields on a dark surface (phone header search) */
+  --color-field-dark: oklch(0.28 0.012 260);
+  --color-field-dark-line: oklch(0.40 0.01 260);
+
   /* === Border Radius === */
   --radius-chip: 6px;
+  --radius-md: 8px;
   --radius-card: 10px;
   --radius-pill: 999px;
 
