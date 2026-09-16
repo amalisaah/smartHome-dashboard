@@ -19,6 +19,7 @@ with inline styles or arbitrary values when a design system primitive exists.
 | `<SSelect>` | `@/components/atoms/SSelect.vue` | Fixed-option dropdowns |
 | `<SCombobox>` | `@/components/atoms/SCombobox.vue` | Searchable dropdowns, free-text entry |
 | `<SSegmented>` | `@/components/atoms/SSegmented.vue` | 2–3 option toggle controls (e.g. Grouped / Itemised) |
+| `<SFilterChip>` | `@/components/atoms/SFilterChip.vue` | Toggleable filter chips (low stock, needs attention, group) |
 | `<SToggle>` | `@/components/atoms/SToggle.vue` | Boolean on/off switches |
 | `<SCheckbox>` | `@/components/atoms/SCheckbox.vue` | Boolean checkboxes |
 | `<SCard>` | `@/components/atoms/SCard.vue` | Record cards, figure cards, attention cards |
@@ -38,8 +39,25 @@ with inline styles or arbitrary values when a design system primitive exists.
 <SText type="money">GH₵ 480.00</SText>                 <!-- IBM Plex Mono 400 13px -->
 ```
 
-Block types (`display`, `title`, `heading`, `body`, `meta`, `label`) render as `<p>` by default.
-Inline types (`ui`, `micro`, `money-lg`, `money`) render as `<span>` by default.
+Denser roles the list screens need. Reach for these rather than inventing a one-off class:
+
+```vue
+<SText type="screen-title">Catalogue</SText>            <!-- Space Grotesk 600 17px — phone header -->
+<SText type="app-title">Smart Home Ops</SText>          <!-- Space Grotesk 600 15px — app-bar wordmark -->
+<SText type="list-title">Tuya switch, 2 gang</SText>    <!-- IBM Plex Sans 500 15px — phone row name -->
+<SText type="tab">Shipments</SText>                     <!-- IBM Plex Sans 500 13px — tab bar -->
+<SText type="caption">at landed cost · 187 units</SText><!-- IBM Plex Sans 400 12px -->
+<SText type="column-header">Stock</SText>               <!-- Mono 10px UC .10em — table headers -->
+<SText type="figure">GH₵ 21,304</SText>                 <!-- Mono 500 24px — summary strip -->
+<SText type="list-figure">373.00</SText>                <!-- Mono 500 16px — phone row price -->
+<SText type="list-meta">12 in stock · 14 d</SText>      <!-- Mono 400 12px — phone meta line -->
+<SText type="cell-meta">14 d</SText>                    <!-- Mono 400 11px — Group/Lead cells, footers -->
+```
+
+`micro` is 10px uppercase at `.14em`; `column-header` is the same size at `.10em`.
+
+Block types (`display`, `title`, `heading`, `screen-title`, `body`, `list-title`, `meta`, `label`,
+`caption`) render as `<p>` by default. The rest render as `<span>`.
 Override with `as="h1"`, `as="label"`, etc. for correct semantics.
 
 ### SText color prop
@@ -50,6 +68,8 @@ Only pass `color` when deviating from the type role's default.
 |---|---|---|
 | `fg` | `--color-fg` | Primary text (default for most roles) |
 | `fg-2` | `--color-fg-2` | Labels, meta (default for `label`, `meta`, `micro`) |
+| `fg-2-soft` | `--color-fg-2-soft` | One step quieter than `fg-2` — inactive tabs, captions, Group/Lead cells, footers |
+| `micro` | `--color-micro` | Micro labels, the `/ 6` denominator |
 | `fg-3` | `--color-fg-3` | Disabled, placeholder |
 | `action` | `--color-action` | Selected values, links, money highlights |
 | `risk` | `--color-risk` | Warnings, low stock, errors |
@@ -64,9 +84,12 @@ Only pass `color` when deviating from the type role's default.
 <SButton variant="ghost">Cancel</SButton>
 <SButton variant="destructive">Archive item</SButton>
 <SButton :disabled="true">Send</SButton>
-<SButton size="lg">On-site action</SButton>             <!-- 48px — phone door -->
+<SButton size="lg">On-site action</SButton>             <!-- 48px — phone door, 14px label -->
 <SButton size="sm">Inline action</SButton>              <!-- 32px -->
 ```
+
+Sizes carry their door: `md` is 44px / 15px (laptop primary), `lg` is 48px / 14px and
+horizontally compact so it still shares a 390px action bar. Both use `rounded-md`.
 
 ### SBadge variants
 
@@ -84,6 +107,33 @@ Only pass `color` when deviating from the type role's default.
 <SBadge variant="nav-risk">3</SBadge>
 ```
 
+`size="row"` is the in-row flag chip — lowercase, untracked, `3px 6px`, `rounded-flag`. Use it
+for flags that state a problem in words inside a table row:
+
+```vue
+<SBadge variant="low-stock" size="row">reorder</SBadge>
+<SBadge variant="incomplete" size="row">no supplier link</SBadge>
+<SBadge variant="overridden" size="row">price overridden</SBadge>
+```
+
+### SFilterChip
+
+Emphasis is fixed per chip and marks severity, not selection; selection is the ring.
+
+```vue
+<SFilterChip variant="risk-filled" :selected="lowStockOnly">low stock · 4</SFilterChip>
+<SFilterChip variant="risk-outlined" :selected="attentionOnly">needs attention · 2</SFilterChip>
+<SFilterChip variant="neutral-outlined" size="phone">All groups ▾</SFilterChip>
+```
+
+`size="phone"` keeps the drawn box at the reference metrics and stretches the tap target to 48px.
+
+### SInput / SSelect
+
+`variant="on-dark"` for a field on the dark app bar; `size="lg"` for the 48px phone door;
+`variant="chip"` on SSelect for a chip-sized dropdown. Pass `ariaLabel` whenever there is no
+visible `label`.
+
 ### SCard variants
 
 ```vue
@@ -97,10 +147,11 @@ Only pass `color` when deviating from the type role's default.
 All tokens are in `src/style.css` under `@theme` and available as Tailwind utilities.
 
 **Colors** → `bg-*`, `text-*`, `border-*`:
-`bg`, `surface`, `line`, `divider`, `fg`, `fg-2`, `fg-3`, `micro`, `action`, `action-hover`, `risk`, `risk-hover`, `inverse`, `muted-dark`, `chrome`
+`bg`, `surface`, `line`, `divider`, `fg`, `fg-2`, `fg-2-soft`, `fg-3`, `micro`, `action`, `action-hover`, `risk`, `risk-hover`, `inverse`, `muted-dark`, `chrome`
 
-`micro` is the third neutral, between `fg-2` (0.40) and `fg-3` (0.58) — micro labels, the
-`/ 6` denominator in a low-stock count, table footers.
+The quiet inks run `fg-2` (0.40) → `fg-2-soft` (0.45) → `micro` (0.50) → `fg-3` (0.58).
+`fg-2-soft` is inactive tabs, summary captions, the Group and Lead cells, and footers.
+`micro` is micro labels and the `/ 6` denominator in a low-stock count.
 
 **Row backgrounds** → `bg-row-hover`, `bg-row-hover-risk` (hover on a risk-tinted row),
 `bg-row-risk-tint` (low stock), `bg-row-action-tint` (new / selected).
@@ -110,7 +161,9 @@ All tokens are in `src/style.css` under `@theme` and available as Tailwind utili
 
 **Fonts** → `font-display`, `font-sans`, `font-mono`
 
-**Radius** → `rounded-chip` (6px), `rounded-md` (8px — buttons, inputs), `rounded-card` (10px), `rounded-pill` (999px)
+**Radius** → `rounded-flag` (5px — in-row flag chips), `rounded-chip` (6px), `rounded-md` (8px — buttons, inputs), `rounded-card` (10px — cards, frames), `rounded-pill` (999px)
+
+**Hit target** → `--hit-min` (48px)
 
 **Shadows** → `shadow-elev-1` (resting), `shadow-elev-2` (dialogs / sheets)
 

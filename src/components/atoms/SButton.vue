@@ -51,18 +51,21 @@ defineProps<{
   border-radius: var(--radius-chip);
 }
 
+/* Laptop primary action — the >=44px desktop door. */
 .s-btn--md {
-  height: 40px;
+  min-height: 44px;
   padding: 0 18px;
-  font-size: 14px;
-  border-radius: var(--radius-card);
+  font-size: 15px;
+  border-radius: var(--radius-md);
 }
 
+/* Phone primary action — the >=48px phone door. Compact horizontally so it
+   still shares an action bar with the match count at 390px. */
 .s-btn--lg {
-  height: 48px;
-  padding: 0 24px;
-  font-size: 15px;
-  border-radius: var(--radius-card);
+  min-height: 48px;
+  padding: 0 16px;
+  font-size: 14px;
+  border-radius: var(--radius-md);
 }
 
 /* Variants */

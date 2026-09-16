@@ -8,6 +8,10 @@ defineProps<{
   error?: boolean
   errorMessage?: string
   required?: boolean
+  /** `chip` matches the filter-chip metrics — used on the phone filter row. */
+  variant?: 'default' | 'chip'
+  /** Use when the control has no visible label. */
+  ariaLabel?: string
 }>()
 
 defineEmits<{
@@ -20,10 +24,17 @@ defineEmits<{
     <label v-if="label" class="s-select-label" :class="{ 's-select-label--error': error }">
       {{ label }}<span v-if="required" class="s-select-required"> *</span>
     </label>
-    <div class="s-select-wrap" :class="{ 's-select-wrap--error': error, 's-select-wrap--disabled': disabled }">
+    <div
+      class="s-select-wrap"
+      :class="[
+        `s-select-wrap--${variant ?? 'default'}`,
+        { 's-select-wrap--error': error, 's-select-wrap--disabled': disabled },
+      ]"
+    >
       <select
         :value="modelValue"
         :disabled="disabled"
+        :aria-label="ariaLabel"
         class="s-select"
         @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value as T)"
       >
@@ -34,7 +45,8 @@ defineEmits<{
           {{ opt.label }}
         </option>
       </select>
-      <svg class="s-select-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <span v-if="variant === 'chip'" class="s-select-caret" aria-hidden="true">▾</span>
+      <svg v-else class="s-select-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
         <path d="M3 5L7 9L11 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
@@ -70,23 +82,51 @@ defineEmits<{
   display: flex;
   align-items: center;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-md);
   background: var(--color-bg);
-  transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+  transition: border-color 120ms ease-out, background-color 120ms ease-out;
+}
+
+.s-select-wrap:hover:not(.s-select-wrap--disabled) {
+  background: var(--color-surface);
 }
 
 .s-select-wrap:focus-within {
   border-color: var(--color-action);
-  box-shadow: 0 0 0 3px oklch(0.55 0.13 255 / 0.12);
+  outline: 2px solid var(--color-action);
+  outline-offset: -1px;
 }
 
 .s-select-wrap--error {
   border-color: var(--color-risk);
 }
 
+/* Risk-state fields focus with --risk instead of --action. */
 .s-select-wrap--error:focus-within {
   border-color: var(--color-risk);
-  box-shadow: 0 0 0 3px oklch(0.55 0.13 45 / 0.12);
+  outline-color: var(--color-risk);
+}
+
+/* Chip-sized select — the phone filter row's "All groups ▾". */
+.s-select-wrap--chip {
+  border-radius: var(--radius-chip);
+}
+
+.s-select-wrap--chip .s-select {
+  padding: 9px 26px 9px 11px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-fg-2);
+}
+
+.s-select-caret {
+  position: absolute;
+  right: 11px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--color-fg-2);
+  pointer-events: none;
 }
 
 .s-select-wrap--disabled {

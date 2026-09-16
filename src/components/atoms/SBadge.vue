@@ -12,11 +12,13 @@ defineProps<{
     | 'archived'
     | 'source-to-order'
     | 'nav-risk'
+  /** `row` is the in-row flag chip: lowercase, untracked, tighter box. */
+  size?: 'default' | 'row'
 }>()
 </script>
 
 <template>
-  <span class="s-badge" :class="`s-badge--${variant ?? 'category-mid'}`">
+  <span class="s-badge" :class="[`s-badge--${variant ?? 'category-mid'}`, `s-badge--size-${size ?? 'default'}`]">
     <slot />
   </span>
 </template>
@@ -36,6 +38,15 @@ defineProps<{
   border: 1px solid transparent;
   white-space: nowrap;
   line-height: 1.2;
+}
+
+/* Flag chip sitting inside a table row: states the problem in words, so it
+   keeps sentence spacing rather than the tracked-uppercase category look. */
+.s-badge--size-row {
+  padding: 3px 6px;
+  border-radius: var(--radius-flag);
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .s-badge--category-dark {

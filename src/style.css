@@ -23,11 +23,15 @@
   --color-muted-dark: oklch(0.80 0.006 250);
   --color-very-muted-dark: oklch(0.75 0.006 250);
   --color-disabled-text: oklch(0.72 0.006 250);
-  --color-chrome: oklch(0.93 0.004 90);
+  --color-chrome: oklch(0.93 0.004 250);
 
   /* Micro ink — the third neutral, between fg-2 (0.40) and fg-3 (0.58).
      Micro labels, the `/ 6` denominator in low-stock counts, table footer. */
   --color-micro: oklch(0.50 0.01 260);
+
+  /* Soft label ink — sits between fg-2 (0.40) and micro (0.50). Inactive tabs,
+     summary captions, the Group / Lead table cells, footers, phone meta lines. */
+  --color-fg-2-soft: oklch(0.45 0.01 260);
 
   /* Row backgrounds. The tints mark state; the hovers are the interaction. */
   --color-row-hover: oklch(0.97 0.003 250);
@@ -43,10 +47,14 @@
   --color-field-dark-line: oklch(0.40 0.01 260);
 
   /* === Border Radius === */
+  --radius-flag: 5px;
   --radius-chip: 6px;
   --radius-md: 8px;
   --radius-card: 10px;
   --radius-pill: 999px;
+
+  /* === Hit target === */
+  --hit-min: 48px;
 
   /* === Shadows === */
   --shadow-elev-1: 0 1px 3px oklch(0.21 0.01 260 / 0.08);

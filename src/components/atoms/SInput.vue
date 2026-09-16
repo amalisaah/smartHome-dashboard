@@ -11,6 +11,12 @@ defineProps<{
   type?: string
   required?: boolean
   disabled?: boolean
+  /** `on-dark` is the field that sits on the dark app bar / phone header. */
+  variant?: 'default' | 'on-dark'
+  /** `lg` is the >=48px phone door. */
+  size?: 'md' | 'lg'
+  /** Use when the field has no visible label. */
+  ariaLabel?: string
 }>()
 
 defineEmits<{
@@ -25,11 +31,14 @@ defineEmits<{
     </label>
     <div
       class="s-input-wrap"
-      :class="{
-        's-input-wrap--error': error,
-        's-input-wrap--derived': derived,
-        's-input-wrap--has-prefix': prefix,
-      }"
+      :class="[
+        `s-input-wrap--${variant ?? 'default'}`,
+        {
+          's-input-wrap--error': error,
+          's-input-wrap--derived': derived,
+          's-input-wrap--has-prefix': prefix,
+        },
+      ]"
     >
       <span v-if="prefix" class="s-input-prefix">{{ prefix }}</span>
       <input
@@ -38,8 +47,9 @@ defineEmits<{
         :placeholder="placeholder"
         :disabled="disabled || derived"
         :readonly="derived"
+        :aria-label="ariaLabel"
         class="s-input"
-        :class="{ 's-input--derived': derived }"
+        :class="[`s-input--${size ?? 'md'}`, { 's-input--derived': derived }]"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />
     </div>
@@ -75,24 +85,40 @@ defineEmits<{
   display: flex;
   align-items: stretch;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-bg);
-  transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+  transition: border-color 120ms ease-out, background-color 120ms ease-out;
 }
 
 .s-input-wrap:focus-within {
   border-color: var(--color-action);
-  box-shadow: 0 0 0 3px oklch(0.55 0.13 255 / 0.12);
+  outline: 2px solid var(--color-action);
+  outline-offset: -1px;
 }
 
 .s-input-wrap--error {
   border-color: var(--color-risk);
 }
 
+/* Risk-state fields focus with --risk instead of --action. */
 .s-input-wrap--error:focus-within {
   border-color: var(--color-risk);
-  box-shadow: 0 0 0 3px oklch(0.55 0.13 45 / 0.12);
+  outline-color: var(--color-risk);
+}
+
+/* A field sitting on the dark app bar / phone header. */
+.s-input-wrap--on-dark {
+  background: var(--color-field-dark);
+  border-color: var(--color-field-dark-line);
+}
+
+.s-input-wrap--on-dark .s-input {
+  color: var(--color-inverse);
+}
+
+.s-input-wrap--on-dark .s-input::placeholder {
+  color: var(--color-muted-dark);
 }
 
 .s-input-wrap--derived {
@@ -122,14 +148,23 @@ defineEmits<{
 
 .s-input {
   flex: 1;
-  padding: 10px 12px;
   border: none;
   outline: none;
   background: transparent;
   font-family: var(--font-sans);
-  font-size: 14px;
   color: var(--color-fg);
   min-width: 0;
+}
+
+.s-input--md {
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.s-input--lg {
+  padding: 12px;
+  font-size: 15px;
+  min-height: 48px;
 }
 
 .s-input::placeholder {
