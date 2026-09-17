@@ -13,7 +13,7 @@ dist-ssr
 *.local
 
 # Design handoff reference material (not part of the app)
-design_handoff_catalogue_list/
+design_handoff*/
 
 # Editor directories and files
 .vscode/*
