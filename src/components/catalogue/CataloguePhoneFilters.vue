@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { SFilterChip, SSelect } from '@/components/atoms'
-import { CATALOGUE_GROUPS, type GroupFilter } from '@/types/catalogue'
+import { ALL_GROUPS, type CatalogueGroupRef, type GroupFilter } from '@/types/catalogue'
 
-defineProps<{
+const props = defineProps<{
   lowStockCount: number
   attentionCount: number
   lowStockOnly: boolean
   attentionOnly: boolean
+  /** From `GET /groups`, already in `sort_order`. */
+  groups: CatalogueGroupRef[]
 }>()
 
 const groupFilter = defineModel<GroupFilter>('groupFilter', { required: true })
@@ -15,8 +17,8 @@ const groupFilter = defineModel<GroupFilter>('groupFilter', { required: true })
 defineEmits<{ toggleLowStock: []; toggleAttention: [] }>()
 
 const groupOptions = computed(() => [
-  { label: 'All groups', value: 'all' as GroupFilter },
-  ...CATALOGUE_GROUPS.map((group) => ({ label: group, value: group as GroupFilter })),
+  { label: 'All groups', value: ALL_GROUPS },
+  ...props.groups.map((group) => ({ label: group.name, value: group.slug })),
 ])
 </script>
 

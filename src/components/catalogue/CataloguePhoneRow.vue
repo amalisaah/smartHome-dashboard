@@ -14,7 +14,10 @@ const props = defineProps<{
 defineEmits<{ open: [] }>()
 
 const lowStock = computed(() => isLowStock(props.item))
-const sourceToOrder = computed(() => props.item.stock === 0)
+/** Out of stock and still stocked — a discontinued line at 0 is finished, not urgent. */
+const sourceToOrder = computed(
+  () => props.item.stock === 0 && props.item.discontinuedAt === null,
+)
 const urgent = computed(() => lowStock.value || sourceToOrder.value)
 
 const nameParts = computed(() => splitOnMatch(props.item.name ?? 'Untitled item', props.query))
@@ -29,7 +32,7 @@ const metaSegments = computed(() => {
   if (lowStock.value) {
     return [`${stock} left`, `reorder at ${reorderLevel}`, lead]
   }
-  return [`${stock} in stock`, group ?? '—', lead]
+  return [`${stock} in stock`, group?.name ?? '—', lead]
 })
 
 const metaLine = computed(() => metaSegments.value.filter(Boolean).join(' · '))
@@ -68,9 +71,9 @@ const keywordParts = computed(() =>
     </span>
 
     <span class="right">
-      <SText v-if="item.sellPrice === null" type="list-figure" color="risk">no markup</SText>
-      <SText v-else type="list-figure">{{ formatMoney(item.sellPrice) }}</SText>
-      <SText type="cell-meta" color="fg-2">cost {{ formatMoney(item.landedCost) }}</SText>
+      <SText v-if="item.sellPricePesewas === null" type="list-figure" color="risk">no markup</SText>
+      <SText v-else type="list-figure">{{ formatMoney(item.sellPricePesewas) }}</SText>
+      <SText type="cell-meta" color="fg-2">cost {{ formatMoney(item.landedCostPesewas) }}</SText>
     </span>
   </div>
 </template>

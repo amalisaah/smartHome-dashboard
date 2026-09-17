@@ -1,63 +1,81 @@
-/** The eight fixed groups. Never free-typed, never a second hierarchy level. */
-export const CATALOGUE_GROUPS = [
-  'lighting',
-  'switching',
-  'security',
-  'climate',
-  'power',
-  'networking',
-  'sensors',
-  'control',
-] as const
-
-export type CatalogueGroup = (typeof CATALOGUE_GROUPS)[number]
-
 /**
- * What one row renders. Not a data model — the handoff is UI-only, so this is
- * just the fields the list and the summary strip display.
+ * The view model the screen renders. Mapped from the wire types in `@/types/api`
+ * by `@/api/catalogue` — camelCase, but money stays in integer pesewas all the
+ * way to the formatter, so nothing ever rounds a float on the way through.
  */
+
+/** A group, as embedded on an item and as offered in the filter. */
+export interface CatalogueGroupRef {
+  id: number
+  name: string
+  slug: string
+}
+
 export interface CatalogueItem {
-  id: string
+  id: number
   /** Absent → the row renders `Untitled item`. */
   name: string | null
   /** Absent → the Group cell renders `—` in risk. */
-  group: CatalogueGroup | null
+  group: CatalogueGroupRef | null
   /** Searched together with the name. */
   keywords: string[]
   stock: number
-  /** 0 means "no reorder level set" — such a row is never low stock. */
   reorderLevel: number
   leadDays: number | null
-  landedCost: number
-  /** Absent → the Sell cell renders `no markup` in risk. */
-  sellPrice: number | null
+  /** Integer pesewas. */
+  landedCostPesewas: number
+  /**
+   * Integer pesewas. Never null from the API as it stands — `selling_price_pesewas`
+   * is non-nullable, so the `no markup` cell state below is unreachable until the
+   * backend can say "this item has no basis for a price".
+   */
+  sellPricePesewas: number | null
   hasSupplierLink: boolean
   priceOverridden: boolean
+  /** The backend's flag, not a local rule: see `needs_attention` in openapi.json. */
+  needsAttention: boolean
+  /** Set → we are selling this down and will not reorder it. */
+  discontinuedAt: string | null
+  discontinueReason: string | null
+  /** Discontinued and sold through, so it can be archived. */
+  readyToArchive: boolean
 }
 
-export interface DraftShipmentSummary {
-  count: number
-  /** Already formatted for display, e.g. "24 Sep". */
-  nextArrival: string
+/** The nine numbers from `GET /summary`. */
+export interface CatalogueSummary {
+  capitalInStockPesewas: number
+  retailValuePesewas: number
+  unitsInStock: number
+  restockCount: number
+  longestRestockLead: number | null
+  attentionCount: number
+  readyToArchiveCount: number
+  draftShipmentCount: number
+  /** ISO date-time, or null when no draft has anything to estimate from. */
+  nextDraftEta: string | null
 }
 
 export type SortColumn = 'name' | 'group' | 'stock' | 'landed' | 'sell' | 'margin' | 'lead'
 export type SortDirection = 'asc' | 'desc'
 
-export type GroupFilter = CatalogueGroup | 'all'
+/** A group slug, or `all`. Slugs rather than ids because a `<select>` yields strings. */
+export type GroupFilter = string
+export const ALL_GROUPS = 'all'
 
-/** Low stock is the only state that tints a row. */
+/**
+ * Low stock is the only state that tints a row. A discontinued item is never low:
+ * running it down to zero is the plan, not a shortfall. This is the same predicate
+ * `GET /stock/low` and the summary's `items_needing_restock` read, so the chip
+ * count can never disagree with the rows it filters to.
+ */
 export function isLowStock(item: CatalogueItem): boolean {
-  return item.reorderLevel > 0 && item.stock <= item.reorderLevel
-}
-
-/** Something is missing that stops the item being quoted or reordered. */
-export function needsAttention(item: CatalogueItem): boolean {
-  return !item.name || !item.group || !item.hasSupplierLink || item.sellPrice === null
+  return item.discontinuedAt === null && item.stock <= item.reorderLevel
 }
 
 /** Integer percent of the selling price. */
 export function marginPercent(item: CatalogueItem): number | null {
-  if (item.sellPrice === null || item.sellPrice === 0) return null
-  return Math.round(((item.sellPrice - item.landedCost) / item.sellPrice) * 100)
+  if (item.sellPricePesewas === null || item.sellPricePesewas === 0) return null
+  return Math.round(
+    ((item.sellPricePesewas - item.landedCostPesewas) / item.sellPricePesewas) * 100,
+  )
 }

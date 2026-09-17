@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { SFilterChip, SInput, SSelect } from '@/components/atoms'
-import { CATALOGUE_GROUPS, type GroupFilter } from '@/types/catalogue'
+import { ALL_GROUPS, type CatalogueGroupRef, type GroupFilter } from '@/types/catalogue'
 import { formatCount } from '@/utils/format'
 
-defineProps<{
+const props = defineProps<{
   totalCount: number
   lowStockCount: number
   attentionCount: number
   lowStockOnly: boolean
   attentionOnly: boolean
+  /** From `GET /groups`, already in `sort_order`. */
+  groups: CatalogueGroupRef[]
 }>()
 
 const query = defineModel<string>('query', { required: true })
@@ -17,9 +19,11 @@ const groupFilter = defineModel<GroupFilter>('groupFilter', { required: true })
 
 defineEmits<{ toggleLowStock: []; toggleAttention: [] }>()
 
+// Filtered by slug rather than id: a `<select>` yields strings, and the slug is
+// stable across renames, so a stored filter survives a group being retitled.
 const groupOptions = computed(() => [
-  { label: 'All groups', value: 'all' as GroupFilter },
-  ...CATALOGUE_GROUPS.map((group) => ({ label: group, value: group as GroupFilter })),
+  { label: 'All groups', value: ALL_GROUPS },
+  ...props.groups.map((group) => ({ label: group.name, value: group.slug })),
 ])
 </script>
 

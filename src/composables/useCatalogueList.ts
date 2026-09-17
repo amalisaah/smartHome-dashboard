@@ -1,11 +1,12 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { CATALOGUE_ITEMS, MOCK_LOAD_MS } from '@/data/catalogueMock'
+import { fetchCatalogue } from '@/api/catalogue'
 import {
-  CATALOGUE_GROUPS,
+  ALL_GROUPS,
   isLowStock,
   marginPercent,
-  needsAttention,
+  type CatalogueGroupRef,
   type CatalogueItem,
+  type CatalogueSummary,
   type GroupFilter,
   type SortColumn,
   type SortDirection,
@@ -22,6 +23,19 @@ export const SORT_COLUMN_LABELS: Record<SortColumn, string> = {
   sell: 'sell',
   margin: 'margin',
   lead: 'lead',
+}
+
+/** Until the first load lands there is nothing to count. */
+const EMPTY_SUMMARY: CatalogueSummary = {
+  capitalInStockPesewas: 0,
+  retailValuePesewas: 0,
+  unitsInStock: 0,
+  restockCount: 0,
+  longestRestockLead: null,
+  attentionCount: 0,
+  readyToArchiveCount: 0,
+  draftShipmentCount: 0,
+  nextDraftEta: null,
 }
 
 const displayName = (item: CatalogueItem) => item.name ?? 'Untitled item'
@@ -43,18 +57,17 @@ function compareText(a: string | null, b: string | null, direction: SortDirectio
 
 function readStoredGroup(): GroupFilter {
   try {
-    const stored = sessionStorage.getItem(GROUP_FILTER_KEY)
-    if (stored && (stored === 'all' || (CATALOGUE_GROUPS as readonly string[]).includes(stored))) {
-      return stored as GroupFilter
-    }
+    return sessionStorage.getItem(GROUP_FILTER_KEY) ?? ALL_GROUPS
   } catch {
     // Session storage can be unavailable; the default is fine.
+    return ALL_GROUPS
   }
-  return 'all'
 }
 
 export function useCatalogueList() {
   const items = ref<CatalogueItem[]>([])
+  const groups = ref<CatalogueGroupRef[]>([])
+  const summary = ref<CatalogueSummary>(EMPTY_SUMMARY)
   const loading = ref(true)
 
   const query = ref('')
@@ -66,29 +79,41 @@ export function useCatalogueList() {
   const sortDirection = ref<SortDirection>('asc')
   const online = ref(true)
 
-  // --- async content -------------------------------------------------------
-  let loadTimer: ReturnType<typeof setTimeout> | undefined
+  // --- loading -------------------------------------------------------------
   let debounceTimer: ReturnType<typeof setTimeout> | undefined
 
-  onMounted(() => {
+  const handleOnline = () => (online.value = true)
+  const handleOffline = () => (online.value = false)
+
+  onMounted(async () => {
     online.value = navigator.onLine
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-    loadTimer = setTimeout(() => {
-      items.value = CATALOGUE_ITEMS
+
+    try {
+      const payload = await fetchCatalogue()
+      items.value = payload.items
+      groups.value = payload.groups
+      summary.value = payload.summary
+
+      // The stored slug came from a previous session; a group can have been
+      // renamed away or archived since.
+      if (
+        groupFilter.value !== ALL_GROUPS &&
+        !payload.groups.some((group) => group.slug === groupFilter.value)
+      ) {
+        groupFilter.value = ALL_GROUPS
+      }
+    } finally {
       loading.value = false
-    }, MOCK_LOAD_MS)
+    }
   })
 
   onBeforeUnmount(() => {
-    clearTimeout(loadTimer)
     clearTimeout(debounceTimer)
     window.removeEventListener('online', handleOnline)
     window.removeEventListener('offline', handleOffline)
   })
-
-  const handleOnline = () => (online.value = true)
-  const handleOffline = () => (online.value = false)
 
   watch(query, (value) => {
     clearTimeout(debounceTimer)
@@ -129,9 +154,9 @@ export function useCatalogueList() {
   const visibleItems = computed(() => {
     const filtered = items.value.filter((item) => {
       if (!matchesQuery(item)) return false
-      if (groupFilter.value !== 'all' && item.group !== groupFilter.value) return false
+      if (groupFilter.value !== ALL_GROUPS && item.group?.slug !== groupFilter.value) return false
       if (lowStockOnly.value && !isLowStock(item)) return false
-      if (attentionOnly.value && !needsAttention(item)) return false
+      if (attentionOnly.value && !item.needsAttention) return false
       return true
     })
 
@@ -139,13 +164,16 @@ export function useCatalogueList() {
     return filtered.sort((a, b) => {
       switch (sortColumn.value) {
         case 'group':
-          return compareText(a.group, b.group, direction) || compareText(displayName(a), displayName(b), 'asc')
+          return (
+            compareText(a.group?.name ?? null, b.group?.name ?? null, direction) ||
+            compareText(displayName(a), displayName(b), 'asc')
+          )
         case 'stock':
           return compareNumeric(a.stock, b.stock, direction)
         case 'landed':
-          return compareNumeric(a.landedCost, b.landedCost, direction)
+          return compareNumeric(a.landedCostPesewas, b.landedCostPesewas, direction)
         case 'sell':
-          return compareNumeric(a.sellPrice, b.sellPrice, direction)
+          return compareNumeric(a.sellPricePesewas, b.sellPricePesewas, direction)
         case 'margin':
           return compareNumeric(marginPercent(a), marginPercent(b), direction)
         case 'lead':
@@ -165,41 +193,30 @@ export function useCatalogueList() {
     sortDirection.value = 'asc'
   }
 
-  // --- counts and summary --------------------------------------------------
-  const totalCount = computed(() => items.value.length)
-  const lowStockCount = computed(() => items.value.filter(isLowStock).length)
-  const attentionCount = computed(() => items.value.filter(needsAttention).length)
-  const groupCount = computed(
-    () => new Set(items.value.map((item) => item.group).filter(Boolean)).size,
-  )
+  // --- counts --------------------------------------------------------------
+  // The chip counts are the server's, so `low stock · 4` can never label a filter
+  // that then shows a different number of rows — both read the one predicate.
+  const lowStockCount = computed(() => summary.value.restockCount)
+  const attentionCount = computed(() => summary.value.attentionCount)
 
-  const summary = computed(() => {
-    const restocking = items.value.filter(isLowStock)
-    return {
-      capitalInStock: items.value.reduce((total, item) => total + item.stock * item.landedCost, 0),
-      unitsInStock: items.value.reduce((total, item) => total + item.stock, 0),
-      retailValue: items.value.reduce(
-        (total, item) => total + item.stock * (item.sellPrice ?? 0),
-        0,
-      ),
-      restockCount: restocking.length,
-      longestRestockLead: restocking.reduce(
-        (longest, item) => Math.max(longest, item.leadDays ?? 0),
-        0,
-      ),
-    }
-  })
+  // Still local: `GET /items` is unpaginated and `GET /groups` returns every
+  // group, so these are whole-catalogue figures. They become page counts the day
+  // the list paginates — `total_items` on the summary is the fix at that point.
+  const totalCount = computed(() => items.value.length)
+  const groupCount = computed(() => groups.value.length)
 
   const isFiltered = computed(
     () =>
       normalisedQuery.value !== '' ||
-      groupFilter.value !== 'all' ||
+      groupFilter.value !== ALL_GROUPS ||
       lowStockOnly.value ||
       attentionOnly.value,
   )
 
   return {
     items,
+    groups,
+    summary,
     loading,
     online,
     query,
@@ -216,7 +233,6 @@ export function useCatalogueList() {
     groupCount,
     lowStockCount,
     attentionCount,
-    summary,
     isFiltered,
   }
 }

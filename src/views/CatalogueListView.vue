@@ -14,7 +14,7 @@ import CatalogueTable from '@/components/catalogue/CatalogueTable.vue'
 import CatalogueToolbar from '@/components/catalogue/CatalogueToolbar.vue'
 import { useCatalogueList } from '@/composables/useCatalogueList'
 import { useMediaQuery } from '@/composables/useMediaQuery'
-import { DRAFT_SHIPMENTS, SAVE_STATUS_DATE } from '@/data/catalogueMock'
+import { SAVE_STATUS_DATE } from '@/data/catalogueMock'
 import type { CatalogueItem } from '@/types/catalogue'
 
 const TABS = ['Catalogue', 'Shipments', 'Groups & markup']
@@ -23,6 +23,8 @@ const TABS = ['Catalogue', 'Shipments', 'Groups & markup']
 const isPhone = useMediaQuery('(max-width: 899px)')
 
 const {
+  groups,
+  summary,
   loading,
   online,
   query,
@@ -39,7 +41,6 @@ const {
   groupCount,
   lowStockCount,
   attentionCount,
-  summary,
   isFiltered,
 } = useCatalogueList()
 
@@ -69,6 +70,7 @@ const addFromQuery = () => {}
         <CataloguePhoneHeader v-model:query="query" :total-count="totalCount" :offline="!online" />
         <CataloguePhoneFilters
           v-model:group-filter="groupFilter"
+          :groups="groups"
           :low-stock-count="lowStockCount"
           :attention-count="attentionCount"
           :low-stock-only="lowStockOnly"
@@ -110,18 +112,14 @@ const addFromQuery = () => {}
         <AppTabBar :tabs="TABS" active="Catalogue" />
         <CatalogueSummaryStrip
           :loading="loading"
-          :capital-in-stock="summary.capitalInStock"
-          :units-in-stock="summary.unitsInStock"
-          :retail-value="summary.retailValue"
-          :restock-count="summary.restockCount"
-          :longest-restock-lead="summary.longestRestockLead"
-          :drafts="DRAFT_SHIPMENTS"
+          :summary="summary"
           @log-shipment="logShipment"
           @open-draft="openDraft"
         />
         <CatalogueToolbar
           v-model:query="query"
           v-model:group-filter="groupFilter"
+          :groups="groups"
           :total-count="totalCount"
           :low-stock-count="lowStockCount"
           :attention-count="attentionCount"

@@ -24,6 +24,11 @@ const incompleteFlag = computed(() => {
   if (!props.item.group) missing.push('no group')
   return missing.length > 0 ? missing.join(' · ') : null
 })
+
+/** A dropped line is not missing a supplier — nothing is being reordered for it. */
+const missingSupplier = computed(
+  () => !props.item.hasSupplierLink && props.item.discontinuedAt === null,
+)
 </script>
 
 <template>
@@ -45,11 +50,11 @@ const incompleteFlag = computed(() => {
       </SText>
       <SBadge v-if="lowStock" variant="low-stock" size="row">reorder</SBadge>
       <SBadge v-if="incompleteFlag" variant="incomplete" size="row">{{ incompleteFlag }}</SBadge>
-      <SBadge v-if="!item.hasSupplierLink" variant="incomplete" size="row">no supplier link</SBadge>
+      <SBadge v-if="missingSupplier" variant="incomplete" size="row">no supplier link</SBadge>
       <SBadge v-if="item.priceOverridden" variant="overridden" size="row">price overridden</SBadge>
     </span>
 
-    <SText v-if="item.group" type="cell-meta" role="cell">{{ item.group }}</SText>
+    <SText v-if="item.group" type="cell-meta" role="cell">{{ item.group.name }}</SText>
     <SText v-else type="cell-meta" color="risk" role="cell">—</SText>
 
     <span class="cell cell--num" role="cell">
@@ -64,16 +69,16 @@ const incompleteFlag = computed(() => {
     </span>
 
     <SText type="money" color="fg-2" class="cell--num" role="cell">
-      {{ formatMoney(item.landedCost) }}
+      {{ formatMoney(item.landedCostPesewas) }}
     </SText>
 
     <SText
       type="money"
-      :color="item.sellPrice === null ? 'risk' : undefined"
+      :color="item.sellPricePesewas === null ? 'risk' : undefined"
       class="cell--num"
       role="cell"
     >
-      {{ item.sellPrice === null ? 'no markup' : formatMoney(item.sellPrice) }}
+      {{ item.sellPricePesewas === null ? 'no markup' : formatMoney(item.sellPricePesewas) }}
     </SText>
 
     <SText
