@@ -1,27 +1,39 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { SText } from '@/components/atoms'
+import { APP_TABS, type AppTab } from '@/components/app/tabs'
 
-defineProps<{
-  tabs: string[]
-  active: string
-}>()
+const route = useRoute()
+const router = useRouter()
 
-defineEmits<{ select: [tab: string] }>()
+/**
+ * A tab owns its section and everything under it, so `/shipments/SH-015` still
+ * lights Shipments. The catalogue sits at `/`, which prefixes every path, so it
+ * is matched exactly.
+ */
+const isActive = (tab: AppTab) => {
+  if (!tab.to) return false
+  const path = router.resolve(tab.to).path
+  return path === '/' ? route.path === '/' : route.path === path || route.path.startsWith(`${path}/`)
+}
+
+const tabs = computed(() => APP_TABS.map((tab) => ({ ...tab, active: isActive(tab) })))
 </script>
 
 <template>
   <nav class="tab-bar" aria-label="Sections">
-    <button
+    <component
+      :is="tab.to ? 'RouterLink' : 'span'"
       v-for="tab in tabs"
-      :key="tab"
-      type="button"
+      :key="tab.label"
+      :to="tab.to"
       class="tab"
-      :class="{ 'tab--active': tab === active }"
-      :aria-current="tab === active ? 'page' : undefined"
-      @click="$emit('select', tab)"
+      :class="{ 'tab--active': tab.active, 'tab--inert': !tab.to }"
+      :aria-current="tab.active ? 'page' : undefined"
     >
-      <SText type="tab" :color="tab === active ? 'fg' : 'fg-2-soft'">{{ tab }}</SText>
-    </button>
+      <SText type="tab" :color="tab.active ? 'fg' : 'fg-2-soft'">{{ tab.label }}</SText>
+    </component>
   </nav>
 </template>
 
@@ -39,6 +51,7 @@ defineEmits<{ select: [tab: string] }>()
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
+  text-decoration: none;
   cursor: pointer;
   transition: color 120ms ease-out, border-color 120ms ease-out;
 }
@@ -50,6 +63,15 @@ defineEmits<{ select: [tab: string] }>()
 .tab:focus-visible {
   outline: 2px solid var(--color-action);
   outline-offset: -1px;
+}
+
+/* A section with no screen yet: it reads the same, and it does not invite a click. */
+.tab--inert {
+  cursor: default;
+}
+
+.tab--inert:hover :deep(.s-text) {
+  color: var(--color-fg-2-soft);
 }
 
 .tab--active {
