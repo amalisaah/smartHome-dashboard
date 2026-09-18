@@ -1,12 +1,10 @@
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { fetchCatalogue } from '@/api/catalogue'
+import { computed, onBeforeUnmount, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 import {
   ALL_GROUPS,
   isLowStock,
   marginPercent,
   type CatalogueGroupRef,
   type CatalogueItem,
-  type CatalogueSummary,
   type GroupFilter,
   type SortColumn,
   type SortDirection,
@@ -23,19 +21,6 @@ export const SORT_COLUMN_LABELS: Record<SortColumn, string> = {
   sell: 'sell',
   margin: 'margin',
   lead: 'lead',
-}
-
-/** Until the first load lands there is nothing to count. */
-const EMPTY_SUMMARY: CatalogueSummary = {
-  capitalInStockPesewas: 0,
-  retailValuePesewas: 0,
-  unitsInStock: 0,
-  restockCount: 0,
-  longestRestockLead: null,
-  attentionCount: 0,
-  readyToArchiveCount: 0,
-  draftShipmentCount: 0,
-  nextDraftEta: null,
 }
 
 const displayName = (item: CatalogueItem) => item.name ?? 'Untitled item'
@@ -64,11 +49,23 @@ function readStoredGroup(): GroupFilter {
   }
 }
 
-export function useCatalogueList() {
-  const items = ref<CatalogueItem[]>([])
-  const groups = ref<CatalogueGroupRef[]>([])
-  const summary = ref<CatalogueSummary>(EMPTY_SUMMARY)
-  const loading = ref(true)
+/**
+ * Search, filter and sort over a catalogue that is already loaded. It owns no
+ * requests: the view fetches with the hooks in `@/api/hooks/catalogue` and hands
+ * the rows in, so a refetch flows through here as new input rather than as a
+ * second source of truth.
+ *
+ * All three are local because `GET /items` is unpaginated — that is what lets a
+ * keystroke re-filter without a round trip, and lets a row say which keyword
+ * matched. `/items` does take `q`, `group_id`, `low_stock` and `sort`, so the day
+ * the list paginates, this is the file that starts passing them instead.
+ */
+export function useCatalogueList(
+  itemsSource: MaybeRefOrGetter<CatalogueItem[]>,
+  groupsSource: MaybeRefOrGetter<CatalogueGroupRef[]>,
+) {
+  const items = computed(() => toValue(itemsSource))
+  const groups = computed(() => toValue(groupsSource))
 
   const query = ref('')
   const debouncedQuery = ref('')
@@ -77,43 +74,10 @@ export function useCatalogueList() {
   const attentionOnly = ref(false)
   const sortColumn = ref<SortColumn>('name')
   const sortDirection = ref<SortDirection>('asc')
-  const online = ref(true)
 
-  // --- loading -------------------------------------------------------------
   let debounceTimer: ReturnType<typeof setTimeout> | undefined
 
-  const handleOnline = () => (online.value = true)
-  const handleOffline = () => (online.value = false)
-
-  onMounted(async () => {
-    online.value = navigator.onLine
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-
-    try {
-      const payload = await fetchCatalogue()
-      items.value = payload.items
-      groups.value = payload.groups
-      summary.value = payload.summary
-
-      // The stored slug came from a previous session; a group can have been
-      // renamed away or archived since.
-      if (
-        groupFilter.value !== ALL_GROUPS &&
-        !payload.groups.some((group) => group.slug === groupFilter.value)
-      ) {
-        groupFilter.value = ALL_GROUPS
-      }
-    } finally {
-      loading.value = false
-    }
-  })
-
-  onBeforeUnmount(() => {
-    clearTimeout(debounceTimer)
-    window.removeEventListener('online', handleOnline)
-    window.removeEventListener('offline', handleOffline)
-  })
+  onBeforeUnmount(() => clearTimeout(debounceTimer))
 
   watch(query, (value) => {
     clearTimeout(debounceTimer)
@@ -126,6 +90,14 @@ export function useCatalogueList() {
     } catch {
       // Persisting the group is a convenience, never a requirement.
     }
+  })
+
+  // The stored slug came from a previous session, and a group can have been
+  // renamed away or archived since. Checked when the groups land, not before —
+  // an empty list is "not fetched yet", not "that group is gone".
+  watch(groups, (list) => {
+    if (list.length === 0 || groupFilter.value === ALL_GROUPS) return
+    if (!list.some((group) => group.slug === groupFilter.value)) groupFilter.value = ALL_GROUPS
   })
 
   // --- search --------------------------------------------------------------
@@ -161,6 +133,8 @@ export function useCatalogueList() {
     })
 
     const direction = sortDirection.value
+    // A copy, because `items` is now query cache data — sorting in place would
+    // reorder the cached array every keystroke.
     return filtered.sort((a, b) => {
       switch (sortColumn.value) {
         case 'group':
@@ -194,14 +168,9 @@ export function useCatalogueList() {
   }
 
   // --- counts --------------------------------------------------------------
-  // The chip counts are the server's, so `low stock · 4` can never label a filter
-  // that then shows a different number of rows — both read the one predicate.
-  const lowStockCount = computed(() => summary.value.restockCount)
-  const attentionCount = computed(() => summary.value.attentionCount)
-
-  // Still local: `GET /items` is unpaginated and `GET /groups` returns every
-  // group, so these are whole-catalogue figures. They become page counts the day
-  // the list paginates — `total_items` on the summary is the fix at that point.
+  // Still whole-catalogue figures: `GET /items` is unpaginated and `GET /groups`
+  // returns every group. They become page counts the day the list paginates —
+  // a `total_items` on the summary is the fix at that point.
   const totalCount = computed(() => items.value.length)
   const groupCount = computed(() => groups.value.length)
 
@@ -214,11 +183,6 @@ export function useCatalogueList() {
   )
 
   return {
-    items,
-    groups,
-    summary,
-    loading,
-    online,
     query,
     debouncedQuery,
     groupFilter,
@@ -231,8 +195,6 @@ export function useCatalogueList() {
     matchedKeyword,
     totalCount,
     groupCount,
-    lowStockCount,
-    attentionCount,
     isFiltered,
   }
 }

@@ -61,6 +61,19 @@ export interface CatalogueSummary {
   nextDraftEta: string | null
 }
 
+/** What the strip and the chips count before the first `GET /summary` lands. */
+export const EMPTY_SUMMARY: CatalogueSummary = {
+  capitalInStockPesewas: 0,
+  retailValuePesewas: 0,
+  unitsInStock: 0,
+  restockCount: 0,
+  longestRestockLead: null,
+  attentionCount: 0,
+  readyToArchiveCount: 0,
+  draftShipmentCount: 0,
+  nextDraftEta: null,
+}
+
 export type SortColumn = 'name' | 'group' | 'stock' | 'landed' | 'sell' | 'margin' | 'lead'
 export type SortDirection = 'asc' | 'desc'
 

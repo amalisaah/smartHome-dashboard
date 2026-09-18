@@ -1,4 +1,5 @@
 import { QueryClient, type VueQueryPluginOptions } from '@tanstack/vue-query'
+import { isRetryableError } from './http'
 
 /**
  * One cache for the app. The defaults below are the ones worth stating
@@ -19,9 +20,11 @@ export const queryClient = new QueryClient({
       // revalidates, and so does regaining the network.
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
-      // Three tries is the library default; two is enough to ride out a blip
-      // without leaving a spinner up for ~7s on an endpoint that is simply down.
-      retry: 2,
+      // Two retries is enough to ride out a blip without leaving a spinner up for
+      // ~7s on an endpoint that is simply down — and only for a failure retrying
+      // can fix. A 400 or a 404 is the request being wrong and will be just as
+      // wrong the second time, so it surfaces on the first answer.
+      retry: (failureCount, error) => failureCount < 2 && isRetryableError(error),
       retryDelay: (attempt) => Math.min(1_000 * 2 ** attempt, 8_000),
     },
     mutations: {

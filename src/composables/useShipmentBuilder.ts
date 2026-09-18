@@ -1,5 +1,5 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { fetchCatalogue } from '@/api/catalogue'
+import { fetchGroups, fetchItems } from '@/api/catalogue'
 import { DRAFT_COSTS, DRAFT_LINES, DRAFT_META } from '@/data/shipmentMock'
 import type { CatalogueGroupRef } from '@/types/catalogue'
 import {
@@ -53,11 +53,17 @@ export function useShipmentBuilder() {
     // until it lands there are simply no matches to offer.
     if (catalogueRequested) return
     catalogueRequested = true
-    const payload = await fetchCatalogue()
-    catalogueNames.value = payload.items
-      .map((item) => item.name)
-      .filter((name): name is string => name !== null)
-    groups.value = payload.groups
+    try {
+      const [items, groupRefs] = await Promise.all([fetchItems(), fetchGroups()])
+      catalogueNames.value = items
+        .map((item) => item.name)
+        .filter((name): name is string => name !== null)
+      groups.value = groupRefs
+    } catch {
+      // The combobox simply has nothing to offer. Cleared so the next visit to
+      // the screen tries again rather than being stuck with no matches for good.
+      catalogueRequested = false
+    }
   })
 
   onBeforeUnmount(() => {

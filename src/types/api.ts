@@ -2,9 +2,9 @@
  * The wire contract, mirroring `openapi.json` exactly: snake_case keys, money as
  * integer pesewas (1 GHS = 100 pesewas), timestamps as ISO date-time strings.
  *
- * Nothing outside `@/api/catalogue` should import these — the rest of the app
- * speaks the view model in `@/types/catalogue`. Keeping the two apart means a
- * backend rename lands in one mapper rather than in every component.
+ * Nothing outside `@/api` and `@/utils/mapper` should import these — the rest of
+ * the app speaks the view model in `@/types/catalogue`. Keeping the two apart
+ * means a backend rename lands in one mapper rather than in every component.
  */
 
 /** The group an item belongs to, embedded on the item row. */

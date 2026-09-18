@@ -1,79 +1,72 @@
 import type { ApiGroup, ApiItem, ApiSummary } from '@/types/api'
 import type { CatalogueGroupRef, CatalogueItem, CatalogueSummary } from '@/types/catalogue'
-import { MOCK_GROUPS, MOCK_ITEMS, MOCK_LOAD_MS, MOCK_SUMMARY } from '@/data/catalogueMock'
+import { toCatalogueItem, toCatalogueSummary, toGroupRef } from '@/utils/mapper/catalogueMapper'
+import { apiGet } from './http'
 
 /**
- * The seam between the wire and the screen. Everything snake_case stops here.
+ * The seam between the wire and the screen. The fetchers below call the real
+ * endpoints and map the answers through `@/utils/mapper/catalogueMapper`, so no
+ * component ever sees a `_pesewas` key or a snake_case field.
  *
- * `fetchCatalogue` is served from the mock for now; swapping it for the real
- * `GET /items`, `GET /groups` and `GET /summary` is a change to this one
- * function, because the mappers below already take the shapes the API sends.
+ * Search, filter and sort are deliberately not query params yet. `GET /items` is
+ * unpaginated, so the list is fetched once and worked over in memory — that is
+ * what lets a keystroke re-filter without a round trip and lets a row explain
+ * which keyword matched. The params exist on the endpoint for the day the list
+ * paginates; `@/composables/useCatalogueList` is where that switch would land.
  */
 
-export function toCatalogueItem(api: ApiItem): CatalogueItem {
-  return {
-    id: api.id,
-    name: api.name,
-    group: api.group,
-    keywords: api.keywords,
-    stock: api.stock_on_hand,
-    reorderLevel: api.reorder_level,
-    leadDays: api.lead_time_days,
-    landedCostPesewas: api.landed_unit_cost_pesewas,
-    // `selling_price_pesewas` is non-nullable on the wire, so this never actually
-    // arrives null today. The view model keeps the null so the `no markup` cell
-    // state is already wired for when the backend can express it.
-    sellPricePesewas: api.selling_price_pesewas,
-    hasSupplierLink: api.supplier_url !== null,
-    priceOverridden: api.selling_price_override_pesewas !== null,
-    needsAttention: api.needs_attention,
-    discontinuedAt: api.discontinued_at,
-    discontinueReason: api.discontinue_reason,
-    readyToArchive: api.ready_to_archive,
-  }
+/** The sorts `GET /items` does server-side. Ascending only. */
+export type CatalogueItemSort = 'name' | 'stock' | 'margin'
+
+export interface CatalogueItemsQuery {
+  /** `?q=` — substring across name and keywords. */
+  search?: string
+  groupId?: number
+  needsAttention?: boolean
+  lowStock?: boolean
+  discontinued?: boolean
+  readyToArchive?: boolean
+  sort?: CatalogueItemSort
+  archived?: boolean
 }
 
-/**
- * The filter needs only a group's identity; the shipment preview also needs the
- * multiplier, because picking a group there is what gives a new item a price.
- */
-export function toGroupRef(api: ApiGroup): CatalogueGroupRef {
-  return { id: api.id, name: api.name, slug: api.slug, defaultMarkupBps: api.default_markup_bps }
+export interface CatalogueGroupsQuery {
+  archived?: boolean
 }
 
-export function toCatalogueSummary(api: ApiSummary): CatalogueSummary {
-  return {
-    capitalInStockPesewas: api.capital_in_stock_pesewas,
-    retailValuePesewas: api.retail_value_pesewas,
-    unitsInStock: api.units_in_stock,
-    restockCount: api.items_needing_restock,
-    longestRestockLead: api.longest_restock_lead_days,
-    attentionCount: api.items_needing_attention,
-    readyToArchiveCount: api.items_ready_to_archive,
-    draftShipmentCount: api.draft_shipment_count,
-    nextDraftEta: api.next_draft_eta,
-  }
+/** `GET /items`. No argument: active items in id order. Unset keys are not sent. */
+export async function fetchItems(
+  query: CatalogueItemsQuery = {},
+  signal?: AbortSignal,
+): Promise<CatalogueItem[]> {
+  const rows = await apiGet<ApiItem[]>(
+    '/items',
+    {
+      q: query.search,
+      group_id: query.groupId,
+      needs_attention: query.needsAttention,
+      low_stock: query.lowStock,
+      discontinued: query.discontinued,
+      ready_to_archive: query.readyToArchive,
+      sort: query.sort,
+      archived: query.archived,
+    },
+    signal,
+  )
+  return rows.map(toCatalogueItem)
 }
 
-export interface CataloguePayload {
-  items: CatalogueItem[]
-  groups: CatalogueGroupRef[]
-  summary: CatalogueSummary
+/** `GET /groups` — every active group, already in `sort_order`. */
+export async function fetchGroups(
+  query: CatalogueGroupsQuery = {},
+  signal?: AbortSignal,
+): Promise<CatalogueGroupRef[]> {
+  const rows = await apiGet<ApiGroup[]>('/groups', { archived: query.archived }, signal)
+  return rows.map(toGroupRef)
 }
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-/**
- * One load for the whole screen. `GET /items` is unpaginated and search, filter
- * and sort are all local for now, so the list is fetched once and worked over in
- * memory; the counts come from `GET /summary` so they stay whole-catalogue
- * figures rather than counts of whatever is on screen.
- */
-export async function fetchCatalogue(): Promise<CataloguePayload> {
-  await delay(MOCK_LOAD_MS)
-  return {
-    items: MOCK_ITEMS.map(toCatalogueItem),
-    groups: MOCK_GROUPS.map(toGroupRef),
-    summary: toCatalogueSummary(MOCK_SUMMARY),
-  }
+/** `GET /summary`. */
+export async function fetchSummary(signal?: AbortSignal): Promise<CatalogueSummary> {
+  const api = await apiGet<ApiSummary>('/summary', undefined, signal)
+  return toCatalogueSummary(api)
 }
