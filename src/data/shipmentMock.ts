@@ -43,6 +43,25 @@ export const DRAFT_META: ShipmentMeta = {
   splitOverridden: false,
 }
 
+/**
+ * A shipment that does not exist yet: nothing is known about it but the ref he
+ * will call it by. Every field is his to type, including the rate — there is no
+ * sensible default for a rate he has not been to the forex shop for.
+ */
+export function blankDraftMeta(ref: string): ShipmentMeta {
+  return {
+    ref,
+    state: 'draft',
+    supplier: '',
+    orderDate: '',
+    invoiceCurrency: 'USD',
+    rate: '',
+    expectedArrival: '',
+    receivedAt: null,
+    splitOverridden: false,
+  }
+}
+
 export const DRAFT_LINES: InvoiceLine[] = [
   { id: 1, itemName: 'Tuya no-neutral switch, 2 gang', isNew: false, qty: '20', unitPrice: '14.20' },
   { id: 2, itemName: 'RGB bulb, E27, 9W', isNew: false, qty: '40', unitPrice: '3.10' },

@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router'
 import { SButton, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import ShipmentsTableRow from '@/components/shipment/ShipmentsTableRow.vue'
-import { DRAFT_META, MOCK_SHIPMENTS } from '@/data/shipmentMock'
+import { mintDraftRef, savedShipments } from '@/composables/useShipmentBuilder'
 import type { ShipmentListRow } from '@/types/shipment'
 
 const router = useRouter()
@@ -23,8 +23,8 @@ function open(row: ShipmentListRow) {
   router.push({ name, params: { ref: row.ref } })
 }
 
-const newShipment = () =>
-  router.push({ name: 'shipment-builder', params: { ref: DRAFT_META.ref } })
+/** A new shipment is an empty draft under a ref of its own, not the last one. */
+const newShipment = () => router.push({ name: 'shipment-builder', params: { ref: mintDraftRef() } })
 </script>
 
 <template>
@@ -50,7 +50,7 @@ const newShipment = () =>
       </div>
 
       <ShipmentsTableRow
-        v-for="row in MOCK_SHIPMENTS"
+        v-for="row in savedShipments"
         :key="row.ref"
         :row="row"
         @open="open(row)"

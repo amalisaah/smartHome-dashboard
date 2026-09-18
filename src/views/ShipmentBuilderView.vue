@@ -7,6 +7,8 @@ import ShipmentMetaStrip from '@/components/shipment/ShipmentMetaStrip.vue'
 import { useShipmentBuilder } from '@/composables/useShipmentBuilder'
 import type { InvoiceLine, SharedCost } from '@/types/shipment'
 
+const props = defineProps<{ shipmentRef: string }>()
+
 const router = useRouter()
 
 const {
@@ -31,7 +33,9 @@ const {
   clearLineFocus,
   ensureBlankCost,
   removeCost,
-} = useShipmentBuilder()
+  draftIsEmpty,
+  saveDraft,
+} = useShipmentBuilder(() => props.shipmentRef)
 
 function updateLine(next: InvoiceLine) {
   const index = lines.value.findIndex((line) => line.id === next.id)
@@ -48,6 +52,12 @@ function updateCost(next: SharedCost) {
 
 const openPreview = () => router.push({ name: 'shipment-preview', params: { ref: meta.value.ref } })
 const close = () => router.push({ name: 'shipments' })
+
+/** Filed, then shown where it landed: the list he just put it on. */
+function save() {
+  saveDraft()
+  close()
+}
 </script>
 
 <template>
@@ -58,7 +68,9 @@ const close = () => router.push({ name: 'shipments' })
         :shipment-ref="meta.ref"
         :status="saveStatus"
         :offline="!online"
+        :empty="draftIsEmpty"
         @close="close"
+        @save="save"
       />
 
       <ShipmentMetaStrip :meta="meta" @update:meta="meta = $event" />

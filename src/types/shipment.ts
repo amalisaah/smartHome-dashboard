@@ -122,8 +122,12 @@ export interface ShipmentListRow {
   productPesewas: number
   sharedPesewas: number
   state: ShipmentState
-  /** ISO — the expected arrival on a draft, the received date on a received one. */
-  stateDate: string
+  /**
+   * ISO — the expected arrival on a draft, the received date on a received one.
+   * Absent on a draft he has not said when to expect: the chip says so rather
+   * than inventing a date.
+   */
+  stateDate: string | null
   splitOverridden: boolean
 }
 
@@ -133,6 +137,15 @@ export interface ShipmentListRow {
 export function toMinor(text: string): number {
   const value = Number.parseFloat(text.replace(/,/g, ''))
   return Number.isFinite(value) ? Math.round(value * 100) : 0
+}
+
+/**
+ * `24 Sep 2026` → `2026-09-24`. The date fields hold what he typed, so a
+ * half-typed or nonsense date reads as no date at all rather than as a wrong one.
+ */
+export function toIsoDate(text: string): string | null {
+  const date = new Date(text)
+  return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10)
 }
 
 /** `20` → 20. A count is never fractional. */

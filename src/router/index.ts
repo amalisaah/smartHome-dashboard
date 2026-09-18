@@ -20,10 +20,12 @@ export const router = createRouter({
     },
     {
       // The shipment is addressed by its ref: it is what he calls it out loud.
-      // There is one draft in the sample data, so the builder always opens it.
+      // A new shipment is minted a ref on the click that starts it, so there is
+      // no second, ref-less route for one that has not been saved yet.
       path: '/shipments/:ref',
       name: 'shipment-builder',
       component: ShipmentBuilderView,
+      props: (route) => ({ shipmentRef: String(route.params.ref) }),
     },
     {
       path: '/shipments/:ref/preview',

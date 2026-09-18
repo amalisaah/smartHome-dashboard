@@ -15,8 +15,10 @@ const draft = computed(() => props.row.state === 'draft')
  * one that has landed, and it says what it means in words rather than colour.
  */
 const stateLabel = computed(() => {
-  if (draft.value) return `draft · arrives ${formatShortDate(props.row.stateDate)}`
-  const received = `received ${formatShortDate(props.row.stateDate)}`
+  const date = props.row.stateDate
+  if (draft.value) return date ? `draft · arrives ${formatShortDate(date)}` : 'draft · no date yet'
+  if (!date) return 'received'
+  const received = `received ${formatShortDate(date)}`
   return props.row.splitOverridden ? `${received} · split overridden` : received
 })
 </script>

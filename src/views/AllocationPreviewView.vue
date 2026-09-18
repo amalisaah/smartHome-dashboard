@@ -20,7 +20,7 @@ const props = defineProps<{ shipmentRef: string }>()
 
 const router = useRouter()
 
-const { groups, lines, unitCount, productPesewas, sharedPesewas } = useShipmentBuilder()
+const { groups, lines, unitCount, productPesewas, sharedPesewas, saveDraft } = useShipmentBuilder()
 
 /** A received shipment is history: its figures come from the list, not the draft. */
 const shipment = computed(() => metaForShipment(props.shipmentRef))
@@ -74,6 +74,12 @@ function setOverride(index: number, percent: string) {
 const backToLines = () =>
   router.push({ name: 'shipment-builder', params: { ref: shipment.value.ref } })
 const toList = () => router.push({ name: 'shipments' })
+
+/** `Keep as draft` files it on the list, the same as saving from the builder. */
+function keepAsDraft() {
+  saveDraft()
+  toList()
+}
 
 /** Escape on the preview is `Back to lines` — the same exit, by keyboard. */
 function onKeydown(event: KeyboardEvent) {
@@ -130,7 +136,7 @@ function receive() {
         :read-only="readOnly"
         :received-at="shipment.receivedAt"
         @back="backToLines"
-        @draft="toList"
+        @draft="keepAsDraft"
         @receive="confirming = true"
         @close="toList"
       />

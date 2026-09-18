@@ -6,9 +6,11 @@ defineProps<{
   /** `saved on this device · 4 lines`, or what the offline state says instead. */
   status: string
   offline: boolean
+  /** Nothing entered yet: there is no shipment to put on the list. */
+  empty: boolean
 }>()
 
-defineEmits<{ close: [] }>()
+defineEmits<{ close: []; save: [] }>()
 </script>
 
 <template>
@@ -24,7 +26,10 @@ defineEmits<{ close: [] }>()
         <span class="dot" :class="{ 'dot--offline': offline }" aria-hidden="true" />
         <SText type="cell-meta" :color="offline ? 'risk' : undefined">{{ status }}</SText>
       </span>
-      <SButton variant="secondary" size="md" @click="$emit('close')">Close</SButton>
+      <SButton variant="ghost" size="md" @click="$emit('close')">Close</SButton>
+      <!-- Typing is already saved on this device; this is what files the
+           shipment on the list, where he can find it by ref. -->
+      <SButton size="md" :disabled="empty" @click="$emit('save')">Save draft</SButton>
     </div>
   </div>
 </template>
