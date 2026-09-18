@@ -56,6 +56,26 @@ Denser roles the list screens need. Reach for these rather than inventing a one-
 
 `micro` is 10px uppercase at `.14em`; `column-header` is the same size at `.10em`.
 
+Roles the shipment builder added. The four Space Grotesk ones are one scale — a frame,
+a surface that opens over it, a dialog, a pane inside one:
+
+```vue
+<SText type="sheet-title">What the freight did to each item</SText>  <!-- Space Grotesk 600 26px, -0.01em -->
+<SText type="frame-title">Shipment SH-015</SText>       <!-- Space Grotesk 600 20px — a frame's header bar -->
+<SText type="dialog-title">Receive SH-015?</SText>      <!-- Space Grotesk 600 19px -->
+<SText type="pane-title">Invoice lines</SText>          <!-- Space Grotesk 600 16px — a pane header -->
+<SText type="cell">Tuya switch, 2 gang</SText>          <!-- IBM Plex Sans 400 14px — laptop table row -->
+<SText type="row-meta">Cameras — took the container</SText> <!-- Sans 400 13px, no leading -->
+<SText type="hint">prices as invoiced, in USD</SText>   <!-- Mono 10px, no tracking, micro ink -->
+<SText type="total">GH₵ 11,287.68</SText>               <!-- Mono 500 22px — the figure a block is about -->
+<SText type="count">+70</SText>                         <!-- Mono 400 14px — a figure inside prose -->
+<SText type="cell-prompt" color="risk">pick a group</SText> <!-- Mono 500 14px — an in-cell control -->
+<SText type="ref">SH-015</SText>                        <!-- Mono 500 13px — a document number -->
+```
+
+`cell` and `row-meta` declare no `line-height`, so a table row keeps the height its own
+padding gives it; `meta` is `row-meta` with 1.5 leading, for prose that wraps.
+
 Block types (`display`, `title`, `heading`, `screen-title`, `body`, `list-title`, `meta`, `label`,
 `caption`) render as `<p>` by default. The rest render as `<span>`.
 Override with `as="h1"`, `as="label"`, etc. for correct semantics.
@@ -86,10 +106,20 @@ Only pass `color` when deviating from the type role's default.
 <SButton :disabled="true">Send</SButton>
 <SButton size="lg">On-site action</SButton>             <!-- 48px — phone door, 14px label -->
 <SButton size="sm">Inline action</SButton>              <!-- 32px -->
+<SButton variant="create" size="md">+ create "smoke" inline</SButton> <!-- mono 12px, action on surface -->
 ```
 
 Sizes carry their door: `md` is 44px / 15px (laptop primary), `lg` is 48px / 14px and
 horizontally compact so it still shares a 390px action bar. Both use `rounded-md`.
+
+**There are three sizes and that is the set.** A handoff that draws a 40px or 46px button
+gets the nearest of these, not a fourth size: the shipment builder's header and action-bar
+buttons are `lg`, its primaries are `md`. Consequence to expect — a 14px button comes out
+6–8px taller than drawn, and every label reads at weight 500 rather than 600.
+
+`variant="create"` is the inline-create chip beside a combobox — mono, because what it
+creates is the query quoted back, and action-blue because creating is the affordance. At
+`size="md"` it stands 44px, flush with the combobox it sits beside.
 
 ### SBadge variants
 
@@ -105,7 +135,15 @@ horizontally compact so it still shares a 390px action bar. Both use `rounded-md
 <SBadge variant="archived">archived</SBadge>
 <SBadge variant="source-to-order">source to order</SBadge>
 <SBadge variant="nav-risk">3</SBadge>
+<SBadge variant="draft" size="state">draft · arrives 24 Sep</SBadge>
+<SBadge variant="received" size="state">received 12 Aug</SBadge>
+<SBadge variant="neutral" size="state">3 costs down</SBadge>
 ```
+
+`size="state"` is the sentence-shaped chip at 11px (`5px 9px`, `rounded-chip`, no tracking),
+for a chip that says a state or a count rather than labelling a category. `draft` is dashed
+`--color-fg-3` on nothing; `received` is a solid `--color-line` fill with no border at all.
+Keep the two vocabularies apart: **dashed means not-yet, solid means committed.**
 
 `size="row"` is the in-row flag chip — lowercase, untracked, `3px 6px`, `rounded-flag`. Use it
 for flags that state a problem in words inside a table row:
@@ -128,11 +166,46 @@ Emphasis is fixed per chip and marks severity, not selection; selection is the r
 
 `size="phone"` keeps the drawn box at the reference metrics and stretches the tap target to 48px.
 
-### SInput / SSelect
+### SSegmented
+
+`size="lg"` is the allocation-basis door: an 8px track with no gap, 9px/14px segments, and a
+selection that weighs 600 and lifts by `shadow-elev-0`. The selection settles in 150ms on
+background and shadow — it is not a pill that slides. Hovering an unselected segment brings
+its label to full ink and moves nothing. `disabled` makes the whole control inert for a
+read-only view.
+
+### SInput / SSelect / SCombobox
 
 `variant="on-dark"` for a field on the dark app bar; `size="lg"` for the 48px phone door;
 `variant="chip"` on SSelect for a chip-sized dropdown. Pass `ariaLabel` whenever there is no
-visible `label`.
+visible `label` — a `label` is tied to its control with `for`/`id`, so it names the field to
+a screen reader as well as to the eye.
+
+```vue
+<SInput label="Order date" size="field" mono />              <!-- meta strip: 11px/12px, 14px -->
+<SInput label="Rate you actually got" size="field" mono align="right" prefix="1 USD =" />
+<SInput size="row" dashed placeholder="Name a cost…" />      <!-- in-table label field -->
+<SInput size="row-figure" dashed mono align="right" placeholder="0.00" />
+<SInput size="split" variant="accent" mono align="right" suffix="%" />  <!-- the 92px override -->
+<SInput variant="flat" mono align="right" ariaLabel="Quantity" />       <!-- a figure in a row -->
+```
+
+- `mono` makes a field a figure — mono and tabular. `align="right"` for anything read by column.
+- `dashed` is a blank row that is not a row yet: it keeps its dashes **until it holds a value**,
+  then goes solid on its own.
+- `variant="flat"` draws no box until you reach for it, so a table of editable figures still
+  reads as figures. Put `min-width: 0` on the grid items of any row holding one, or the field's
+  intrinsic width widens the column and the row stops lining up under the head.
+- `variant="accent"` carries the action border at rest — a value he decided rather than was given.
+- `prefix` is a fact about the field and is fenced off by a border; `suffix` is part of the
+  value's reading and is not.
+
+SCombobox: `size="row"` is the 44px inline-create row; `hint` is mono micro inside the field
+(`no match in 209 items`) and suppresses the dropdown's own "No matches"; `hideChevron` for a
+field that is a row rather than a picker; `createOnEnter` makes Enter-with-no-match create
+without adding a second create row to the list; `@update:query` hands the typed text to the
+screen, and `focus()` / `clear()` are exposed so a flow can put the caret where it belongs.
+**Escape clears the query and stays in the field** — it never exits the row.
 
 ### SCard variants
 
@@ -154,10 +227,12 @@ The quiet inks run `fg-2` (0.40) → `fg-2-soft` (0.45) → `micro` (0.50) → `
 `micro` is micro labels and the `/ 6` denominator in a low-stock count.
 
 **Row backgrounds** → `bg-row-hover`, `bg-row-hover-risk` (hover on a risk-tinted row),
-`bg-row-risk-tint` (low stock), `bg-row-action-tint` (new / selected).
+`bg-row-hover-action` (hover on an action-tinted row), `bg-row-risk-tint` (low stock),
+`bg-row-action-tint` (new / selected). A tinted row **keeps its tint and darkens** on hover;
+it never falls back to the neutral hover.
 
 **Other surfaces** → `bg-match-highlight` (search match), `bg-field-dark` +
-`border-field-dark-line` (an input sitting on the dark app bar).
+`border-field-dark-line` (an input sitting on the dark app bar), `bg-scrim` (behind a modal).
 
 **Fonts** → `font-display`, `font-sans`, `font-mono`
 
@@ -165,7 +240,9 @@ The quiet inks run `fg-2` (0.40) → `fg-2-soft` (0.45) → `micro` (0.50) → `
 
 **Hit target** → `--hit-min` (48px)
 
-**Shadows** → `shadow-elev-1` (resting), `shadow-elev-2` (dialogs / sheets)
+**Shadows** → `shadow-elev-0` (the faintest lift: a selected segment, a secondary button in an
+action bar), `shadow-elev-1` (resting card), `shadow-elev-2` (dialogs / sheets, and a surface
+that opened over another)
 
 ### Rules
 
@@ -175,5 +252,12 @@ The quiet inks run `fg-2` (0.40) → `fg-2-soft` (0.45) → `micro` (0.50) → `
 - **Spacing:** use the 4px base scale (4 · 8 · 12 · 16 · 24 · 32 · 48). In Tailwind: `gap-1` → 4px, `gap-2` → 8px, `gap-4` → 16px, `gap-6` → 24px, `gap-8` → 32px.
 - **One action color, one risk color.** `--color-action` (blue) = interactive affordances only. `--color-risk` (amber) = all warnings (stock, data, loss, archive). Do not introduce new semantic colors.
 - **Phone door targets:** any tappable element on a mobile view must be `min-height: 48px` (`size="lg"` on buttons).
-- **Motion:** hover/press transitions are always `120ms ease-out`. Sheet/dialog entrances are `200ms`. Nothing else animates.
+- **Motion:** hover/press transitions are always `120ms ease-out`. Sheet/dialog entrances are `200ms`. A segmented selection settles in `150ms`. Nothing else animates.
+- **One focus treatment.** Every field focuses the same way: a 1px `--color-action` border plus a
+  2px `--color-action` outline at `-1px` offset. Reaching for a field firms its border to
+  `--color-fg-3` first. Buttons and rows take a 2px `--color-action` outline instead.
+- **Validation appears in the row that has the problem**, expressed as the consequence
+  (`blocks receiving`), never as a banner or a summary list elsewhere.
+- **The dot, never the spinner.** Local-first saving is a state, not progress, and no screen
+  where something is being typed may wait on the network or disable a control when it drops.
 - **New atoms go in** `src/components/atoms/` and must be prefixed `S`.

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineProps<{
-  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive'
+  /** `create` is the inline-create chip beside a combobox: mono, action text. */
+  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive' | 'create'
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
   type?: 'button' | 'submit' | 'reset'
@@ -98,6 +99,23 @@ defineProps<{
 .s-btn--ghost:hover:not([disabled]) {
   color: var(--color-fg);
   background: var(--color-surface);
+}
+
+/* The create chip beside a combobox. Mono, because what it creates is the query
+   the user just typed, quoted back to them. */
+.s-btn--create {
+  background: var(--color-surface);
+  color: var(--color-action);
+  border-color: var(--color-line);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.s-btn--create:hover:not([disabled]) {
+  border-color: var(--color-action);
+  color: var(--color-action-hover);
 }
 
 .s-btn--destructive {

@@ -1,0 +1,71 @@
+<script setup lang="ts">
+import { SBadge, SButton, SText } from '@/components/atoms'
+
+defineProps<{
+  shipmentRef: string
+  /** `saved on this device · 4 lines`, or what the offline state says instead. */
+  status: string
+  offline: boolean
+}>()
+
+defineEmits<{ close: [] }>()
+</script>
+
+<template>
+  <div class="header">
+    <div class="identity">
+      <SText type="frame-title" as="h1">Shipment {{ shipmentRef }}</SText>
+      <SBadge variant="draft" size="state">draft · affects nothing yet</SBadge>
+    </div>
+
+    <div class="actions">
+      <!-- A dot, never a spinner: saving is a state, not progress. -->
+      <span class="save">
+        <span class="dot" :class="{ 'dot--offline': offline }" aria-hidden="true" />
+        <SText type="cell-meta" :color="offline ? 'risk' : undefined">{{ status }}</SText>
+      </span>
+      <SButton variant="secondary" size="md" @click="$emit('close')">Close</SButton>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.save {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-action);
+  flex: none;
+}
+
+.dot--offline {
+  background: var(--color-risk);
+}
+</style>

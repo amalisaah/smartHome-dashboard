@@ -33,9 +33,12 @@ export function toCatalogueItem(api: ApiItem): CatalogueItem {
   }
 }
 
-/** The filter only ever needs a group's identity, not its markup or ordering. */
+/**
+ * The filter needs only a group's identity; the shipment preview also needs the
+ * multiplier, because picking a group there is what gives a new item a price.
+ */
 export function toGroupRef(api: ApiGroup): CatalogueGroupRef {
-  return { id: api.id, name: api.name, slug: api.slug }
+  return { id: api.id, name: api.name, slug: api.slug, defaultMarkupBps: api.default_markup_bps }
 }
 
 export function toCatalogueSummary(api: ApiSummary): CatalogueSummary {

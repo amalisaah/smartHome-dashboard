@@ -36,6 +36,9 @@
   /* Row backgrounds. The tints mark state; the hovers are the interaction. */
   --color-row-hover: oklch(0.97 0.003 250);
   --color-row-hover-risk: oklch(0.97 0.012 45);
+  /* Hover on an action-tinted row — a draft in the shipments list. A tinted row
+     keeps its tint and darkens; it never falls back to the neutral hover. */
+  --color-row-hover-action: oklch(0.97 0.012 255);
   --color-row-risk-tint: oklch(0.985 0.008 45);
   --color-row-action-tint: oklch(0.985 0.008 255);
 
@@ -45,6 +48,9 @@
   /* Fields on a dark surface (phone header search) */
   --color-field-dark: oklch(0.28 0.012 260);
   --color-field-dark-line: oklch(0.40 0.01 260);
+
+  /* Behind a modal dialog. Built on --fg, the same ink the elevations use. */
+  --color-scrim: oklch(0.21 0.01 260 / 0.28);
 
   /* === Border Radius === */
   --radius-flag: 5px;
@@ -57,6 +63,9 @@
   --hit-min: 48px;
 
   /* === Shadows === */
+  /* The faintest lift there is: a selected segment, a secondary button in an
+     action bar. Present enough to say "this one is raised", nothing more. */
+  --shadow-elev-0: 0 1px 2px oklch(0.21 0.01 260 / 0.06);
   --shadow-elev-1: 0 1px 3px oklch(0.21 0.01 260 / 0.08);
   --shadow-elev-2: 0 10px 30px oklch(0.21 0.01 260 / 0.16);
 }

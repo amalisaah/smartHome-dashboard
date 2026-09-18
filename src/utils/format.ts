@@ -13,7 +13,18 @@ const TWO_DP = new Intl.NumberFormat('en-US', {
 
 const WHOLE = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
 
-const SHORT_DATE = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' })
+const ONE_DP = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+})
+
+/**
+ * Day and month are formatted apart on purpose: the convention is `24 Sep`, and
+ * an `en-GB` short month spells September `Sept`, which is a character wider in
+ * every chip it appears in. `en-US` gives the three-letter form the design uses.
+ */
+const SHORT_DAY = new Intl.DateTimeFormat('en-GB', { day: 'numeric' })
+const SHORT_MONTH = new Intl.DateTimeFormat('en-US', { month: 'short' })
 
 /** Money inside a table cell or a phone row — two decimals, no currency mark. */
 export const formatMoney = (pesewas: number) => TWO_DP.format(pesewas / 100)
@@ -21,14 +32,38 @@ export const formatMoney = (pesewas: number) => TWO_DP.format(pesewas / 100)
 /** A summary figure — `GH₵` appears here and in form prefixes, nowhere else. */
 export const formatCurrency = (pesewas: number) => `GH₵ ${WHOLE.format(pesewas / 100)}`
 
+/**
+ * A total, to the pesewa. `formatCurrency` rounds to whole cedis for a summary
+ * figure; a shipment total is money he will reconcile against paper, so it keeps
+ * its decimals.
+ */
+export const formatCedi = (pesewas: number) => `GH₵ ${TWO_DP.format(pesewas / 100)}`
+
+/** The symbol a currency code shows in a header caption or a field prefix. */
+export const currencySymbol = (code: string) =>
+  ({ USD: '$', CNY: '¥' } as Record<string, string>)[code] ?? code
+
+/** A figure in the invoice's own currency — `$ 658.20`. */
+export const formatInvoice = (minorUnits: number, code: string) =>
+  `${currencySymbol(code)} ${TWO_DP.format(minorUnits / 100)}`
+
 export const formatCount = (value: number) => WHOLE.format(value)
+
+/** Share of a shipment — one decimal, the only percentage that carries one. */
+export const formatShare = (percent: number) => `${ONE_DP.format(percent)}%`
+
+/** Basis points as the multiplier he reads it as: 5000 → `1.50`. */
+export const formatMarkup = (bps: number) => TWO_DP.format(1 + bps / 10_000)
 
 export const formatLead = (days: number) => `${days} d`
 
 export const formatMargin = (percent: number) => `${percent}%`
 
-/** An ISO date-time as `24 Sep` — shipment ETAs, and nothing else so far. */
-export const formatShortDate = (iso: string) => SHORT_DATE.format(new Date(iso))
+/** An ISO date-time as `24 Sep` — chips and captions. */
+export const formatShortDate = (iso: string) => {
+  const date = new Date(iso)
+  return `${SHORT_DAY.format(date)} ${SHORT_MONTH.format(date)}`
+}
 
 /** Splits `text` into matched / unmatched runs for the search highlight. */
 export function splitOnMatch(text: string, query: string): { text: string; match: boolean }[] {

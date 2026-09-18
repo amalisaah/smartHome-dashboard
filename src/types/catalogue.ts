@@ -9,6 +9,12 @@ export interface CatalogueGroupRef {
   id: number
   name: string
   slug: string
+  /**
+   * Basis points — 6000 = a markup of 1.60. Absent on the ref embedded in an
+   * item row, which the wire contract does not carry a markup on; present when
+   * the group came from `GET /groups`, where a selling price gets its multiplier.
+   */
+  defaultMarkupBps?: number
 }
 
 export interface CatalogueItem {

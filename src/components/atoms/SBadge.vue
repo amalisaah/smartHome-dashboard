@@ -12,8 +12,14 @@ defineProps<{
     | 'archived'
     | 'source-to-order'
     | 'nav-risk'
-  /** `row` is the in-row flag chip: lowercase, untracked, tighter box. */
-  size?: 'default' | 'row'
+    | 'draft'
+    | 'received'
+    | 'neutral'
+  /**
+   * `row` is the in-row flag chip: lowercase, untracked, tighter box.
+   * `state` is the sentence-shaped chip — `draft · arrives 24 Sep` — at 11px.
+   */
+  size?: 'default' | 'row' | 'state'
 }>()
 </script>
 
@@ -47,6 +53,42 @@ defineProps<{
   border-radius: var(--radius-flag);
   letter-spacing: normal;
   text-transform: none;
+}
+
+/* A chip that says a state in words rather than labelling a category, so it
+   reads at sentence scale: `draft · affects nothing yet`, `received 12 Aug`. */
+.s-badge--size-state {
+  font-size: 11px;
+  padding: 5px 9px;
+  letter-spacing: normal;
+  text-transform: none;
+  /* Sentence leading, not the tracked-label kind: these chips sit inline with
+     13px prose and have to share its baseline rhythm. */
+  line-height: normal;
+}
+
+/* Dashed means not-yet: nothing here has happened to stock or costs. */
+.s-badge--draft {
+  background: transparent;
+  color: var(--color-fg-2);
+  border: 1px dashed var(--color-fg-3);
+}
+
+/* A chip that reports a count rather than labelling a category, so it reads at
+   full ink: `3 costs down`. */
+.s-badge--neutral {
+  background: var(--color-surface);
+  color: var(--color-fg);
+  border-color: var(--color-line);
+}
+
+/* Solid fill, no border — the committed counterpart to `draft`. */
+.s-badge--received {
+  background: var(--color-line);
+  color: var(--color-fg);
+  /* A fill, not an outline: it carries no border at all, which is what makes it
+     read as the solid counterpart to the dashed draft chip. */
+  border: none;
 }
 
 .s-badge--category-dark {
@@ -92,6 +134,15 @@ defineProps<{
 .s-badge--accepted {
   background: var(--color-action);
   color: var(--color-inverse);
+}
+
+/* A filled chip inside a table row reserves no border space and takes sentence
+   leading, so it sits in the row without making it taller than its text does.
+   Deliberately not extended to `low-stock`, which would restate the catalogue's
+   finished row height for the sake of a pixel. */
+.s-badge--accepted.s-badge--size-row {
+  border: none;
+  line-height: normal;
 }
 
 .s-badge--archived {

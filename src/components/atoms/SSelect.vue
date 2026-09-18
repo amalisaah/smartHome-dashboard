@@ -1,4 +1,6 @@
 <script setup lang="ts" generic="T extends string | number">
+import { useId } from 'vue'
+
 defineProps<{
   modelValue?: T
   label?: string
@@ -10,6 +12,8 @@ defineProps<{
   required?: boolean
   /** `chip` matches the filter-chip metrics — used on the phone filter row. */
   variant?: 'default' | 'chip'
+  /** `field` is the shipment meta strip's door, one step taller than `md`. */
+  size?: 'md' | 'field'
   /** Use when the control has no visible label. */
   ariaLabel?: string
 }>()
@@ -17,11 +21,19 @@ defineProps<{
 defineEmits<{
   'update:modelValue': [value: T]
 }>()
+
+/** The visible label has to name the control to the screen reader too. */
+const fieldId = useId()
 </script>
 
 <template>
   <div class="s-select-group">
-    <label v-if="label" class="s-select-label" :class="{ 's-select-label--error': error }">
+    <label
+      v-if="label"
+      :for="fieldId"
+      class="s-select-label"
+      :class="{ 's-select-label--error': error }"
+    >
       {{ label }}<span v-if="required" class="s-select-required"> *</span>
     </label>
     <div
@@ -32,10 +44,12 @@ defineEmits<{
       ]"
     >
       <select
+        :id="fieldId"
         :value="modelValue"
         :disabled="disabled"
         :aria-label="ariaLabel"
         class="s-select"
+        :class="`s-select--${size ?? 'md'}`"
         @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value as T)"
       >
         <option v-if="placeholder" value="" disabled :selected="modelValue === undefined || modelValue === ''">
@@ -91,6 +105,11 @@ defineEmits<{
   background: var(--color-surface);
 }
 
+/* Reaching for the control firms up its border, as on every other field. */
+.s-select-wrap:hover:not(.s-select-wrap--disabled):not(:focus-within):not(.s-select-wrap--error) {
+  border-color: var(--color-fg-3);
+}
+
 .s-select-wrap:focus-within {
   border-color: var(--color-action);
   outline: 2px solid var(--color-action);
@@ -136,7 +155,6 @@ defineEmits<{
 
 .s-select {
   flex: 1;
-  padding: 10px 36px 10px 12px;
   border: none;
   outline: none;
   background: transparent;
@@ -147,6 +165,15 @@ defineEmits<{
   appearance: none;
   -webkit-appearance: none;
   min-width: 0;
+}
+
+.s-select--md {
+  padding: 10px 36px 10px 12px;
+}
+
+/* The shipment meta strip, matching SInput's `field`. */
+.s-select--field {
+  padding: 11px 36px 11px 12px;
 }
 
 .s-select:disabled {

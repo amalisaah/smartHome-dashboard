@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends string | number">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, useId } from 'vue'
 
 const props = defineProps<{
   modelValue?: T
@@ -12,12 +12,29 @@ const props = defineProps<{
   required?: boolean
   freeText?: boolean
   addLabel?: string // override "Add '{query}'" prompt text
+  /**
+   * Enter with nothing matching creates, without an add row in the list — the
+   * inline-create row carries its own create chip beside the field instead.
+   */
+  createOnEnter?: boolean
+  /** Mono micro sitting inside the field, right-aligned: `no match in 214 items`. */
+  hint?: string
+  hideChevron?: boolean
+  /** `row` is the 44px inline-create row at the foot of a table. */
+  size?: 'md' | 'row'
+  /** Use when the field has no visible label. */
+  ariaLabel?: string
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: T | string]
   'add': [value: string] // fires when user confirms a new item
+  /** The typed query, so the screen can count matches and label its own chip. */
+  'update:query': [value: string]
 }>()
+
+/** The visible label has to name the field to the screen reader too. */
+const fieldId = useId()
 
 const query = ref('')
 const open = ref(false)
@@ -47,32 +64,45 @@ const showAdd = computed(() => {
 
 // Total keyboard-navigable slots (list items + optional add row)
 const totalSlots = computed(() => filtered.value.length + (showAdd.value ? 1 : 0))
+
+/**
+ * A field that reports its own emptiness — `no match in 209 items` — has said
+ * it; a dropdown repeating "No matches" underneath is the same sentence twice.
+ */
+const showList = computed(
+  () => open.value && (filtered.value.length > 0 || showAdd.value || !props.hint),
+)
 const addIndex = computed(() => filtered.value.length) // index of the add row
+
+function setQuery(value: string) {
+  query.value = value
+  emit('update:query', value)
+}
 
 function addNew() {
   const val = query.value.trim()
   emit('update:modelValue', val)
   emit('add', val)
-  query.value = ''
+  setQuery('')
   open.value = false
   activeIndex.value = -1
 }
 
 function select(opt: { label: string; value: T }) {
   emit('update:modelValue', opt.value)
-  query.value = ''
+  setQuery('')
   open.value = false
   activeIndex.value = -1
 }
 
 function onInput(e: Event) {
-  query.value = (e.target as HTMLInputElement).value
+  setQuery((e.target as HTMLInputElement).value)
   open.value = true
   activeIndex.value = -1
 }
 
 function onFocus() {
-  query.value = ''
+  setQuery('')
   open.value = true
   activeIndex.value = -1
 }
@@ -83,10 +113,22 @@ function onBlur(e: FocusEvent) {
 }
 
 function close() {
-  query.value = ''
+  setQuery('')
   open.value = false
   activeIndex.value = -1
 }
+
+/** Escape clears what was typed and stays in the field — it never exits the row. */
+function clearQuery() {
+  setQuery('')
+  open.value = false
+  activeIndex.value = -1
+}
+
+defineExpose({
+  focus: () => inputEl.value?.focus(),
+  clear: clearQuery,
+})
 
 function onKeydown(e: KeyboardEvent) {
   if (!open.value && e.key !== 'Enter') {
@@ -112,11 +154,13 @@ function onKeydown(e: KeyboardEvent) {
         select(filtered.value[activeIndex.value])
       } else if (showAdd.value && query.value.trim()) {
         addNew()
+      } else if (props.createOnEnter && query.value.trim() && filtered.value.length === 0) {
+        addNew()
       }
       break
     case 'Escape':
-      inputEl.value?.blur()
-      close()
+      e.preventDefault()
+      clearQuery()
       break
     case 'Tab':
       close()
@@ -145,24 +189,34 @@ watch(() => props.modelValue, () => {
 
 <template>
   <div ref="rootEl" class="s-cbx-group">
-    <label v-if="label" class="s-cbx-label" :class="{ 's-cbx-label--error': error }">
+    <label
+      v-if="label"
+      :for="fieldId"
+      class="s-cbx-label"
+      :class="{ 's-cbx-label--error': error }"
+    >
       {{ label }}<span v-if="required" class="s-cbx-required"> *</span>
     </label>
 
     <div
       class="s-cbx-wrap"
-      :class="{
-        's-cbx-wrap--open': open,
-        's-cbx-wrap--error': error,
-        's-cbx-wrap--disabled': disabled,
-      }"
+      :class="[
+        `s-cbx-wrap--size-${size ?? 'md'}`,
+        {
+          's-cbx-wrap--open': open,
+          's-cbx-wrap--error': error,
+          's-cbx-wrap--disabled': disabled,
+        },
+      ]"
     >
       <input
         ref="inputEl"
+        :id="fieldId"
         :value="displayValue"
         :placeholder="placeholder"
         :disabled="disabled"
         :aria-expanded="open"
+        :aria-label="ariaLabel"
         :aria-autocomplete="freeText ? 'both' : 'list'"
         autocomplete="off"
         role="combobox"
@@ -172,7 +226,9 @@ watch(() => props.modelValue, () => {
         @blur="onBlur"
         @keydown="onKeydown"
       />
+      <span v-if="hint" class="s-cbx-field-hint">{{ hint }}</span>
       <button
+        v-if="!hideChevron"
         class="s-cbx-chevron"
         :class="{ 's-cbx-chevron--open': open }"
         tabindex="-1"
@@ -185,7 +241,7 @@ watch(() => props.modelValue, () => {
       </button>
     </div>
 
-    <ul v-if="open" ref="listEl" role="listbox" class="s-cbx-list">
+    <ul v-if="showList" ref="listEl" role="listbox" class="s-cbx-list">
       <!-- Existing options -->
       <li
         v-for="(opt, i) in filtered"
@@ -262,10 +318,18 @@ watch(() => props.modelValue, () => {
   overflow: hidden;
 }
 
+/* Reaching for the field firms up its border, as on every other control. */
+.s-cbx-wrap:hover:not(.s-cbx-wrap--open):not(:focus-within):not(.s-cbx-wrap--error) {
+  border-color: var(--color-fg-3);
+}
+
+/* The one focus treatment the system has: the border takes the action colour
+   and an outline sits just inside it. */
 .s-cbx-wrap--open,
 .s-cbx-wrap:focus-within {
   border-color: var(--color-action);
-  box-shadow: 0 0 0 3px oklch(0.55 0.13 255 / 0.12);
+  outline: 2px solid var(--color-action);
+  outline-offset: -1px;
 }
 
 .s-cbx-wrap--error { border-color: var(--color-risk); }
@@ -273,7 +337,30 @@ watch(() => props.modelValue, () => {
 .s-cbx-wrap--error.s-cbx-wrap--open,
 .s-cbx-wrap--error:focus-within {
   border-color: var(--color-risk);
-  box-shadow: 0 0 0 3px oklch(0.55 0.13 45 / 0.12);
+  outline-color: var(--color-risk);
+}
+
+/* The inline-create row at the foot of a table. */
+.s-cbx-wrap--size-row {
+  min-height: 44px;
+  border-radius: var(--radius-md);
+  padding-right: 12px;
+  gap: 8px;
+}
+
+.s-cbx-wrap--size-row .s-cbx-input {
+  padding: 0 0 0 12px;
+  align-self: stretch;
+}
+
+/* What the field knows about what was typed: `no match in 214 items`. */
+.s-cbx-field-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-micro);
+  white-space: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .s-cbx-wrap--disabled {

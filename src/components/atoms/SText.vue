@@ -4,22 +4,33 @@ import { computed } from 'vue'
 const props = defineProps<{
   type?:
     | 'display'
+    | 'sheet-title'
     | 'title'
+    | 'frame-title'
+    | 'dialog-title'
     | 'heading'
     | 'screen-title'
+    | 'pane-title'
     | 'app-title'
     | 'body'
     | 'list-title'
     | 'ui'
+    | 'cell'
     | 'meta'
+    | 'row-meta'
     | 'tab'
     | 'label'
     | 'caption'
     | 'micro'
+    | 'hint'
     | 'column-header'
     | 'money-lg'
     | 'figure'
+    | 'total'
     | 'list-figure'
+    | 'cell-prompt'
+    | 'count'
+    | 'ref'
     | 'money'
     | 'list-meta'
     | 'cell-meta'
@@ -29,9 +40,13 @@ const props = defineProps<{
 
 const BLOCK_TYPES = new Set([
   'display',
+  'sheet-title',
   'title',
+  'frame-title',
+  'dialog-title',
   'heading',
   'screen-title',
+  'pane-title',
   'body',
   'list-title',
   'meta',
@@ -67,11 +82,40 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
   color: var(--color-fg);
 }
 
+/* Title of a surface that opens over a frame — C2's "What the freight did…".
+   Sits between `display` and `title`; the reference tracks it in a touch. */
+.s-text--sheet-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: normal;
+  letter-spacing: -0.01em;
+  color: var(--color-fg);
+}
+
 .s-text--title {
   font-family: var(--font-display);
   font-size: 22px;
   font-weight: 600;
   line-height: 1.2;
+  color: var(--color-fg);
+}
+
+/* The name of a whole frame, in its header bar — "Shipment SH-015", "Shipments". */
+.s-text--frame-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: normal;
+  color: var(--color-fg);
+}
+
+/* Title of a modal dialog — "Receive SH-015?". */
+.s-text--dialog-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: normal;
   color: var(--color-fg);
 }
 
@@ -88,6 +132,15 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
   font-family: var(--font-display);
   font-size: 17px;
   font-weight: 600;
+  color: var(--color-fg);
+}
+
+/* Header of one pane inside a frame — "Invoice lines", "Shared costs". */
+.s-text--pane-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: normal;
   color: var(--color-fg);
 }
 
@@ -122,11 +175,30 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
   color: var(--color-fg);
 }
 
+/* Text in a laptop table row — an item name, a supplier. `ui` is the same size
+   carrying weight; this is the unweighted one, and it takes its line-height from
+   the row so a table keeps the height the frame draws. */
+.s-text--cell {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-fg);
+}
+
 .s-text--meta {
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 400;
   line-height: 1.5;
+  color: var(--color-fg-2);
+}
+
+/* `meta` at the same size without the leading: a label in a panel row or an
+   action bar, where the line box must not push the row taller than its box. */
+.s-text--row-meta {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
   color: var(--color-fg-2);
 }
 
@@ -163,6 +235,16 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
   color: var(--color-fg-2);
 }
 
+/* Mono micro that reads as a sentence, not a label: a pane caption
+   ("prices as invoiced, in USD"), a field's own hint ("no match in 214 items").
+   Same size as `micro`, without the uppercase and the tracking. */
+.s-text--hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--color-micro);
+}
+
 /* Table column header — micro at tighter tracking. */
 .s-text--column-header {
   font-family: var(--font-mono);
@@ -191,10 +273,47 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
   color: var(--color-fg);
 }
 
+/* The one figure a block is about — a shipment total. */
+.s-text--total {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-fg);
+}
+
 /* Selling price on a phone list row. */
 .s-text--list-figure {
   font-family: var(--font-mono);
   font-size: 16px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-fg);
+}
+
+/* Where a figure should be, a control instead — C2's "pick a group". The cell
+   text is the control, so it reads at figure weight rather than as prose. */
+.s-text--cell-prompt {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-fg);
+}
+
+/* A figure standing inside a line of prose — the `+70` a consequence opens
+   with. Mono, so a stack of them lines up down the left. */
+.s-text--count {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-fg);
+}
+
+/* A document number — a shipment ref. Mono, because it is read by column. */
+.s-text--ref {
+  font-family: var(--font-mono);
+  font-size: 13px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--color-fg);
