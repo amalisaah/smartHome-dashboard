@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import {
   SBadge,
+  SBanner,
   SButton,
   SCard,
   SCheckbox,
@@ -428,6 +429,29 @@ const qty = ref(3)
                 <SButton size="sm" variant="secondary">Source stock</SButton>
               </div>
             </SCard>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── § 07b BANNERS ───────────────────────────────────────────── -->
+      <section class="ds-section">
+        <div class="ds-section-label">07b — Banners</div>
+        <div class="ds-component-block">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <SBanner variant="error" label="error" title="Couldn't load the catalogue." dismissible>
+              The server didn't answer. Nothing you've typed has been lost.
+              <template #action>
+                <SButton size="sm" variant="secondary">Retry</SButton>
+              </template>
+            </SBanner>
+
+            <SBanner variant="warn" label="heads up" title="Landed costs are a day old.">
+              The last FX rate was entered on 17 Sep. Margins below are computed at that rate.
+            </SBanner>
+
+            <SBanner variant="info" label="note" title="This shipment is received." dismissible>
+              Received shipments are read-only. Reopen it to change a line.
+            </SBanner>
           </div>
         </div>
       </section>

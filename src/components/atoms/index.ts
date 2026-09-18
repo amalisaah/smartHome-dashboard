@@ -1,4 +1,5 @@
 export { default as SBadge } from './SBadge.vue'
+export { default as SBanner } from './SBanner.vue'
 export { default as SButton } from './SButton.vue'
 export { default as SCard } from './SCard.vue'
 export { default as SCheckbox } from './SCheckbox.vue'
