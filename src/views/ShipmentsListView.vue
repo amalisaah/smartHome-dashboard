@@ -28,8 +28,8 @@ const newShipment = () =>
 </script>
 
 <template>
-  <!-- C3 — laptop 1100 -->
-  <AppLayout :max-width="1100">
+  <!-- C3 — drawn at 1100, on the app's 1440 frame -->
+  <AppLayout>
     <div class="header">
       <SText type="frame-title" as="h1">Shipments</SText>
       <SButton size="md" @click="newShipment">New shipment</SButton>

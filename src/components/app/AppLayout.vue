@@ -5,17 +5,15 @@ import AppTabBar from '@/components/app/AppTabBar.vue'
 import { useOnline } from '@/composables/useOnline'
 import { SAVE_STATUS_DATE } from '@/data/catalogueMock'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
-    /** The frame's width at the handoff that drew this screen. */
-    maxWidth?: number
     /**
      * The app bar and the tab bar. Off for the phone frame, which carries its own
      * header and is the device rather than a frame inside one.
      */
     chrome?: boolean
   }>(),
-  { maxWidth: 1440, chrome: true },
+  { chrome: true },
 )
 
 const online = useOnline()
@@ -25,13 +23,11 @@ const status = computed(() =>
     ? `${SAVE_STATUS_DATE} · all changes saved`
     : 'No connection — showing last known counts',
 )
-
-const frameStyle = computed(() => ({ maxWidth: `${props.maxWidth}px` }))
 </script>
 
 <template>
   <main class="page">
-    <div class="frame" :style="frameStyle">
+    <div class="frame">
       <template v-if="chrome">
         <AppBar :status="status" :offline="!online" />
         <AppTabBar />
@@ -48,8 +44,11 @@ const frameStyle = computed(() => ({ maxWidth: `${props.maxWidth}px` }))
   background: var(--color-chrome);
 }
 
+/* One frame width for the whole app: every section sits under the same app bar,
+   so they may not sit on differently sized sheets. */
 .frame {
   width: 100%;
+  max-width: 1440px;
   margin: 0 auto;
   background: var(--color-bg);
   border: 1px solid var(--color-line);
