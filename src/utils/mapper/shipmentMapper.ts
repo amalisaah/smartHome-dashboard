@@ -38,14 +38,12 @@ export function rateToApi(text: string): number {
   return Number.isFinite(value) ? Math.round(value * 100) : 0
 }
 
-/** `2026-09-24T00:00:00.000Z` → `24 Sep 2026`, which is what the field holds. */
+/** `2026-09-24T00:00:00.000Z` → `2026-09-24`, which is what the date field holds. */
 export function dateFromApi(iso: string | null): string {
   if (!iso) return ''
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ''
-  const day = new Intl.DateTimeFormat('en-GB', { day: '2-digit', timeZone: 'UTC' }).format(date)
-  const month = new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' }).format(date)
-  return `${day} ${month} ${date.getUTCFullYear()}`
+  return date.toISOString().slice(0, 10)
 }
 
 export function toShipmentMeta(api: ApiShipment): ShipmentMeta {

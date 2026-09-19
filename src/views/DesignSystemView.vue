@@ -7,6 +7,7 @@ import {
   SCard,
   SCheckbox,
   SCombobox,
+  SDate,
   SInput,
   SSegmented,
   SSelect,
@@ -18,6 +19,9 @@ const inputVal = ref('')
 const prefixedVal = ref('')
 const derivedVal = ref('GH₵ 2,400.00')
 const errorVal = ref('')
+const dateVal = ref('2026-09-03')
+const emptyDateVal = ref('')
+const errorDateVal = ref('')
 const toggle1 = ref(true)
 const toggle2 = ref(false)
 const check1 = ref(true)
@@ -254,6 +258,20 @@ const qty = ref(3)
               errorMessage="A supplier is required before quoting."
               :required="true"
             />
+          </div>
+
+          <!-- Row 2: Dates — picked, never typed as prose. -->
+          <div class="form-grid">
+            <SDate v-model="dateVal" label="Order date" />
+            <SDate v-model="emptyDateVal" label="Expected arrival" />
+            <SDate
+              v-model="errorDateVal"
+              label="Received on"
+              :error="true"
+              errorMessage="A date is needed before receiving."
+              :required="true"
+            />
+            <SDate v-model="dateVal" label="Ordered" :disabled="true" />
           </div>
 
           <div class="form-grid">

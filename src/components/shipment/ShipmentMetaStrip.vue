@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { SInput, SSelect } from '@/components/atoms'
+import { SDate, SInput, SSelect } from '@/components/atoms'
 import { INVOICE_CURRENCIES } from '@/data/shipmentCopy'
 import type { ShipmentMeta } from '@/types/shipment'
 
@@ -24,10 +24,9 @@ const ratePrefix = computed(() => `1 ${props.meta.invoiceCurrency} =`)
       :model-value="meta.supplier"
       @update:model-value="patch({ supplier: $event })"
     />
-    <SInput
+    <SDate
       label="Order date"
       size="field"
-      mono
       :model-value="meta.orderDate"
       @update:model-value="patch({ orderDate: $event })"
     />
@@ -48,10 +47,9 @@ const ratePrefix = computed(() => `1 ${props.meta.invoiceCurrency} =`)
       :model-value="meta.rate"
       @update:model-value="patch({ rate: $event })"
     />
-    <SInput
+    <SDate
       label="Expected arrival"
       size="field"
-      mono
       :model-value="meta.expectedArrival"
       @update:model-value="patch({ expectedArrival: $event })"
     />

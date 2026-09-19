@@ -18,6 +18,7 @@ with inline styles or arbitrary values when a design system primitive exists.
 | `<SInput>` | `@/components/atoms/SInput.vue` | Text inputs, prefixed inputs, derived/read-only fields |
 | `<SSelect>` | `@/components/atoms/SSelect.vue` | Fixed-option dropdowns |
 | `<SCombobox>` | `@/components/atoms/SCombobox.vue` | Searchable dropdowns, free-text entry |
+| `<SDate>` | `@/components/atoms/SDate.vue` | Any date the user picks — order date, expected arrival |
 | `<SSegmented>` | `@/components/atoms/SSegmented.vue` | 2–3 option toggle controls (e.g. Grouped / Itemised) |
 | `<SFilterChip>` | `@/components/atoms/SFilterChip.vue` | Toggleable filter chips (low stock, needs attention, group) |
 | `<SToggle>` | `@/components/atoms/SToggle.vue` | Boolean on/off switches |
@@ -199,6 +200,18 @@ a screen reader as well as to the eye.
 - `variant="accent"` carries the action border at rest — a value he decided rather than was given.
 - `prefix` is a fact about the field and is fenced off by a border; `suffix` is part of the
   value's reading and is not.
+
+### SDate
+
+A date is picked, never typed as prose. `SDate` is SInput with the browser's date
+control inside it, so it takes the same `label` / `size` / `error` / `required` / `disabled`
+props and focuses the same way. Its value is **ISO — `2026-09-03`** — which is what a date
+control speaks and what the API wants; it is mono without being asked, because a date is a
+figure. Empty, the browser's own `dd/mm/yyyy` reads as placeholder ink.
+
+```vue
+<SDate label="Order date" size="field" v-model="meta.orderDate" />
+```
 
 SCombobox: `size="row"` is the 44px inline-create row; `hint` is mono micro inside the field
 (`no match in 209 items`) and suppresses the dropdown's own "No matches"; `hideChevron` for a

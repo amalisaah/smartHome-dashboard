@@ -22,7 +22,7 @@ export interface ShipmentMeta {
   ref: string
   state: ShipmentState
   supplier: string
-  /** `03 Sep 2026` — what the field holds. */
+  /** ISO `2026-09-03` — what the date field holds, and empty until one is picked. */
   orderDate: string
   invoiceCurrency: string
   /** The rate he got at the forex shop. Not a market rate, never fetched. */
