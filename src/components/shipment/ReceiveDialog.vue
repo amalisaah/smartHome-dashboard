@@ -6,12 +6,16 @@ import type { ChipTone, ConsequenceLine } from '@/types/shipment'
 import { formatCount } from '@/utils/format'
 
 const props = defineProps<{
+  /** Empty while the shipment is unsaved and has no number yet. */
   shipmentRef: string
   unitCount: number
   lineCount: number
 }>()
 
 const emit = defineEmits<{ receive: []; dismiss: [] }>()
+
+/** `Receive SH-015?`, or `Receive this shipment?` before it has a number. */
+const subject = computed(() => props.shipmentRef || 'this shipment')
 
 const dialogEl = ref<HTMLDivElement | null>(null)
 const confirmButton = ref<InstanceType<typeof SButton> | null>(null)
@@ -75,7 +79,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       aria-modal="true"
       aria-labelledby="receive-title"
     >
-      <SText id="receive-title" type="dialog-title" as="h2">Receive {{ shipmentRef }}?</SText>
+      <SText id="receive-title" type="dialog-title" as="h2">Receive {{ subject }}?</SText>
 
       <div class="consequences">
         <div v-for="line in consequences" :key="line.text" class="consequence">

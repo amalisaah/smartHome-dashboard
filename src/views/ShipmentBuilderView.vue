@@ -4,7 +4,7 @@ import ShipmentCostsPane from '@/components/shipment/ShipmentCostsPane.vue'
 import ShipmentHeaderBar from '@/components/shipment/ShipmentHeaderBar.vue'
 import ShipmentLinesPane from '@/components/shipment/ShipmentLinesPane.vue'
 import ShipmentMetaStrip from '@/components/shipment/ShipmentMetaStrip.vue'
-import { useShipmentBuilder } from '@/composables/useShipmentBuilder'
+import { NEW_DRAFT, useShipmentBuilder } from '@/composables/useShipmentBuilder'
 import type { InvoiceLine, SharedCost } from '@/types/shipment'
 
 const props = defineProps<{ shipmentRef: string }>()
@@ -50,7 +50,12 @@ function updateCost(next: SharedCost) {
   ensureBlankCost()
 }
 
-const openPreview = () => router.push({ name: 'shipment-preview', params: { ref: meta.value.ref } })
+/** The unsaved one previews at its own route — it still has no ref to use. */
+const openPreview = () =>
+  meta.value.ref === NEW_DRAFT
+    ? router.push({ name: 'shipment-new-preview' })
+    : router.push({ name: 'shipment-preview', params: { ref: meta.value.ref } })
+
 const close = () => router.push({ name: 'shipments' })
 
 /** Filed, then shown where it landed: the list he just put it on. */

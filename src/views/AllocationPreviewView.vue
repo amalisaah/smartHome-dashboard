@@ -7,7 +7,7 @@ import AllocationPreviewHeader from '@/components/shipment/AllocationPreviewHead
 import AllocationPreviewTable from '@/components/shipment/AllocationPreviewTable.vue'
 import AllocationReadout from '@/components/shipment/AllocationReadout.vue'
 import ReceiveDialog from '@/components/shipment/ReceiveDialog.vue'
-import { useShipmentBuilder } from '@/composables/useShipmentBuilder'
+import { NEW_DRAFT, useShipmentBuilder } from '@/composables/useShipmentBuilder'
 import {
   MOCK_PREVIEW,
   MOCK_SHIPMENTS,
@@ -20,10 +20,16 @@ const props = defineProps<{ shipmentRef: string }>()
 
 const router = useRouter()
 
-const { groups, lines, unitCount, productPesewas, sharedPesewas, saveDraft } = useShipmentBuilder()
+const { meta, groups, lines, unitCount, productPesewas, sharedPesewas, saveDraft } =
+  useShipmentBuilder()
 
-/** A received shipment is history: its figures come from the list, not the draft. */
-const shipment = computed(() => metaForShipment(props.shipmentRef))
+/**
+ * A received shipment is history: its figures come from the list, not the draft.
+ * The unsaved one has nothing to look up — it is the draft that is open.
+ */
+const shipment = computed(() =>
+  props.shipmentRef === NEW_DRAFT ? meta.value : metaForShipment(props.shipmentRef),
+)
 const readOnly = computed(() => shipment.value.state === 'received')
 
 const listRow = computed(() => MOCK_SHIPMENTS.find((row) => row.ref === props.shipmentRef))
@@ -72,7 +78,10 @@ function setOverride(index: number, percent: string) {
 }
 
 const backToLines = () =>
-  router.push({ name: 'shipment-builder', params: { ref: shipment.value.ref } })
+  shipment.value.ref === NEW_DRAFT
+    ? router.push({ name: 'shipment-new' })
+    : router.push({ name: 'shipment-builder', params: { ref: shipment.value.ref } })
+
 const toList = () => router.push({ name: 'shipments' })
 
 /** `Keep as draft` files it on the list, the same as saving from the builder. */
@@ -94,6 +103,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 
 function receive() {
   confirming.value = false
+  // Receiving is the act that makes it real if saving had not already: a
+  // shipment whose stock has landed is on the list, with a number.
+  saveDraft()
   // What receiving actually does to stock and costs is the next module.
   toList()
 }

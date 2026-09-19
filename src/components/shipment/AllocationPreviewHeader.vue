@@ -6,6 +6,7 @@ import type { AllocationBasis } from '@/types/shipment'
 import { formatCedi } from '@/utils/format'
 
 const props = defineProps<{
+  /** Empty while the shipment is unsaved and has no number yet. */
   shipmentRef: string
   basis: AllocationBasis
   sharedPesewas: number
@@ -22,7 +23,9 @@ const BASIS_OPTIONS: { label: string; value: AllocationBasis }[] = [
 ]
 
 const subline = computed(() => {
-  const totals = `${props.shipmentRef} · ${formatCedi(props.sharedPesewas)} of shared cost spread across ${formatCedi(props.productPesewas)} of product.`
+  // An unsaved shipment has no ref to lead with; the figures still stand alone.
+  const named = props.shipmentRef ? `${props.shipmentRef} · ` : ''
+  const totals = `${named}${formatCedi(props.sharedPesewas)} of shared cost spread across ${formatCedi(props.productPesewas)} of product.`
   return props.readOnly
     ? totals
     : `${totals} Nothing is committed until you receive the shipment.`

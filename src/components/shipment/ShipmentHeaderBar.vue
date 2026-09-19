@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { SBadge, SButton, SText } from '@/components/atoms'
 
-defineProps<{
+const props = defineProps<{
+  /** Empty until it is saved — a shipment he has just started has no number. */
   shipmentRef: string
   /** `saved on this device · 4 lines`, or what the offline state says instead. */
   status: string
@@ -11,12 +13,17 @@ defineProps<{
 }>()
 
 defineEmits<{ close: []; save: [] }>()
+
+/** It is called by its ref once it has one, and `New shipment` until then. */
+const title = computed(() =>
+  props.shipmentRef ? `Shipment ${props.shipmentRef}` : 'New shipment',
+)
 </script>
 
 <template>
   <div class="header">
     <div class="identity">
-      <SText type="frame-title" as="h1">Shipment {{ shipmentRef }}</SText>
+      <SText type="frame-title" as="h1">{{ title }}</SText>
       <SBadge variant="draft" size="state">draft · affects nothing yet</SBadge>
     </div>
 

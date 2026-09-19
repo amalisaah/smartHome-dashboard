@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { NEW_DRAFT } from '@/composables/useShipmentBuilder'
 import AllocationPreviewView from '@/views/AllocationPreviewView.vue'
 import CatalogueListView from '@/views/CatalogueListView.vue'
 import DesignSystemView from '@/views/DesignSystemView.vue'
@@ -19,9 +20,22 @@ export const router = createRouter({
       component: ShipmentsListView,
     },
     {
-      // The shipment is addressed by its ref: it is what he calls it out loud.
-      // A new shipment is minted a ref on the click that starts it, so there is
-      // no second, ref-less route for one that has not been saved yet.
+      // A shipment he has just started is not addressed by a ref, because it
+      // does not have one: it is given a number when he saves it, not by the
+      // click that opened a blank form. Declared above `:ref` so it wins.
+      path: '/shipments/new',
+      name: 'shipment-new',
+      component: ShipmentBuilderView,
+      props: { shipmentRef: NEW_DRAFT },
+    },
+    {
+      path: '/shipments/new/preview',
+      name: 'shipment-new-preview',
+      component: AllocationPreviewView,
+      props: { shipmentRef: NEW_DRAFT },
+    },
+    {
+      // A saved shipment is addressed by its ref: it is what he calls it out loud.
       path: '/shipments/:ref',
       name: 'shipment-builder',
       component: ShipmentBuilderView,

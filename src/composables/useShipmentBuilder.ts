@@ -36,6 +36,13 @@ interface Draft {
 }
 
 /**
+ * A shipment he has just started has no ref: a ref is what you call a shipment
+ * that exists, and this one does not yet. `''` is that state everywhere — the
+ * key it is stashed under, and what `meta.ref` holds until it is saved.
+ */
+export const NEW_DRAFT = ''
+
+/**
  * A draft he has not started is empty — the sample lines belong to the sample
  * shipment and to no other. The blank cost row is there from the first render:
  * it is the row he types the first cost into, not a row that appears later.
@@ -66,8 +73,9 @@ function seedDraft(ref: string): Draft {
  * left. That is what "saved on this device" promises, and it is the reason
  * nothing in this screen may wait on the network.
  *
- * One draft is open at a time — the one whose ref is in the URL. The others are
- * put down in `stash` whole, so switching between two drafts loses nothing.
+ * One draft is open at a time — the one whose ref is in the URL, or the new one
+ * that has no ref yet. The others are put down in `stash` whole, so switching
+ * between two drafts loses nothing.
  */
 const initial = seedDraft(DRAFT_META.ref)
 const meta = ref<ShipmentMeta>(initial.meta)
@@ -80,7 +88,10 @@ let nextCostId = initial.nextCostId
 let activeRef = DRAFT_META.ref
 const stash = new Map<string, Draft>()
 
-/** Open the draft this ref names, seeding a blank one the first time. */
+/**
+ * Open the draft this ref names — `NEW_DRAFT` for the one being started — and
+ * seed a blank one the first time.
+ */
 function openDraft(ref: string) {
   if (ref === activeRef) return
 
@@ -110,11 +121,11 @@ function refNumber(ref: string): number {
 let lastRefNumber = MOCK_SHIPMENTS.reduce((max, row) => Math.max(max, refNumber(row.ref)), 0)
 
 /**
- * The ref a new shipment is called by, minted on the click that starts it: the
- * builder is addressed by ref, so the draft has a real URL from the first
- * keystroke rather than a `new` route that has to be renamed on save.
+ * Give the open draft the ref it will be called by. Saving is what does this —
+ * a blank form he may abandon is not a shipment and has no number, so nothing
+ * is minted until there is something to number.
  */
-export function mintDraftRef(): string {
+function mintRef(): string {
   lastRefNumber += 1
   return `SH-${String(lastRefNumber).padStart(3, '0')}`
 }
@@ -192,10 +203,16 @@ const draftIsEmpty = computed(
 /**
  * Put the open draft on the shipments list. Typing is already saved on this
  * device — what this adds is the shipment being *listed*, which is the step he
- * takes once it is real enough to look up by ref.
+ * takes once it is real enough to look up by ref. Returns the ref it now has.
  */
-function saveDraft() {
-  if (draftIsEmpty.value) return
+function saveDraft(): string {
+  if (draftIsEmpty.value) return meta.value.ref
+
+  // The moment it becomes a shipment is the moment it gets a number.
+  if (meta.value.ref === NEW_DRAFT) {
+    meta.value = { ...meta.value, ref: mintRef() }
+    activeRef = meta.value.ref
+  }
 
   const row: ShipmentListRow = {
     ref: meta.value.ref,
@@ -211,6 +228,8 @@ function saveDraft() {
   const index = savedDrafts.value.findIndex((saved) => saved.ref === row.ref)
   if (index === -1) savedDrafts.value.unshift(row)
   else savedDrafts.value[index] = row
+
+  return row.ref
 }
 
 /**

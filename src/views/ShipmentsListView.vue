@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router'
 import { SButton, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import ShipmentsTableRow from '@/components/shipment/ShipmentsTableRow.vue'
-import { mintDraftRef, savedShipments } from '@/composables/useShipmentBuilder'
+import { savedShipments } from '@/composables/useShipmentBuilder'
 import type { ShipmentListRow } from '@/types/shipment'
 
 const router = useRouter()
@@ -23,8 +23,8 @@ function open(row: ShipmentListRow) {
   router.push({ name, params: { ref: row.ref } })
 }
 
-/** A new shipment is an empty draft under a ref of its own, not the last one. */
-const newShipment = () => router.push({ name: 'shipment-builder', params: { ref: mintDraftRef() } })
+/** A blank form, at a route that says so. It is numbered when it is saved. */
+const newShipment = () => router.push({ name: 'shipment-new' })
 </script>
 
 <template>
