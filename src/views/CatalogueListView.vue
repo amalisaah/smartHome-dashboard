@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCatalogueGroups, useCatalogueItems, useCatalogueSummary } from '@/api/hooks/catalogue'
 import { SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
@@ -20,6 +21,8 @@ import { EMPTY_SUMMARY, type CatalogueItem } from '@/types/catalogue'
 
 /** Below ~900px the phone layout takes over. There is no third layout. */
 const isPhone = useMediaQuery('(max-width: 899px)')
+
+const router = useRouter()
 
 const online = useOnline()
 
@@ -58,9 +61,11 @@ const showEmptyState = computed(
   () => !loading.value && visibleItems.value.length === 0 && debouncedQuery.value.trim() !== '',
 )
 
+// A shipment started from here has no ref yet — it is numbered by the save.
+const logShipment = () => router.push({ name: 'shipment-new' })
+
 // The screens these lead to are out of scope for this handoff.
 const openItem = (_item: CatalogueItem) => {}
-const logShipment = () => {}
 const openDraft = () => {}
 const addItemManually = () => {}
 const addFromQuery = () => {}

@@ -13,6 +13,8 @@ const props = defineProps<{
   sharedPesewas: number
   totalPesewas: number
   sharedPercent: number
+  /** Nothing entered on either pane — the total block offers no preview. */
+  empty: boolean
 }>()
 
 const emit = defineEmits<{
@@ -61,6 +63,7 @@ const isLast = (index: number) => index === props.costs.length - 1
     <ShipmentTotalBlock
       :total-pesewas="totalPesewas"
       :shared-percent="sharedPercent"
+      :empty="empty"
       @preview="emit('preview')"
     />
   </div>

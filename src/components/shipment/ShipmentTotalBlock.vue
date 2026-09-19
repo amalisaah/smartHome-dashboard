@@ -7,6 +7,8 @@ defineProps<{
   totalPesewas: number
   /** Shared cost as a share of product value — the figure the note bolds. */
   sharedPercent: number
+  /** No costs and no lines: nothing to spread, and nothing to spread it over. */
+  empty: boolean
 }>()
 
 defineEmits<{ preview: [] }>()
@@ -24,8 +26,11 @@ defineEmits<{ preview: [] }>()
       }}<b>{{ formatMargin(sharedPercent) }}</b>{{ SHARED_COST_NOTE.tail }}
     </SText>
 
-    <!-- A question, not a verb: the preview is what he came here for. -->
-    <SButton size="md" @click="$emit('preview')">See what this does to my costs</SButton>
+    <!-- A question, not a verb: the preview is what he came here for. It is not
+         offered before there is anything for it to answer about. -->
+    <SButton v-if="!empty" size="md" @click="$emit('preview')">
+      See what this does to my costs
+    </SButton>
   </div>
 </template>
 

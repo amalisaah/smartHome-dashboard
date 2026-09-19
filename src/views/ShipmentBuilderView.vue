@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import ShipmentCostsPane from '@/components/shipment/ShipmentCostsPane.vue'
 import ShipmentHeaderBar from '@/components/shipment/ShipmentHeaderBar.vue'
@@ -49,6 +50,12 @@ function updateCost(next: SharedCost) {
   // Typing in the blank row makes it a real row and spawns the next blank one.
   ensureBlankCost()
 }
+
+/**
+ * A shipment with no lines and no costs has nothing the preview could say, so
+ * the preview is not offered until one of the two panes holds something.
+ */
+const nothingToAllocate = computed(() => lines.value.length === 0 && costCount.value === 0)
 
 /** The unsaved one previews at its own route — it still has no ref to use. */
 const openPreview = () =>
@@ -105,6 +112,7 @@ function save() {
           :shared-pesewas="sharedPesewas"
           :total-pesewas="shipmentTotalPesewas"
           :shared-percent="sharedPercent"
+          :empty="nothingToAllocate"
           @update:cost="updateCost"
           @edit="editingCostId = $event"
           @leave="editingCostId = null"
