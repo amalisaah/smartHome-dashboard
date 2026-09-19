@@ -1,76 +1,88 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { catalogueKeys, useCatalogueGroups, useCatalogueItems } from '@/api/hooks/catalogue'
+import { shipmentKeys, useShipmentPreview } from '@/api/hooks/shipments'
+import { receiveShipment, updateItem } from '@/api/shipments'
+import { SBanner } from '@/components/atoms'
 import AllocationActionBar from '@/components/shipment/AllocationActionBar.vue'
 import AllocationOverridePanel from '@/components/shipment/AllocationOverridePanel.vue'
 import AllocationPreviewHeader from '@/components/shipment/AllocationPreviewHeader.vue'
 import AllocationPreviewTable from '@/components/shipment/AllocationPreviewTable.vue'
 import AllocationReadout from '@/components/shipment/AllocationReadout.vue'
 import ReceiveDialog from '@/components/shipment/ReceiveDialog.vue'
-import { NEW_DRAFT, useShipmentBuilder } from '@/composables/useShipmentBuilder'
 import {
-  MOCK_PREVIEW,
-  MOCK_SHIPMENTS,
   MOVED_ENOUGH_THRESHOLD_PERCENT,
-  metaForShipment,
-} from '@/data/shipmentMock'
-import type { AllocationBasis, OverrideRow, PreviewRow } from '@/types/shipment'
+  PREVIEW_COPY,
+} from '@/data/shipmentCopy'
+import type { AllocationBasis, OverrideRow } from '@/types/shipment'
+import { toPreviewRow, toShipmentMeta } from '@/utils/mapper/shipmentMapper'
 
-const props = defineProps<{ shipmentRef: string }>()
+const props = defineProps<{ shipmentId: number }>()
 
 const router = useRouter()
+const queryClient = useQueryClient()
 
-const { meta, groups, lines, unitCount, productPesewas, sharedPesewas, saveDraft } =
-  useShipmentBuilder()
+const previewQuery = useShipmentPreview(() => props.shipmentId)
+const itemsQuery = useCatalogueItems()
+const groupsQuery = useCatalogueGroups()
 
-/**
- * A received shipment is history: its figures come from the list, not the draft.
- * The unsaved one has nothing to look up — it is the draft that is open.
- */
-const shipment = computed(() =>
-  props.shipmentRef === NEW_DRAFT ? meta.value : metaForShipment(props.shipmentRef),
-)
+const groups = computed(() => groupsQuery.data.value ?? [])
+const items = computed(() => itemsQuery.data.value ?? [])
+
+const shipment = computed(() => {
+  const detail = previewQuery.data.value
+  return detail
+    ? toShipmentMeta(detail)
+    : { id: props.shipmentId, ref: '', state: 'draft' as const, receivedAt: null }
+})
 const readOnly = computed(() => shipment.value.state === 'received')
 
-const listRow = computed(() => MOCK_SHIPMENTS.find((row) => row.ref === props.shipmentRef))
-
-const productTotal = computed(() =>
-  readOnly.value ? (listRow.value?.productPesewas ?? 0) : productPesewas.value,
-)
 const sharedTotal = computed(() =>
-  readOnly.value ? (listRow.value?.sharedPesewas ?? 0) : sharedPesewas.value,
+  (previewQuery.data.value?.cost_lines ?? []).reduce((sum, cost) => sum + cost.amount_pesewas, 0),
 )
-const units = computed(() => (readOnly.value ? (listRow.value?.units ?? 0) : unitCount.value))
-const lineCount = computed(() => (readOnly.value ? rows.value.length : lines.value.length))
+
+/**
+ * The table. Every allocated figure is the API's; what it costs to sell comes
+ * from the item's group, which is why a row without one has no price to show.
+ */
+const rows = computed(() =>
+  (previewQuery.data.value?.lines ?? []).map((line) => {
+    const item = items.value.find((candidate) => candidate.id === line.item_id)
+    const group = groups.value.find((candidate) => candidate.id === item?.group?.id)
+    return toPreviewRow(line, item, group, sharedTotal.value)
+  }),
+)
+
+const productTotal = computed(() => rows.value.reduce((sum, row) => sum + row.productPesewas, 0))
+const units = computed(() => rows.value.reduce((sum, row) => sum + row.qty, 0))
+const lineCount = computed(() => rows.value.length)
 
 // Local UI state: the basis he is looking at, and any split he has typed.
 const basis = ref<AllocationBasis>('by-value')
-const rows = ref<PreviewRow[]>(MOCK_PREVIEW.rows.map((row) => ({ ...row })))
-const overrides = ref<OverrideRow[]>(MOCK_PREVIEW.overrides.map((row) => ({ ...row })))
+const overrides = ref<OverrideRow[]>(PREVIEW_COPY.overrides.map((row) => ({ ...row })))
 const confirming = ref(false)
 
 /**
  * Picking the group in the row that blocks is what unblocks it: the group is
- * where the markup comes from, and the markup is the price. It is the same rule
- * every other row on this table was drawn with — landed cost × the multiplier.
- * There is no previous price to compare against, so that row carries no
- * was-line; what a first-ever price should say there is not designed yet.
+ * where the markup comes from, and the markup is the price. It is written to the
+ * item, because that is where a group lives — the shipment only points at it.
  */
+const assignGroupMutation = useMutation({
+  mutationFn: ({ itemId, groupId }: { itemId: number; groupId: number }) =>
+    updateItem(itemId, { group_id: groupId }),
+  onSuccess: async () => {
+    await queryClient.invalidateQueries({ queryKey: catalogueKeys.items() })
+    await queryClient.invalidateQueries({ queryKey: shipmentKeys.preview(props.shipmentId) })
+  },
+})
+
 function assignGroup(rowId: number, slug: string) {
   const group = groups.value.find((candidate) => candidate.slug === slug)
-  const index = rows.value.findIndex((row) => row.id === rowId)
-  if (!group || index === -1 || group.defaultMarkupBps === undefined) return
-
-  const row = rows.value[index]
-  const sell = Math.round(row.landedUnitPesewas * (1 + group.defaultMarkupBps / 10_000))
-  rows.value[index] = {
-    ...row,
-    group: group.name,
-    markupBps: group.defaultMarkupBps,
-    blocksReceiving: false,
-    sellPricePesewas: sell,
-    marginPercent: sell === 0 ? null : Math.round(((sell - row.landedUnitPesewas) / sell) * 100),
-  }
+  const row = rows.value.find((candidate) => candidate.id === rowId)
+  if (!group || !row) return
+  assignGroupMutation.mutate({ itemId: row.itemId, groupId: group.id })
 }
 
 function setOverride(index: number, percent: string) {
@@ -78,17 +90,9 @@ function setOverride(index: number, percent: string) {
 }
 
 const backToLines = () =>
-  shipment.value.ref === NEW_DRAFT
-    ? router.push({ name: 'shipment-new' })
-    : router.push({ name: 'shipment-builder', params: { ref: shipment.value.ref } })
+  router.push({ name: 'shipment-builder', params: { id: props.shipmentId } })
 
 const toList = () => router.push({ name: 'shipments' })
-
-/** `Keep as draft` files it on the list, the same as saving from the builder. */
-function keepAsDraft() {
-  saveDraft()
-  toList()
-}
 
 /** Escape on the preview is `Back to lines` — the same exit, by keyboard. */
 function onKeydown(event: KeyboardEvent) {
@@ -101,14 +105,25 @@ function onKeydown(event: KeyboardEvent) {
 onMounted(() => document.addEventListener('keydown', onKeydown))
 onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 
+/** The irreversible one. Stock and costs move here, on the server. */
+const receiveMutation = useMutation({
+  mutationFn: () => receiveShipment(props.shipmentId),
+  onSuccess: async () => {
+    await queryClient.invalidateQueries({ queryKey: shipmentKeys.all })
+    await queryClient.invalidateQueries({ queryKey: catalogueKeys.all })
+    toList()
+  },
+})
+
 function receive() {
   confirming.value = false
-  // Receiving is the act that makes it real if saving had not already: a
-  // shipment whose stock has landed is on the list, with a number.
-  saveDraft()
-  // What receiving actually does to stock and costs is the next module.
-  toList()
+  receiveMutation.mutate()
 }
+
+const failure = computed(() => {
+  const error = receiveMutation.error.value ?? assignGroupMutation.error.value
+  return error instanceof Error ? error.message : null
+})
 </script>
 
 <template>
@@ -125,6 +140,10 @@ function receive() {
         @update:basis="basis = $event"
       />
 
+      <SBanner v-if="failure" variant="error" label="error" title="That didn't go through.">
+        {{ failure }}
+      </SBanner>
+
       <AllocationPreviewTable
         :rows="rows"
         :moved-threshold="MOVED_ENOUGH_THRESHOLD_PERCENT"
@@ -134,10 +153,10 @@ function receive() {
       />
 
       <div class="band">
-        <AllocationReadout :sentence="MOCK_PREVIEW.sentence" :chips="MOCK_PREVIEW.chips" />
+        <AllocationReadout :sentence="PREVIEW_COPY.sentence" :chips="PREVIEW_COPY.chips" />
         <AllocationOverridePanel
           :overrides="overrides"
-          :remainder="MOCK_PREVIEW.remainder"
+          :remainder="PREVIEW_COPY.remainder"
           :read-only="readOnly"
           @update:percent="setOverride"
         />
@@ -148,7 +167,7 @@ function receive() {
         :read-only="readOnly"
         :received-at="shipment.receivedAt"
         @back="backToLines"
-        @draft="keepAsDraft"
+        @draft="toList"
         @receive="confirming = true"
         @close="toList"
       />

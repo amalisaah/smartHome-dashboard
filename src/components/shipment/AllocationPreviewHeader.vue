@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { SSegmented, SText } from '@/components/atoms'
-import { BASIS_NOTES } from '@/data/shipmentMock'
+import { BASIS_NOTES } from '@/data/shipmentCopy'
 import type { AllocationBasis } from '@/types/shipment'
 import { formatCedi } from '@/utils/format'
 

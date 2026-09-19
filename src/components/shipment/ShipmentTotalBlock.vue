@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { SButton, SText } from '@/components/atoms'
-import { SHARED_COST_NOTE } from '@/data/shipmentMock'
+import { SHARED_COST_NOTE } from '@/data/shipmentCopy'
 import { formatCedi, formatMargin } from '@/utils/format'
 
 defineProps<{

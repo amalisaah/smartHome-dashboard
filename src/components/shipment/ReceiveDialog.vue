@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { SButton, SText } from '@/components/atoms'
-import { RECEIVE_CONSEQUENCES, RECEIVE_NOTE } from '@/data/shipmentMock'
+import { RECEIVE_CONSEQUENCES, RECEIVE_NOTE } from '@/data/shipmentCopy'
 import type { ChipTone, ConsequenceLine } from '@/types/shipment'
 import { formatCount } from '@/utils/format'
 

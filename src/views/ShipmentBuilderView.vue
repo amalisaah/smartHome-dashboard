@@ -1,23 +1,34 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQueryClient } from '@tanstack/vue-query'
+import { useCatalogueItems } from '@/api/hooks/catalogue'
+import { shipmentKeys, useShipment } from '@/api/hooks/shipments'
 import ShipmentCostsPane from '@/components/shipment/ShipmentCostsPane.vue'
 import ShipmentHeaderBar from '@/components/shipment/ShipmentHeaderBar.vue'
 import ShipmentLinesPane from '@/components/shipment/ShipmentLinesPane.vue'
 import ShipmentMetaStrip from '@/components/shipment/ShipmentMetaStrip.vue'
-import { NEW_DRAFT, useShipmentBuilder } from '@/composables/useShipmentBuilder'
+import { useOnline } from '@/composables/useOnline'
+import { useShipmentBuilder } from '@/composables/useShipmentBuilder'
 import type { InvoiceLine, SharedCost } from '@/types/shipment'
 
-const props = defineProps<{ shipmentRef: string }>()
+/** Null on `/shipments/new`: the shipment has no id until it is saved. */
+const props = defineProps<{ shipmentId: number | null }>()
 
 const router = useRouter()
+const queryClient = useQueryClient()
+const online = useOnline()
+
+// The view owns the requests; the builder composable owns the draft being typed.
+const shipmentQuery = useShipment(() => props.shipmentId)
+const itemsQuery = useCatalogueItems()
+const items = computed(() => itemsQuery.data.value ?? [])
 
 const {
   meta,
   lines,
   costs,
-  online,
-  catalogueNames,
+  pickableItems,
   focusLineId,
   editingCostId,
   isBlankCost,
@@ -30,13 +41,19 @@ const {
   shipmentTotalPesewas,
   sharedPercent,
   saveStatus,
+  saveState,
   addLine,
   clearLineFocus,
   ensureBlankCost,
   removeCost,
   draftIsEmpty,
   saveDraft,
-} = useShipmentBuilder(() => props.shipmentRef)
+} = useShipmentBuilder(
+  () => props.shipmentId,
+  () => shipmentQuery.data.value,
+  items,
+  () => !itemsQuery.isPending.value,
+)
 
 function updateLine(next: InvoiceLine) {
   const index = lines.value.findIndex((line) => line.id === next.id)
@@ -57,18 +74,30 @@ function updateCost(next: SharedCost) {
  */
 const nothingToAllocate = computed(() => lines.value.length === 0 && costCount.value === 0)
 
-/** The unsaved one previews at its own route — it still has no ref to use. */
-const openPreview = () =>
-  meta.value.ref === NEW_DRAFT
-    ? router.push({ name: 'shipment-new-preview' })
-    : router.push({ name: 'shipment-preview', params: { ref: meta.value.ref } })
-
 const close = () => router.push({ name: 'shipments' })
 
+/** Every screen that read this shipment is now looking at a stale copy. */
+const refresh = () => queryClient.invalidateQueries({ queryKey: shipmentKeys.all })
+
 /** Filed, then shown where it landed: the list he just put it on. */
-function save() {
-  saveDraft()
+async function save() {
+  const id = await saveDraft()
+  // A failed save keeps him here with everything he typed; the header says why.
+  if (id === null) return
+  await refresh()
   close()
+}
+
+/**
+ * The allocation is worked out by the API from what it holds, so the lines have
+ * to be there before it can answer. Saving first is not a detour — previewing is
+ * one of the moments the shipment becomes real.
+ */
+async function openPreview() {
+  const id = await saveDraft()
+  if (id === null) return
+  await refresh()
+  router.push({ name: 'shipment-preview', params: { id } })
 }
 </script>
 
@@ -79,8 +108,9 @@ function save() {
       <ShipmentHeaderBar
         :shipment-ref="meta.ref"
         :status="saveStatus"
-        :offline="!online"
+        :offline="!online || saveState === 'failed'"
         :empty="draftIsEmpty"
+        :saving="saveState === 'saving'"
         @close="close"
         @save="save"
       />
@@ -92,7 +122,7 @@ function save() {
       <div class="panes">
         <ShipmentLinesPane
           :lines="lines"
-          :catalogue-names="catalogueNames"
+          :items="pickableItems"
           :currency="meta.invoiceCurrency"
           :subtotal="invoiceSubtotal"
           :product-pesewas="productPesewas"

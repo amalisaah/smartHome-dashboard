@@ -16,6 +16,9 @@ export type ShipmentState = 'draft' | 'received'
 
 /** The header bar and the meta strip. */
 export interface ShipmentMeta {
+  /** The backend's id, and null until `POST /shipments` has given it one. */
+  id: number | null
+  /** How he says it out loud — `SH-016`, derived from the id. Empty until saved. */
   ref: string
   state: ShipmentState
   supplier: string
@@ -32,7 +35,12 @@ export interface ShipmentMeta {
 }
 
 export interface InvoiceLine {
+  /** Local, and the key the table renders by — a row exists before it is saved. */
   id: number
+  /** The line's id on the backend, null until it has been posted. */
+  serverId: number | null
+  /** The catalogue item this line buys, null while it is still only a name. */
+  itemId: number | null
   itemName: string
   /** Created in this shipment — not in the catalogue yet. */
   isNew: boolean
@@ -53,7 +61,10 @@ export type AllocationBasis = 'by-value' | 'override'
 
 /** One row of the allocation preview. Figures are given, not computed. */
 export interface PreviewRow {
+  /** The shipment line's id. */
   id: number
+  /** The catalogue item it buys — what a group assigned here is written to. */
+  itemId: number
   itemName: string
   isNew: boolean
   /** Absent → no markup to apply, and the row blocks receiving. */
@@ -116,11 +127,17 @@ export interface AllocationPreview {
 
 /** A row of the shipments list. */
 export interface ShipmentListRow {
+  id: number
   ref: string
   supplier: string
-  units: number
-  productPesewas: number
-  sharedPesewas: number
+  /**
+   * `GET /shipments` is headers only, so these three are what the shipment's own
+   * detail adds up to — null until it has landed, and rendered as a dash rather
+   * than as a zero the list does not know to be true.
+   */
+  units: number | null
+  productPesewas: number | null
+  sharedPesewas: number | null
   state: ShipmentState
   /**
    * ISO — the expected arrival on a draft, the received date on a received one.
@@ -146,6 +163,17 @@ export function toMinor(text: string): number {
 export function toIsoDate(text: string): string | null {
   const date = new Date(text)
   return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10)
+}
+
+/**
+ * The same date as the API takes it: a full ISO instant at midnight UTC. The
+ * fields on this screen are days, not moments — the time is a formality the
+ * contract requires, not something he chose.
+ */
+export function toApiDate(text: string): string | null {
+  const date = new Date(text)
+  if (Number.isNaN(date.getTime())) return null
+  return `${date.toISOString().slice(0, 10)}T00:00:00.000Z`
 }
 
 /** `20` → 20. A count is never fractional. */

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { SInput, SSelect } from '@/components/atoms'
-import { INVOICE_CURRENCIES } from '@/data/shipmentMock'
+import { INVOICE_CURRENCIES } from '@/data/shipmentCopy'
 import type { ShipmentMeta } from '@/types/shipment'
 
 const props = defineProps<{ meta: ShipmentMeta }>()
@@ -10,7 +10,7 @@ const emit = defineEmits<{ 'update:meta': [meta: ShipmentMeta] }>()
 
 const patch = (fields: Partial<ShipmentMeta>) => emit('update:meta', { ...props.meta, ...fields })
 
-const currencyOptions = INVOICE_CURRENCIES.map((code) => ({ label: code, value: code }))
+const currencyOptions = INVOICE_CURRENCIES
 
 /** The prefix tracks the currency: it is a rate *for* whatever he was invoiced in. */
 const ratePrefix = computed(() => `1 ${props.meta.invoiceCurrency} =`)

@@ -41,7 +41,7 @@ export const formatCedi = (pesewas: number) => `GH₵ ${TWO_DP.format(pesewas / 
 
 /** The symbol a currency code shows in a header caption or a field prefix. */
 export const currencySymbol = (code: string) =>
-  ({ USD: '$', CNY: '¥' } as Record<string, string>)[code] ?? code
+  ({ USD: '$', CNY: '¥', GHS: 'GH₵' } as Record<string, string>)[code] ?? code
 
 /** A figure in the invoice's own currency — `$ 658.20`. */
 export const formatInvoice = (minorUnits: number, code: string) =>

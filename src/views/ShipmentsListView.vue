@@ -1,12 +1,31 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { SButton, SText } from '@/components/atoms'
+import { useShipmentDetails, useShipments } from '@/api/hooks/shipments'
+import { SBanner, SButton, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import ShipmentsTableRow from '@/components/shipment/ShipmentsTableRow.vue'
-import { savedShipments } from '@/composables/useShipmentBuilder'
 import type { ShipmentListRow } from '@/types/shipment'
+import { toShipmentListRow, toShipmentTotals } from '@/utils/mapper/shipmentMapper'
 
 const router = useRouter()
+
+const shipmentsQuery = useShipments()
+
+/**
+ * `GET /shipments` carries no totals, so each row's Units / Product / Shared come
+ * from its own detail. They arrive after the rows do and fill in; a row never
+ * waits on them, and never shows a zero it has not been told.
+ */
+const ids = computed(() => (shipmentsQuery.data.value ?? []).map((shipment) => shipment.id))
+const details = useShipmentDetails(ids)
+
+const rows = computed<ShipmentListRow[]>(() =>
+  (shipmentsQuery.data.value ?? []).map((shipment) => {
+    const detail = details.value.byId.get(shipment.id)
+    return toShipmentListRow(shipment, detail ? toShipmentTotals(detail) : undefined)
+  }),
+)
 
 const COLUMNS = [
   { label: 'Ref', numeric: false },
@@ -20,7 +39,7 @@ const COLUMNS = [
 /** A draft opens where it is still being entered; a received one opens read-only. */
 function open(row: ShipmentListRow) {
   const name = row.state === 'draft' ? 'shipment-builder' : 'shipment-preview'
-  router.push({ name, params: { ref: row.ref } })
+  router.push({ name, params: { id: row.id } })
 }
 
 /** A blank form, at a route that says so. It is numbered when it is saved. */
@@ -34,6 +53,15 @@ const newShipment = () => router.push({ name: 'shipment-new' })
       <SText type="frame-title" as="h1">Shipments</SText>
       <SButton size="md" @click="newShipment">New shipment</SButton>
     </div>
+
+    <SBanner
+      v-if="shipmentsQuery.isError.value"
+      variant="error"
+      label="error"
+      title="Couldn't load shipments."
+    >
+      {{ (shipmentsQuery.error.value as Error)?.message }}
+    </SBanner>
 
     <div role="table" aria-label="Shipments">
       <div class="head" role="row">
@@ -49,12 +77,13 @@ const newShipment = () => router.push({ name: 'shipment-new' })
         </SText>
       </div>
 
-      <ShipmentsTableRow
-        v-for="row in savedShipments"
-        :key="row.ref"
-        :row="row"
-        @open="open(row)"
-      />
+      <ShipmentsTableRow v-for="row in rows" :key="row.id" :row="row" @open="open(row)" />
+
+      <div v-if="!rows.length" class="empty">
+        <SText type="cell" color="fg-2-soft">
+          {{ shipmentsQuery.isPending.value ? 'Loading shipments…' : 'No shipments yet.' }}
+        </SText>
+      </div>
     </div>
   </AppLayout>
 </template>
@@ -80,5 +109,9 @@ const newShipment = () => router.push({ name: 'shipment-new' })
 
 .num {
   text-align: right;
+}
+
+.empty {
+  padding: 20px;
 }
 </style>

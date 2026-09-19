@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { SInput, SText } from '@/components/atoms'
-import { OVERRIDE_NOTE } from '@/data/shipmentMock'
+import { OVERRIDE_NOTE } from '@/data/shipmentCopy'
 import type { OverrideRow } from '@/types/shipment'
 
 defineProps<{

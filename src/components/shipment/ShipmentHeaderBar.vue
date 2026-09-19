@@ -10,6 +10,9 @@ const props = defineProps<{
   offline: boolean
   /** Nothing entered yet: there is no shipment to put on the list. */
   empty: boolean
+  /** A write is in flight. It changes the dot, and nothing else: no control on
+      this screen may go dead while he is still typing in it. */
+  saving?: boolean
 }>()
 
 defineEmits<{ close: []; save: [] }>()
@@ -30,7 +33,11 @@ const title = computed(() =>
     <div class="actions">
       <!-- A dot, never a spinner: saving is a state, not progress. -->
       <span class="save">
-        <span class="dot" :class="{ 'dot--offline': offline }" aria-hidden="true" />
+        <span
+          class="dot"
+          :class="{ 'dot--offline': offline, 'dot--saving': saving && !offline }"
+          aria-hidden="true"
+        />
         <SText type="cell-meta" :color="offline ? 'risk' : undefined">{{ status }}</SText>
       </span>
       <SButton variant="ghost" size="md" @click="$emit('close')">Close</SButton>
@@ -79,5 +86,10 @@ const title = computed(() =>
 
 .dot--offline {
   background: var(--color-risk);
+}
+
+/* In flight. A quieter dot, not a spinner: it is a state, not progress. */
+.dot--saving {
+  background: var(--color-fg-3);
 }
 </style>

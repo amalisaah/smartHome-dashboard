@@ -78,6 +78,107 @@ export interface ApiSummary {
   next_draft_eta: string | null
 }
 
+// --- shipments --------------------------------------------------------------
+
+export type ApiCurrency = 'USD' | 'CNY' | 'GHS'
+
+/** How shared costs will be spread across lines on receive. */
+export type ApiAllocationMethod = 'by_value' | 'per_unit' | 'manual'
+
+export type ApiShipmentStatus = 'draft' | 'received'
+
+/** `GET /shipments` — the header only; lines and costs come with the detail. */
+export interface ApiShipment {
+  id: number
+  supplier_name: string
+  ordered_at: string | null
+  /** The arrival he was quoted, if he was quoted one. */
+  eta_override: string | null
+  /** Derived: the override if set, else `ordered_at` plus the longest lead time. */
+  eta: string | null
+  eta_source: 'override' | 'lead_time' | null
+  received_at: string | null
+  currency: ApiCurrency
+  /** Rate to GHS ×100 — 1650 is 16.50. Recorded only: the pesewas below are GHS. */
+  fx_rate_to_ghs: number
+  allocation_method: ApiAllocationMethod
+  notes: string | null
+  status: ApiShipmentStatus
+  created_at: string
+  updated_at: string
+}
+
+/** A cost he named himself. There are no fixed freight / duty / other fields. */
+export interface ApiShipmentCostLine {
+  id: number
+  shipment_id: number
+  label: string
+  amount_pesewas: number
+}
+
+/** A line of the supplier's invoice. Every figure is already GHS pesewas. */
+export interface ApiShipmentLine {
+  id: number
+  shipment_id: number
+  item_id: number
+  quantity: number
+  unit_price_pesewas: number
+  manual_allocation_pesewas: number | null
+  /** Derived, and null until the allocation has been worked out. */
+  line_product_value_pesewas: number | null
+  allocated_shared_cost_pesewas: number | null
+  landed_unit_cost_pesewas: number | null
+}
+
+/** `GET /shipments/{id}` and `GET /shipments/{id}/preview` — the whole document. */
+export interface ApiShipmentDetail extends ApiShipment {
+  cost_lines: ApiShipmentCostLine[]
+  lines: ApiShipmentLine[]
+}
+
+/** `POST /shipments`. */
+export interface ApiShipmentCreate {
+  supplier_name: string
+  ordered_at?: string
+  eta_override?: string | null
+  currency: ApiCurrency
+  fx_rate_to_ghs?: number
+  allocation_method: ApiAllocationMethod
+  notes?: string
+}
+
+/** `PATCH /shipments/{id}`. `cost_lines` replaces the set wholesale. */
+export interface ApiShipmentUpdate {
+  supplier_name?: string
+  ordered_at?: string
+  eta_override?: string | null
+  currency?: ApiCurrency
+  fx_rate_to_ghs?: number
+  allocation_method?: ApiAllocationMethod
+  notes?: string
+  cost_lines?: { label: string; amount_pesewas: number }[]
+}
+
+/** `POST /shipments/{id}/lines` and `PATCH .../lines/{lineId}`. */
+export interface ApiShipmentLineWrite {
+  item_id: number
+  quantity: number
+  unit_price_pesewas: number
+  manual_allocation_pesewas?: number
+}
+
+/** `POST /items` — every field optional, so a name alone creates a stub item. */
+export interface ApiItemCreate {
+  name?: string
+  group_id?: number
+  keywords?: string[]
+  unit?: string
+  supplier_name?: string
+  lead_time_days?: number
+  reorder_level?: number
+  notes?: string
+}
+
 /** The error envelope every route shares. */
 export interface ApiError {
   statusCode: number

@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { NEW_DRAFT } from '@/composables/useShipmentBuilder'
 import AllocationPreviewView from '@/views/AllocationPreviewView.vue'
 import CatalogueListView from '@/views/CatalogueListView.vue'
 import DesignSystemView from '@/views/DesignSystemView.vue'
@@ -20,32 +19,27 @@ export const router = createRouter({
       component: ShipmentsListView,
     },
     {
-      // A shipment he has just started is not addressed by a ref, because it
-      // does not have one: it is given a number when he saves it, not by the
-      // click that opened a blank form. Declared above `:ref` so it wins.
+      // A shipment he has just started is not addressed by an id, because it
+      // does not have one: `POST /shipments` gives it a number when he saves,
+      // not the click that opened a blank form. Declared above `:id` so it wins.
       path: '/shipments/new',
       name: 'shipment-new',
       component: ShipmentBuilderView,
-      props: { shipmentRef: NEW_DRAFT },
+      props: { shipmentId: null },
     },
     {
-      path: '/shipments/new/preview',
-      name: 'shipment-new-preview',
-      component: AllocationPreviewView,
-      props: { shipmentRef: NEW_DRAFT },
-    },
-    {
-      // A saved shipment is addressed by its ref: it is what he calls it out loud.
-      path: '/shipments/:ref',
+      // A saved shipment is addressed by the id the backend gave it. `SH-016` is
+      // how he says that id out loud, and the screens render it that way.
+      path: '/shipments/:id(\\d+)',
       name: 'shipment-builder',
       component: ShipmentBuilderView,
-      props: (route) => ({ shipmentRef: String(route.params.ref) }),
+      props: (route) => ({ shipmentId: Number(route.params.id) }),
     },
     {
-      path: '/shipments/:ref/preview',
+      path: '/shipments/:id(\\d+)/preview',
       name: 'shipment-preview',
       component: AllocationPreviewView,
-      props: (route) => ({ shipmentRef: String(route.params.ref) }),
+      props: (route) => ({ shipmentId: Number(route.params.id) }),
     },
     {
       path: '/design-system',

@@ -35,12 +35,16 @@ const stateLabel = computed(() => {
   >
     <SText type="ref" role="cell">{{ row.ref }}</SText>
     <SText type="cell" role="cell">{{ row.supplier }}</SText>
-    <SText type="money" class="num" role="cell">{{ formatCount(row.units) }}</SText>
-    <SText type="money" color="fg-2" class="num" role="cell">
-      {{ formatMoney(row.productPesewas) }}
+    <!-- A dash until the shipment's own detail has landed: the list is told the
+         header, and the figures follow. -->
+    <SText type="money" class="num" role="cell">
+      {{ row.units === null ? '—' : formatCount(row.units) }}
     </SText>
     <SText type="money" color="fg-2" class="num" role="cell">
-      {{ formatMoney(row.sharedPesewas) }}
+      {{ row.productPesewas === null ? '—' : formatMoney(row.productPesewas) }}
+    </SText>
+    <SText type="money" color="fg-2" class="num" role="cell">
+      {{ row.sharedPesewas === null ? '—' : formatMoney(row.sharedPesewas) }}
     </SText>
     <span class="cell cell--state" role="cell">
       <SBadge :variant="draft ? 'draft' : 'received'" size="state">{{ stateLabel }}</SBadge>

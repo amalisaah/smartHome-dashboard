@@ -8,7 +8,7 @@ import { currencySymbol, formatCedi, formatCount, formatInvoice } from '@/utils/
 
 const props = defineProps<{
   lines: InvoiceLine[]
-  catalogueNames: string[]
+  items: { id: number; name: string }[]
   currency: string
   /** Minor units of the invoice currency. */
   subtotal: number
@@ -21,7 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:line': [line: InvoiceLine]
-  pick: [name: string, isNew: boolean]
+  pick: [name: string, itemId: number | null]
   focused: []
 }>()
 
@@ -74,8 +74,8 @@ const onCommit = () => createRow.value?.focus()
 
     <ShipmentLineCreateRow
       ref="createRow"
-      :catalogue-names="catalogueNames"
-      @pick="(name, isNew) => emit('pick', name, isNew)"
+      :items="items"
+      @pick="(name, itemId) => emit('pick', name, itemId)"
     />
 
     <div class="foot">
