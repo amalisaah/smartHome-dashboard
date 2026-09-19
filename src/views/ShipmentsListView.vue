@@ -30,9 +30,9 @@ const rows = computed<ShipmentListRow[]>(() =>
 const COLUMNS = [
   { label: 'Ref', numeric: false },
   { label: 'Supplier', numeric: false },
-  { label: 'Units', numeric: true },
-  { label: 'Product', numeric: true },
-  { label: 'Shared', numeric: true },
+  { label: 'Ordered at', numeric: false },
+  { label: 'Product Cost', numeric: true },
+  { label: 'Misc Cost', numeric: true },
   { label: 'State', numeric: true },
 ]
 

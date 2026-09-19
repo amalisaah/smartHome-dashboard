@@ -76,12 +76,13 @@ export function toShipmentListRow(
     id: api.id,
     ref: formatShipmentRef(api.id),
     supplier: api.supplier_name,
-    units: totals?.units ?? null,
     productPesewas: totals?.productPesewas ?? null,
     sharedPesewas: totals?.sharedPesewas ?? null,
     state: api.status,
     // A draft is going to arrive; a received one already did.
     stateDate: api.status === 'received' ? api.received_at : api.eta,
+    orderedAt: api.ordered_at,
+    notes: api.notes,
     splitOverridden: api.allocation_method === 'manual',
   }
 }

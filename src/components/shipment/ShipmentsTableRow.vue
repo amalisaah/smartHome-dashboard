@@ -37,8 +37,8 @@ const stateLabel = computed(() => {
     <SText type="cell" role="cell">{{ row.supplier }}</SText>
     <!-- A dash until the shipment's own detail has landed: the list is told the
          header, and the figures follow. -->
-    <SText type="money" class="num" role="cell">
-      {{ row.units === null ? '—' : formatCount(row.units) }}
+    <SText type="cell"  role="cell">
+      {{  row.orderedAt === null ? '—' : formatShortDate(row.orderedAt) }}
     </SText>
     <SText type="money" color="fg-2" class="num" role="cell">
       {{ row.productPesewas === null ? '—' : formatMoney(row.productPesewas) }}
