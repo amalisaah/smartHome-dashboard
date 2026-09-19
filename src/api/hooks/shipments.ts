@@ -1,7 +1,6 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-import { useQueries, useQuery } from '@tanstack/vue-query'
+import { useQuery } from '@tanstack/vue-query'
 import { fetchShipment, fetchShipmentPreview, fetchShipments } from '@/api/shipments'
-import type { ApiShipmentDetail } from '@/types/api'
 
 export const shipmentKeys = {
   all: ['shipments'] as const,
@@ -10,38 +9,11 @@ export const shipmentKeys = {
   preview: (id: number) => [...shipmentKeys.all, 'preview', id] as const,
 }
 
-/** `GET /shipments`. Headers only — the figures per row come from the details. */
+/** `GET /shipments`. Each header carries its own Product and Misc totals. */
 export function useShipments() {
   return useQuery({
     queryKey: shipmentKeys.list(),
     queryFn: ({ signal }) => fetchShipments(signal),
-  })
-}
-
-/**
- * The detail behind every row, one query each.
- *
- * `GET /shipments` carries no totals, and the list's Units / Product / Shared
- * columns are the point of the screen, so each row fetches its own. They share
- * the detail cache with the builder, so opening a shipment after this is already
- * painted. The day the list endpoint can total them itself, this hook is what
- * goes — nothing else changes.
- */
-export function useShipmentDetails(ids: MaybeRefOrGetter<number[]>) {
-  return useQueries({
-    queries: computed(() =>
-      toValue(ids).map((id) => ({
-        queryKey: shipmentKeys.detail(id),
-        queryFn: ({ signal }: { signal?: AbortSignal }) => fetchShipment(id, signal),
-      })),
-    ),
-    combine: (results) => {
-      const byId = new Map<number, ApiShipmentDetail>()
-      for (const result of results) {
-        if (result.data) byId.set(result.data.id, result.data)
-      }
-      return { byId, pending: results.some((result) => result.isPending) }
-    },
   })
 }
 

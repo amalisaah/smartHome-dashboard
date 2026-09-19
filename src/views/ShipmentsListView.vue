@@ -1,30 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useShipmentDetails, useShipments } from '@/api/hooks/shipments'
+import { useShipments } from '@/api/hooks/shipments'
 import { SBanner, SButton, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import ShipmentsTableRow from '@/components/shipment/ShipmentsTableRow.vue'
 import type { ShipmentListRow } from '@/types/shipment'
-import { toShipmentListRow, toShipmentTotals } from '@/utils/mapper/shipmentMapper'
+import { toShipmentListRow } from '@/utils/mapper/shipmentMapper'
 
 const router = useRouter()
 
 const shipmentsQuery = useShipments()
 
-/**
- * `GET /shipments` carries no totals, so each row's Units / Product / Shared come
- * from its own detail. They arrive after the rows do and fill in; a row never
- * waits on them, and never shows a zero it has not been told.
- */
-const ids = computed(() => (shipmentsQuery.data.value ?? []).map((shipment) => shipment.id))
-const details = useShipmentDetails(ids)
-
 const rows = computed<ShipmentListRow[]>(() =>
-  (shipmentsQuery.data.value ?? []).map((shipment) => {
-    const detail = details.value.byId.get(shipment.id)
-    return toShipmentListRow(shipment, detail ? toShipmentTotals(detail) : undefined)
-  }),
+  (shipmentsQuery.data.value ?? []).map(toShipmentListRow),
 )
 
 const COLUMNS = [

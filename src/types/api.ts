@@ -104,6 +104,10 @@ export interface ApiShipment {
   allocation_method: ApiAllocationMethod
   notes: string | null
   status: ApiShipmentStatus
+  /** What the lines come to — quantity × unit price, summed. Already GHS. */
+  product_value_total_pesewas: number
+  /** What the costs he named come to, summed. Already GHS. */
+  shared_cost_total_pesewas: number
   created_at: string
   updated_at: string
 }

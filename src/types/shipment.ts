@@ -132,13 +132,9 @@ export interface ShipmentListRow {
   id: number;
   ref: string;
   supplier: string;
-  /**
-   * `GET /shipments` is headers only, so these three are what the shipment's own
-   * detail adds up to — null until it has landed, and rendered as a dash rather
-   * than as a zero the list does not know to be true.
-   */
-  productPesewas: number | null;
-  sharedPesewas: number | null;
+  /** Totalled by the list endpoint itself — the row never adds anything up. */
+  productPesewas: number;
+  sharedPesewas: number;
   state: ShipmentState;
   /**
    * ISO — the expected arrival on a draft, the received date on a received one.

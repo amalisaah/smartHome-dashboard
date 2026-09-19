@@ -1,4 +1,4 @@
-import type { ApiCurrency, ApiShipment, ApiShipmentDetail, ApiShipmentLine } from '@/types/api'
+import type { ApiCurrency, ApiShipment, ApiShipmentLine } from '@/types/api'
 import type { CatalogueGroupRef, CatalogueItem } from '@/types/catalogue'
 import type {
   InvoiceLine,
@@ -64,39 +64,20 @@ export function toShipmentMeta(api: ApiShipment): ShipmentMeta {
   }
 }
 
-/**
- * The list row. `GET /shipments` returns headers only, so the three figures come
- * from the detail the caller has already fetched — `null` while it is in flight,
- * which the row renders as a dash rather than as a zero it does not know.
- */
-export function toShipmentListRow(
-  api: ApiShipment,
-  totals?: { units: number; productPesewas: number; sharedPesewas: number },
-): ShipmentListRow {
+/** The list row. `GET /shipments` totals each shipment itself, header and all. */
+export function toShipmentListRow(api: ApiShipment): ShipmentListRow {
   return {
     id: api.id,
     ref: formatShipmentRef(api.id),
     supplier: api.supplier_name,
-    productPesewas: totals?.productPesewas ?? null,
-    sharedPesewas: totals?.sharedPesewas ?? null,
+    productPesewas: api.product_value_total_pesewas,
+    sharedPesewas: api.shared_cost_total_pesewas,
     state: api.status,
     // A draft is going to arrive; a received one already did.
     stateDate: api.status === 'received' ? api.received_at : api.eta,
     orderedAt: api.ordered_at,
     notes: api.notes,
     splitOverridden: api.allocation_method === 'manual',
-  }
-}
-
-/** What a shipment's own lines and costs add up to, for its row on the list. */
-export function toShipmentTotals(detail: ApiShipmentDetail) {
-  return {
-    units: detail.lines.reduce((total, line) => total + line.quantity, 0),
-    productPesewas: detail.lines.reduce(
-      (total, line) => total + line.quantity * line.unit_price_pesewas,
-      0,
-    ),
-    sharedPesewas: detail.cost_lines.reduce((total, cost) => total + cost.amount_pesewas, 0),
   }
 }
 

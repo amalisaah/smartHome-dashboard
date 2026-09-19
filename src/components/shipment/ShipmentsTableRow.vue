@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { SBadge, SText } from '@/components/atoms'
-import type { ShipmentListRow } from '@/types/shipment'
-import { formatCount, formatMoney, formatShortDate } from '@/utils/format'
+import { SBadge, SText } from '@/components/atoms';
+import type { ShipmentListRow } from '@/types/shipment';
+import { formatMoney, formatShortDate } from '@/utils/format';
+import { computed } from 'vue';
 
 const props = defineProps<{ row: ShipmentListRow }>()
 
@@ -35,17 +35,12 @@ const stateLabel = computed(() => {
   >
     <SText type="ref" role="cell">{{ row.ref }}</SText>
     <SText type="cell" role="cell">{{ row.supplier }}</SText>
-    <!-- A dash until the shipment's own detail has landed: the list is told the
-         header, and the figures follow. -->
-    <SText type="cell"  role="cell">
-      {{  row.orderedAt === null ? '—' : formatShortDate(row.orderedAt) }}
+    <!-- A dash for a shipment he has not said when he ordered. -->
+    <SText type="cell" role="cell">
+      {{ row.orderedAt === null ? '—' : formatShortDate(row.orderedAt) }}
     </SText>
-    <SText type="money" color="fg-2" class="num" role="cell">
-      {{ row.productPesewas === null ? '—' : formatMoney(row.productPesewas) }}
-    </SText>
-    <SText type="money" color="fg-2" class="num" role="cell">
-      {{ row.sharedPesewas === null ? '—' : formatMoney(row.sharedPesewas) }}
-    </SText>
+    <SText type="money" color="fg-2" class="num" role="cell">{{ formatMoney(row.productPesewas) }}</SText>
+    <SText type="money" color="fg-2" class="num" role="cell">{{ formatMoney(row.sharedPesewas) }}</SText>
     <span class="cell cell--state" role="cell">
       <SBadge :variant="draft ? 'draft' : 'received'" size="state">{{ stateLabel }}</SBadge>
     </span>
