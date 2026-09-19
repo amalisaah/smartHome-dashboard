@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useQueryClient } from '@tanstack/vue-query'
 import { useCatalogueItems } from '@/api/hooks/catalogue'
 import { shipmentKeys, useShipment } from '@/api/hooks/shipments'
 import ShipmentCostsPane from '@/components/shipment/ShipmentCostsPane.vue'
 import ShipmentHeaderBar from '@/components/shipment/ShipmentHeaderBar.vue'
 import ShipmentLinesPane from '@/components/shipment/ShipmentLinesPane.vue'
 import ShipmentMetaStrip from '@/components/shipment/ShipmentMetaStrip.vue'
+import ShipmentNotesStrip from '@/components/shipment/ShipmentNotesStrip.vue'
 import { useOnline } from '@/composables/useOnline'
 import { useShipmentBuilder } from '@/composables/useShipmentBuilder'
 import type { InvoiceLine, SharedCost } from '@/types/shipment'
+import { useQueryClient } from '@tanstack/vue-query'
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 /** Null on `/shipments/new`: the shipment has no id until it is saved. */
 const props = defineProps<{ shipmentId: number | null }>()
@@ -150,6 +151,8 @@ async function openPreview() {
           @preview="openPreview"
         />
       </div>
+
+      <ShipmentNotesStrip :notes="meta.notes" @update:notes="meta = { ...meta, notes: $event }" />
     </div>
   </main>
 </template>

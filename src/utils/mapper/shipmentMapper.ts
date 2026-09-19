@@ -60,6 +60,7 @@ export function toShipmentMeta(api: ApiShipment): ShipmentMeta {
     expectedArrival: dateFromApi(api.eta_override),
     receivedAt: api.received_at,
     splitOverridden: api.allocation_method === 'manual',
+    notes: api.notes ?? '',
   }
 }
 

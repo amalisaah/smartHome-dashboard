@@ -55,6 +55,7 @@ function blankDraft(): Draft {
       expectedArrival: '',
       receivedAt: null,
       splitOverridden: false,
+      notes: '',
     },
     lines: [],
     costs: [blankCost()],
@@ -209,6 +210,8 @@ function headerBody(): ApiShipmentUpdate {
     ...(orderedAt ? { ordered_at: orderedAt } : {}),
     eta_override: toApiDate(meta.value.expectedArrival),
     ...(rateHundredths > 0 ? { fx_rate_to_ghs: rateHundredths } : {}),
+    // Always sent, blank included: clearing the note is a thing he can mean.
+    notes: meta.value.notes,
     cost_lines: realCosts.value.map((cost) => ({
       label: cost.label,
       amount_pesewas: toMinor(cost.amount),
@@ -253,6 +256,7 @@ async function saveDraft(): Promise<number | null> {
         ...(body.ordered_at ? { ordered_at: body.ordered_at } : {}),
         eta_override: body.eta_override ?? null,
         ...(body.fx_rate_to_ghs ? { fx_rate_to_ghs: body.fx_rate_to_ghs } : {}),
+        ...(body.notes ? { notes: body.notes } : {}),
       })
       id = created.id
       meta.value = { ...meta.value, id, ref: formatShipmentRef(id) }

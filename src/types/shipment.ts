@@ -32,6 +32,8 @@ export interface ShipmentMeta {
   receivedAt: string | null;
   /** He decided this shipment's split by hand. */
   splitOverridden: boolean;
+  /** What he wrote in the notes field. */
+  notes: string;
 }
 
 export interface InvoiceLine {

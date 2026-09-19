@@ -43,6 +43,16 @@ export const BASIS_NOTES: Record<string, string> = {
   override: 'You decide what a named cost carries; everything else follows value.',
 }
 
+/**
+ * The notes field at the foot of the builder. The placeholder is the teaching:
+ * it shows the kind of fact that has nowhere else to live on this screen, so the
+ * field does not read as a box for repeating what the figures already say.
+ */
+export const NOTES_COPY = {
+  hint: 'what the figures don’t say',
+  placeholder: 'Shorted 3 units — credit promised on the next order. Duty paid cash at the port.',
+}
+
 export const OVERRIDE_NOTE =
   'Available, never the default. Leaving this alone is always a defensible answer; touching it records who decided the split and when.'
 

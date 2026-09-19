@@ -12,6 +12,7 @@ import {
   SSegmented,
   SSelect,
   SText,
+  STextarea,
   SToggle,
 } from '@/components/atoms'
 
@@ -22,6 +23,7 @@ const errorVal = ref('')
 const dateVal = ref('2026-09-03')
 const emptyDateVal = ref('')
 const errorDateVal = ref('')
+const notesVal = ref('')
 const toggle1 = ref(true)
 const toggle2 = ref(false)
 const check1 = ref(true)
@@ -256,6 +258,22 @@ const qty = ref(3)
               placeholder="Search suppliers…"
               :error="true"
               errorMessage="A supplier is required before quoting."
+              :required="true"
+            />
+          </div>
+
+          <!-- The one field that holds prose. It focuses as every other does. -->
+          <div class="form-grid">
+            <STextarea
+              v-model="notesVal"
+              label="Notes"
+              placeholder="Shorted 3 units — credit promised on the next order."
+              caption="What the figures don’t say."
+            />
+            <STextarea
+              label="Why this split"
+              :error="true"
+              errorMessage="A hand-decided split has to say who decided it."
               :required="true"
             />
           </div>

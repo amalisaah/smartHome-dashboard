@@ -16,6 +16,7 @@ with inline styles or arbitrary values when a design system primitive exists.
 | `<SButton>` | `@/components/atoms/SButton.vue` | Every interactive button |
 | `<SBadge>` | `@/components/atoms/SBadge.vue` | Chips, state flags, category labels |
 | `<SInput>` | `@/components/atoms/SInput.vue` | Text inputs, prefixed inputs, derived/read-only fields |
+| `<STextarea>` | `@/components/atoms/STextarea.vue` | Prose — notes, reasons, anything that wraps |
 | `<SSelect>` | `@/components/atoms/SSelect.vue` | Fixed-option dropdowns |
 | `<SCombobox>` | `@/components/atoms/SCombobox.vue` | Searchable dropdowns, free-text entry |
 | `<SDate>` | `@/components/atoms/SDate.vue` | Any date the user picks — order date, expected arrival |
@@ -200,6 +201,24 @@ a screen reader as well as to the eye.
 - `variant="accent"` carries the action border at rest — a value he decided rather than was given.
 - `prefix` is a fact about the field and is fenced off by a border; `suffix` is part of the
   value's reading and is not.
+
+### STextarea
+
+The one field that holds prose rather than a value. It labels, focuses, errors and
+captions exactly as `SInput` does — same label metrics, same 1px action border plus 2px
+outline, same hover firming to `--color-fg-3` — so there is nothing new to learn at it.
+It takes `label` / `placeholder` / `rows` / `error` / `errorMessage` / `caption` /
+`required` / `disabled` / `ariaLabel`, and exposes `focus()`.
+
+```vue
+<STextarea v-model="meta.notes" :rows="3" placeholder="Shorted 3 units — credit promised." />
+```
+
+**One size, and no variants.** A paragraph is a paragraph; a second set of metrics for it
+would be a distinction with nothing behind it. It has no `mono`, no `prefix`, no `flat` —
+a figure is never prose, and prose never sits in a table row. Text is 14px at 1.6 leading
+(the fields that hold values declare no leading; prose that wraps takes it). It resizes
+vertically only — widening it would break the frame it sits in.
 
 ### SDate
 
