@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { SBadge, SCombobox, SText } from '@/components/atoms'
+import { computed, ref, watch } from 'vue'
+import { SBadge, SCombobox, SInput, SText } from '@/components/atoms'
 import type { CatalogueGroupRef } from '@/types/catalogue'
-import { movePercent, type PreviewRow } from '@/types/shipment'
+import { movePercent, toMinor, type PreviewRow } from '@/types/shipment'
 import { formatMargin, formatMarkup, formatMoney, formatShare } from '@/utils/format'
 
 const props = defineProps<{
@@ -13,12 +13,38 @@ const props = defineProps<{
    */
   movedThreshold: number
   groups: CatalogueGroupRef[]
+  /** He is deciding the split himself, so `+ Shared` is his to type. */
+  manual?: boolean
   readOnly?: boolean
 }>()
 
-const emit = defineEmits<{ 'assign-group': [slug: string] }>()
+const emit = defineEmits<{ 'assign-group': [slug: string]; 'set-manual': [pesewas: number] }>()
 
 const picking = ref(false)
+
+// --- the split he types -----------------------------------------------------
+
+/** Pesewas → the text in the field. A line he has not spoken for is blank. */
+const asText = (pesewas: number | null) => (pesewas === null ? '' : (pesewas / 100).toFixed(2))
+
+/**
+ * The field holds what he is typing, not a parsed number, and it is written on
+ * the way out of the cell rather than on every keystroke — the table re-costs
+ * itself from the server's answer, and it may not do that under his caret.
+ */
+const manualText = ref(asText(props.row.manualPesewas))
+watch(() => props.row.manualPesewas, (pesewas) => { manualText.value = asText(pesewas) })
+
+function commitManual() {
+  const blank = manualText.value.trim() === ''
+  // Nothing typed into a line that was already unspoken for is not a decision.
+  if (blank && props.row.manualPesewas === null) return
+
+  const pesewas = blank ? 0 : toMinor(manualText.value)
+  // Say it back in full cedis, so the column lines up whatever he typed.
+  manualText.value = asText(pesewas)
+  if (pesewas !== props.row.manualPesewas) emit('set-manual', pesewas)
+}
 
 const landedMove = computed(() =>
   movePercent(props.row.landedUnitPesewas, props.row.previousLandedUnitPesewas),
@@ -76,7 +102,31 @@ function assign(slug: string | number) {
     <SText type="money" class="num">{{ row.qty }}</SText>
     <SText type="money" color="fg-2" class="num">{{ formatMoney(row.productPesewas) }}</SText>
     <SText type="money" color="fg-2" class="num">{{ formatShare(row.sharePercent) }}</SText>
-    <SText type="money" color="fg-2" class="num">{{ formatMoney(row.sharedAddedPesewas) }}</SText>
+
+    <!-- Under an overridden split this figure is his to set, so the cell becomes
+         the control — flat until he reaches for it, accent once it holds a
+         decision. `focusout` is the commit: leaving the cell is the saying. -->
+    <span
+      v-if="manual"
+      class="cell cell--field"
+      @focusout="commitManual"
+      @keydown.enter.prevent="commitManual"
+    >
+      <SInput
+        size="row-figure"
+        :variant="row.manualPesewas === null ? 'flat' : 'accent'"
+        mono
+        align="right"
+        placeholder="0.00"
+        :disabled="readOnly"
+        :aria-label="`Shared cost carried by ${row.itemName}`"
+        :model-value="manualText"
+        @update:model-value="manualText = $event"
+      />
+    </span>
+    <SText v-else type="money" color="fg-2" class="num">
+      {{ formatMoney(row.sharedAddedPesewas) }}
+    </SText>
 
     <span class="cell cell--stack">
       <SText type="list-figure" :color="moved ? 'risk' : undefined">
@@ -180,6 +230,14 @@ function assign(slug: string | number) {
   flex-direction: column;
   align-items: flex-end;
   gap: 1px;
+  min-width: 0;
+}
+
+/* A field's intrinsic width would widen the column and pull the row out from
+   under the head, so the grid item is allowed to be narrower than its content. */
+.cell--field {
+  display: flex;
+  justify-content: flex-end;
   min-width: 0;
 }
 

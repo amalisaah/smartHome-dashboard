@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { SBadge, SText } from '@/components/atoms';
-import type { ShipmentListRow } from '@/types/shipment';
+import type { AllocationBasis, ShipmentListRow } from '@/types/shipment';
 import { formatMoney, formatShortDate } from '@/utils/format';
 import { computed } from 'vue';
 
@@ -14,12 +14,18 @@ const draft = computed(() => props.row.state === 'draft')
  * The chip is the only place state is expressed — dashed for a draft, solid for
  * one that has landed, and it says what it means in words rather than colour.
  */
+/** By value is the default and says nothing; the other two are worth a word. */
+const BASIS_NOTE: Partial<Record<AllocationBasis, string>> = {
+  'per-unit': 'split per unit',
+  override: 'split overridden',
+}
+
 const stateLabel = computed(() => {
   const date = props.row.stateDate
   if (draft.value) return date ? `draft · arrives ${formatShortDate(date)}` : 'draft · no date yet'
-  if (!date) return 'received'
-  const received = `received ${formatShortDate(date)}`
-  return props.row.splitOverridden ? `${received} · split overridden` : received
+  const received = date ? `received ${formatShortDate(date)}` : 'received'
+  const note = BASIS_NOTE[props.row.basis]
+  return note ? `${received} · ${note}` : received
 })
 </script>
 

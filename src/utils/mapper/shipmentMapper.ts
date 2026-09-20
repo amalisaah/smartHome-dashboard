@@ -1,6 +1,7 @@
-import type { ApiCurrency, ApiShipment, ApiShipmentLine } from '@/types/api'
+import type { ApiAllocationMethod, ApiCurrency, ApiShipment, ApiShipmentLine } from '@/types/api'
 import type { CatalogueGroupRef, CatalogueItem } from '@/types/catalogue'
 import type {
+  AllocationBasis,
   InvoiceLine,
   PreviewRow,
   SharedCost,
@@ -38,6 +39,28 @@ export function rateToApi(text: string): number {
   return Number.isFinite(value) ? Math.round(value * 100) : 0
 }
 
+/**
+ * The split, both ways. Three methods on the wire, three on the screen — the
+ * screen just calls `manual` *overriding* the split, because choosing it is him
+ * saying no rule fits this shipment.
+ */
+const BASIS_BY_METHOD: Record<ApiAllocationMethod, AllocationBasis> = {
+  by_value: 'by-value',
+  per_unit: 'per-unit',
+  manual: 'override',
+}
+
+const METHOD_BY_BASIS: Record<AllocationBasis, ApiAllocationMethod> = {
+  'by-value': 'by_value',
+  'per-unit': 'per_unit',
+  override: 'manual',
+}
+
+export const basisFromApi = (method: ApiAllocationMethod): AllocationBasis =>
+  BASIS_BY_METHOD[method] ?? 'by-value'
+
+export const basisToApi = (basis: AllocationBasis): ApiAllocationMethod => METHOD_BY_BASIS[basis]
+
 /** `2026-09-24T00:00:00.000Z` → `2026-09-24`, which is what the date field holds. */
 export function dateFromApi(iso: string | null): string {
   if (!iso) return ''
@@ -59,7 +82,7 @@ export function toShipmentMeta(api: ApiShipment): ShipmentMeta {
     // lead times, which is a different claim and does not belong in his field.
     expectedArrival: dateFromApi(api.eta_override),
     receivedAt: api.received_at,
-    splitOverridden: api.allocation_method === 'manual',
+    basis: basisFromApi(api.allocation_method),
     notes: api.notes ?? '',
   }
 }
@@ -77,7 +100,7 @@ export function toShipmentListRow(api: ApiShipment): ShipmentListRow {
     stateDate: api.status === 'received' ? api.received_at : api.eta,
     orderedAt: api.ordered_at,
     notes: api.notes,
-    splitOverridden: api.allocation_method === 'manual',
+    basis: basisFromApi(api.allocation_method),
   }
 }
 
@@ -157,6 +180,7 @@ export function toPreviewRow(
     productPesewas: line.line_product_value_pesewas ?? line.quantity * line.unit_price_pesewas,
     sharePercent: sharedTotalPesewas === 0 ? 0 : (added / sharedTotalPesewas) * 100,
     sharedAddedPesewas: added,
+    manualPesewas: line.manual_allocation_pesewas,
     landedUnitPesewas: landed,
     previousLandedUnitPesewas: previousLanded,
     sellPricePesewas: sell,

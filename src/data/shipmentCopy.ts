@@ -9,7 +9,7 @@
  * marked where it is still a sample rather than a claim about this shipment.
  */
 
-import type { OverrideRow, ReadoutSentence } from '@/types/shipment'
+import type { AllocationBasis, ReadoutSentence } from '@/types/shipment'
 
 /**
  * How far a landed cost has to move before its preview row is marked. Where
@@ -37,10 +37,14 @@ export const SHARED_COST_NOTE = {
   tail: ' of the product value on this shipment. That is what makes the Alibaba price a lie.',
 }
 
-/** What each allocation basis means, in one line, under the control. */
-export const BASIS_NOTES: Record<string, string> = {
+/**
+ * What each allocation basis means, in one line, under the control. The three
+ * are the wire's three: value, unit, and him.
+ */
+export const BASIS_NOTES: Record<AllocationBasis, string> = {
   'by-value': 'Each item carries freight in proportion to its share of product value.',
-  override: 'You decide what a named cost carries; everything else follows value.',
+  'per-unit': 'Every unit carries the same freight, whatever the unit cost.',
+  override: 'You decide what each line carries, instead of a rule deciding it.',
 }
 
 /**
@@ -53,31 +57,26 @@ export const NOTES_COPY = {
   placeholder: 'Shorted 3 units — credit promised on the next order. Duty paid cash at the port.',
 }
 
+/** Under the panel while a rule is still doing the splitting. */
 export const OVERRIDE_NOTE =
-  'Available, never the default. Leaving this alone is always a defensible answer; touching it records who decided the split and when.'
+  'Available, never the default. Leaving this alone is always a defensible answer; choosing it hands you every line to set by hand, and records that you decided the split.'
 
 /**
- * The read-out's sentence under the preview table, and the split panel beside it.
+ * The read-out's sentence under the preview table.
  *
- * **Still a sample.** The chips beneath the sentence are this shipment's own —
- * counted in `allocationFacts` — but nothing on the API writes a *sentence*
- * about them, and the override panel has no endpoint to send a hand-decided
- * split to: `allocation_method: manual` says only that one was decided. These
- * two are the frame's copy until that exists.
+ * **Still a sample** — the last one on this screen. The chips beneath it are
+ * this shipment's own, counted in `allocationFacts`, and the split panel beside
+ * it now totals the lines he set. But nothing on the API writes a *sentence*
+ * about a shipment, so this one still names the bulbs and the cameras of the
+ * shipment it was drawn from.
  */
-export const PREVIEW_COPY: {
-  sentence: ReadoutSentence
-  overrides: OverrideRow[]
-  remainder: string
-} = {
+export const PREVIEW_COPY: { sentence: ReadoutSentence } = {
   sentence: {
     lead: 'The bulbs got cheaper per unit because you bought forty of them; ',
     emphasis: 'the cameras carry GH₵ 76 of freight each',
     tail:
       ' and now cost more than they sell for at the old price. Selling prices below follow automatically — the two overridden items do not.',
   },
-  overrides: [{ reason: 'Cameras — bulky, took the container', percent: '40' }],
-  remainder: '60%',
 }
 
 /** Under the consequence list, which `allocationFacts` counts for itself. */

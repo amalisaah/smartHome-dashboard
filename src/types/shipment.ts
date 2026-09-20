@@ -30,8 +30,8 @@ export interface ShipmentMeta {
   expectedArrival: string;
   /** ISO, set once received. */
   receivedAt: string | null;
-  /** He decided this shipment's split by hand. */
-  splitOverridden: boolean;
+  /** How the shared costs are spread on this shipment. */
+  basis: AllocationBasis;
   /** What he wrote in the notes field. */
   notes: string;
 }
@@ -59,7 +59,12 @@ export interface SharedCost {
   amount: string;
 }
 
-export type AllocationBasis = "by-value" | "override";
+/**
+ * How the shared costs get spread. The wire calls these `by_value`, `per_unit`
+ * and `manual`; `override` is what the screen calls the last one, because from
+ * his side it is not a method so much as taking the method off.
+ */
+export type AllocationBasis = "by-value" | "per-unit" | "override";
 
 /** One row of the allocation preview. Figures are given, not computed. */
 export interface PreviewRow {
@@ -78,6 +83,12 @@ export interface PreviewRow {
   /** One decimal, per the display conventions. */
   sharePercent: number;
   sharedAddedPesewas: number;
+  /**
+   * Under `override`, what he said this line carries. Null is a line he has not
+   * spoken for — the backend takes it as nothing, so the total comes up short
+   * and receiving says so.
+   */
+  manualPesewas: number | null;
   landedUnitPesewas: number;
   /** Absent → a first-ever cost, and the was-line says so. */
   previousLandedUnitPesewas: number | null;
@@ -104,27 +115,11 @@ export interface ReadoutChip {
   tone: ChipTone;
 }
 
-/** A split he decided himself, and the reason he gave for it. */
-export interface OverrideRow {
-  reason: string;
-  percent: string;
-}
-
 /** One line of the receive dialog's consequence list. */
 export interface ConsequenceLine {
   figure: string;
   tone: ChipTone;
   text: string;
-}
-
-/** Everything C2 renders for one shipment. */
-export interface AllocationPreview {
-  rows: PreviewRow[];
-  sentence: ReadoutSentence;
-  chips: ReadoutChip[];
-  overrides: OverrideRow[];
-  /** What is left for everything else, as drawn: `60%`. */
-  remainder: string;
 }
 
 /** A row of the shipments list. */
@@ -144,7 +139,8 @@ export interface ShipmentListRow {
   stateDate: string | null;
   orderedAt: string | null;
   notes: string | null;
-  splitOverridden: boolean;
+  /** The row says so only when it is not the default. */
+  basis: AllocationBasis;
 }
 
 // --- reading the fields he types -------------------------------------------

@@ -17,8 +17,10 @@ const props = defineProps<{
 
 defineEmits<{ 'update:basis': [basis: AllocationBasis] }>()
 
+/** The wire's three, in his words. Two rules, then taking the rule off. */
 const BASIS_OPTIONS: { label: string; value: AllocationBasis }[] = [
   { label: 'By value', value: 'by-value' },
+  { label: 'Per unit', value: 'per-unit' },
   { label: 'Override the split', value: 'override' },
 ]
 

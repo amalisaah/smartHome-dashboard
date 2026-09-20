@@ -1,18 +1,31 @@
 <script setup lang="ts">
-import { SInput, SText } from '@/components/atoms'
+import { computed } from 'vue'
+import { SText } from '@/components/atoms'
 import { OVERRIDE_NOTE } from '@/data/shipmentCopy'
-import type { OverrideRow } from '@/types/shipment'
+import { formatCedi } from '@/utils/format'
 
-defineProps<{
-  overrides: OverrideRow[]
-  /** What is left for everything else, once the named splits are taken out. */
-  remainder: string
+const props = defineProps<{
+  /** He is deciding the split himself — the panel is then the running total. */
+  manual: boolean
+  /** What the named costs come to: the figure the lines have to add up to. */
+  sharedPesewas: number
+  /** What the lines carry between them, as he has set them so far. */
+  assignedPesewas: number
   readOnly?: boolean
 }>()
 
-const emit = defineEmits<{ 'update:percent': [index: number, percent: string] }>()
+/** Positive: still to give out. Negative: he has given out more than there is. */
+const differencePesewas = computed(() => props.sharedPesewas - props.assignedPesewas)
 
-const onInput = (index: number, value: string) => emit('update:percent', index, value)
+const balanced = computed(() => differencePesewas.value === 0)
+
+/**
+ * The imbalance in his words, as the consequence rather than as an error code.
+ * The server is the one that refuses, but it should never be the first to say so.
+ */
+const balanceLabel = computed(() =>
+  differencePesewas.value > 0 ? 'Left to assign' : 'Over-assigned',
+)
 </script>
 
 <template>
@@ -20,30 +33,39 @@ const onInput = (index: number, value: string) => emit('update:percent', index, 
   <div class="panel">
     <SText type="micro" color="micro">Override the split</SText>
 
-    <div class="rows">
-      <div v-for="(override, index) in overrides" :key="override.reason" class="row">
-        <SText type="row-meta" color="fg" class="reason">{{ override.reason }}</SText>
-        <SInput
-          class="split"
-          variant="accent"
-          size="split"
-          mono
-          align="right"
-          suffix="%"
-          :disabled="readOnly"
-          :aria-label="`Share carried by ${override.reason}`"
-          :model-value="override.percent"
-          @update:model-value="onInput(index, $event)"
-        />
+    <template v-if="manual">
+      <div class="rows">
+        <div class="row">
+          <SText type="row-meta" color="fg-2-soft" class="label">Shared cost on this shipment</SText>
+          <SText type="money" color="fg-2-soft" class="figure">
+            {{ formatCedi(sharedPesewas) }}
+          </SText>
+        </div>
+        <div class="row">
+          <SText type="row-meta" color="fg" class="label">Assigned across the lines</SText>
+          <SText type="money" class="figure">{{ formatCedi(assignedPesewas) }}</SText>
+        </div>
+        <div class="row row--balance">
+          <SText type="row-meta" :color="balanced ? 'fg-2-soft' : 'risk'" class="label">
+            {{ balanced ? 'Balanced' : balanceLabel }}
+          </SText>
+          <SText type="money" :color="balanced ? 'fg-2-soft' : 'risk'" class="figure">
+            {{ formatCedi(Math.abs(differencePesewas)) }}
+          </SText>
+        </div>
       </div>
 
-      <div class="row">
-        <SText type="row-meta" color="fg-2-soft" class="reason">Everything else — by value</SText>
-        <SText type="money" color="fg-2-soft" class="remainder">{{ remainder }}</SText>
-      </div>
-    </div>
+      <!-- The consequence, in the place that has the problem: the total. -->
+      <SText v-if="!balanced && !readOnly" type="cell-meta" color="risk">
+        blocks receiving — the lines have to carry the whole shared cost
+      </SText>
+      <SText v-else type="caption" class="note">
+        Type what each line carries in the <b>+ Shared</b> column. A line you leave
+        blank carries nothing.
+      </SText>
+    </template>
 
-    <SText type="caption" class="note">{{ OVERRIDE_NOTE }}</SText>
+    <SText v-else type="caption" class="note">{{ OVERRIDE_NOTE }}</SText>
   </div>
 </template>
 
@@ -69,18 +91,19 @@ const onInput = (index: number, value: string) => emit('update:percent', index, 
   gap: 10px;
 }
 
-.reason {
+/* The line the whole panel is about: it is what receiving checks. */
+.row--balance {
+  padding-top: 8px;
+  border-top: 1px solid var(--color-divider);
+}
+
+.label {
   flex: 1;
   min-width: 0;
 }
 
-.split {
-  width: 92px;
-  flex: none;
-}
-
-.remainder {
-  width: 92px;
+.figure {
+  width: 112px;
   text-align: right;
   flex: none;
 }

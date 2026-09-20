@@ -12,7 +12,18 @@
  */
 
 import { movePercent, type ConsequenceLine, type PreviewRow, type ReadoutChip } from '@/types/shipment'
-import { formatCount } from '@/utils/format'
+import { formatCedi, formatCount } from '@/utils/format'
+
+/**
+ * The split, when he is the one making it: what the shared costs come to, and
+ * what he has handed out so far. Absent under a rule, which cannot fail to add
+ * up. The backend takes the amounts as typed and checks them at receive, so an
+ * imbalance is a thing to say here rather than a thing to discover there.
+ */
+export interface ManualSplit {
+  sharedPesewas: number
+  assignedPesewas: number
+}
 
 export interface AllocationFacts {
   /** Items whose landed cost had a previous figure to move from. */
@@ -29,12 +40,18 @@ export interface AllocationFacts {
   overridden: number
   /** Rows with no group: no markup, so no price, so nothing to receive it at. */
   blocked: number
+  /**
+   * Shared cost the lines do not account for, under a split he made himself.
+   * Positive is short, negative is over, zero balances — and null is a rule
+   * doing the splitting, where the question does not arise.
+   */
+  unassignedPesewas: number | null
 }
 
 /** `1 cost` / `3 costs`. A count of one never reads as a plural. */
 const plural = (count: number, one: string, many: string) => (count === 1 ? one : many)
 
-export function allocationFacts(rows: PreviewRow[]): AllocationFacts {
+export function allocationFacts(rows: PreviewRow[], split?: ManualSplit): AllocationFacts {
   const facts: AllocationFacts = {
     rewritten: 0,
     down: 0,
@@ -44,6 +61,7 @@ export function allocationFacts(rows: PreviewRow[]): AllocationFacts {
     followMarkup: 0,
     overridden: 0,
     blocked: 0,
+    unassignedPesewas: split ? split.sharedPesewas - split.assignedPesewas : null,
   }
 
   for (const row of rows) {
@@ -100,6 +118,13 @@ export function readoutChips(facts: AllocationFacts): ReadoutChip[] {
       tone: 'warn',
     })
   }
+  if (facts.unassignedPesewas) {
+    const short = facts.unassignedPesewas > 0
+    chips.push({
+      text: `${formatCedi(Math.abs(facts.unassignedPesewas))} ${short ? 'unassigned' : 'over-assigned'}`,
+      tone: 'warn',
+    })
+  }
   if (facts.overridden) {
     chips.push({
       text: `${facts.overridden} ${plural(facts.overridden, 'price', 'prices')} overridden — untouched`,
@@ -119,13 +144,26 @@ export function receiveConsequences(
   unitCount: number,
   lineCount: number,
 ): ConsequenceLine[] {
-  const lines: ConsequenceLine[] = [
-    {
-      figure: `+${formatCount(unitCount)}`,
-      tone: 'action',
-      text: `units enter stock across ${formatCount(lineCount)} ${plural(lineCount, 'item', 'items')}`,
-    },
-  ]
+  const lines: ConsequenceLine[] = []
+
+  // It leads, because it is the one that stops the rest from happening: the
+  // server refuses a hand-made split that does not add up.
+  if (facts.unassignedPesewas) {
+    const short = facts.unassignedPesewas > 0
+    lines.push({
+      figure: formatCedi(Math.abs(facts.unassignedPesewas)),
+      tone: 'warn',
+      text: short
+        ? 'of shared cost is carried by nothing — receiving is refused until it is'
+        : 'has been handed out that the shipment does not carry — receiving is refused until it comes off',
+    })
+  }
+
+  lines.push({
+    figure: `+${formatCount(unitCount)}`,
+    tone: 'action',
+    text: `units enter stock across ${formatCount(lineCount)} ${plural(lineCount, 'item', 'items')}`,
+  })
 
   if (facts.rewritten) {
     // A cost that landed on the same figure is rewritten and has not moved: it

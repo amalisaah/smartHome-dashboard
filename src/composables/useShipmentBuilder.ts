@@ -18,6 +18,7 @@ import {
   type ShipmentMeta,
 } from '@/types/shipment'
 import {
+  basisToApi,
   formatShipmentRef,
   rateToApi,
   toApiCurrency,
@@ -54,7 +55,9 @@ function blankDraft(): Draft {
       rate: '',
       expectedArrival: '',
       receivedAt: null,
-      splitOverridden: false,
+      // The rule that needs no deciding. He changes it on the preview, where he
+      // can see what it does.
+      basis: 'by-value',
       notes: '',
     },
     lines: [],
@@ -204,7 +207,7 @@ function headerBody(): ApiShipmentUpdate {
   return {
     supplier_name: meta.value.supplier,
     currency: toApiCurrency(meta.value.invoiceCurrency),
-    allocation_method: meta.value.splitOverridden ? 'manual' : 'by_value',
+    allocation_method: basisToApi(meta.value.basis),
     // A date he has not typed is not sent; a cleared arrival is sent as null,
     // which is the difference between "unchanged" and "he took it off".
     ...(orderedAt ? { ordered_at: orderedAt } : {}),

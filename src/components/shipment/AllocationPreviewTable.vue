@@ -10,10 +10,15 @@ defineProps<{
    *  where that line sits is a product decision and not a UI one. */
   movedThreshold: number
   groups: CatalogueGroupRef[]
+  /** The split is his: `+ Shared` is a field in every row rather than a figure. */
+  manual?: boolean
   readOnly?: boolean
 }>()
 
-defineEmits<{ 'assign-group': [rowId: number, slug: string] }>()
+defineEmits<{
+  'assign-group': [rowId: number, slug: string]
+  'set-manual': [rowId: number, pesewas: number]
+}>()
 
 /**
  * The column order is the arithmetic: product value → share of the shipment →
@@ -53,8 +58,10 @@ const COLUMNS = [
       :row="row"
       :moved-threshold="movedThreshold"
       :groups="groups"
+      :manual="manual"
       :read-only="readOnly"
       @assign-group="$emit('assign-group', row.id, $event)"
+      @set-manual="$emit('set-manual', row.id, $event)"
     />
   </div>
 </template>
