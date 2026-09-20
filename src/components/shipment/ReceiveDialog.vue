@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { SButton, SText } from '@/components/atoms'
-import { RECEIVE_CONSEQUENCES, RECEIVE_NOTE } from '@/data/shipmentCopy'
+import { RECEIVE_NOTE } from '@/data/shipmentCopy'
 import type { ChipTone, ConsequenceLine } from '@/types/shipment'
-import { formatCount } from '@/utils/format'
 
 const props = defineProps<{
   /** Empty while the shipment is unsaved and has no number yet. */
   shipmentRef: string
-  unitCount: number
-  lineCount: number
+  /** What receiving will do, counted from the preview rows by the caller. */
+  consequences: ConsequenceLine[]
 }>()
 
 const emit = defineEmits<{ receive: []; dismiss: [] }>()
@@ -19,19 +18,6 @@ const subject = computed(() => props.shipmentRef || 'this shipment')
 
 const dialogEl = ref<HTMLDivElement | null>(null)
 const confirmButton = ref<InstanceType<typeof SButton> | null>(null)
-
-/**
- * The list is in his words and states consequences as counts. The first line is
- * this shipment's own arithmetic; the rest is what the shipment will do.
- */
-const consequences = computed<ConsequenceLine[]>(() => [
-  {
-    figure: `+${formatCount(props.unitCount)}`,
-    tone: 'action',
-    text: `units enter stock across ${formatCount(props.lineCount)} items`,
-  },
-  ...RECEIVE_CONSEQUENCES,
-])
 
 const FIGURE_COLOR: Record<ChipTone, 'action' | 'fg-2' | 'risk'> = {
   action: 'action',

@@ -17,6 +17,7 @@ import {
   PREVIEW_COPY,
 } from '@/data/shipmentCopy'
 import type { AllocationBasis, OverrideRow } from '@/types/shipment'
+import { allocationFacts, readoutChips, receiveConsequences } from '@/utils/allocationFacts'
 import { toPreviewRow, toShipmentMeta } from '@/utils/mapper/shipmentMapper'
 
 const props = defineProps<{ shipmentId: number }>()
@@ -58,6 +59,14 @@ const rows = computed(() =>
 const productTotal = computed(() => rows.value.reduce((sum, row) => sum + row.productPesewas, 0))
 const units = computed(() => rows.value.reduce((sum, row) => sum + row.qty, 0))
 const lineCount = computed(() => rows.value.length)
+
+/**
+ * What receiving will do, counted once from the rows and said twice: as chips
+ * under the read-out, and as the dialog's list when he goes to commit.
+ */
+const facts = computed(() => allocationFacts(rows.value))
+const chips = computed(() => readoutChips(facts.value))
+const consequences = computed(() => receiveConsequences(facts.value, units.value, lineCount.value))
 
 // Local UI state: the basis he is looking at, and any split he has typed.
 const basis = ref<AllocationBasis>('by-value')
@@ -153,7 +162,7 @@ const failure = computed(() => {
       />
 
       <div class="band">
-        <AllocationReadout :sentence="PREVIEW_COPY.sentence" :chips="PREVIEW_COPY.chips" />
+        <AllocationReadout :sentence="PREVIEW_COPY.sentence" :chips="chips" />
         <AllocationOverridePanel
           :overrides="overrides"
           :remainder="PREVIEW_COPY.remainder"
@@ -176,8 +185,7 @@ const failure = computed(() => {
     <ReceiveDialog
       v-if="confirming"
       :shipment-ref="shipment.ref"
-      :unit-count="units"
-      :line-count="lineCount"
+      :consequences="consequences"
       @receive="receive"
       @dismiss="confirming = false"
     />
