@@ -5,6 +5,7 @@ import type {
   ApiShipmentCreate,
   ApiShipmentDetail,
   ApiShipmentLine,
+  ApiShipmentLineUpdate,
   ApiShipmentLineWrite,
   ApiShipmentUpdate,
 } from '@/types/api'
@@ -39,7 +40,7 @@ export const updateShipment = (id: number, body: ApiShipmentUpdate) =>
 export const addShipmentLine = (id: number, body: ApiShipmentLineWrite) =>
   apiSend<ApiShipmentLine>('POST', `/shipments/${id}/lines`, body)
 
-export const updateShipmentLine = (id: number, lineId: number, body: ApiShipmentLineWrite) =>
+export const updateShipmentLine = (id: number, lineId: number, body: ApiShipmentLineUpdate) =>
   apiSend<ApiShipmentLine>('PATCH', `/shipments/${id}/lines/${lineId}`, body)
 
 export const removeShipmentLine = (id: number, lineId: number) =>

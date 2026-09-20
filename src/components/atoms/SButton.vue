@@ -4,6 +4,8 @@ defineProps<{
   variant?: 'primary' | 'secondary' | 'ghost' | 'destructive' | 'create'
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
+  /** The action is in flight. The button is inert while it holds, so it goes once. */
+  loading?: boolean
   type?: 'button' | 'submit' | 'reset'
 }>()
 </script>
@@ -11,10 +13,12 @@ defineProps<{
 <template>
   <button
     :type="type ?? 'button'"
-    :disabled="disabled"
+    :disabled="disabled || loading"
+    :aria-busy="loading || undefined"
     class="s-btn"
     :class="[`s-btn--${variant ?? 'primary'}`, `s-btn--${size ?? 'md'}`]"
   >
+    <span v-if="loading" class="s-btn__spinner" aria-hidden="true" />
     <slot />
   </button>
 </template>
@@ -24,6 +28,7 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   font-family: var(--font-sans);
   font-weight: 500;
   cursor: pointer;
@@ -128,8 +133,41 @@ defineProps<{
   background: var(--color-risk-hover);
 }
 
+/* In flight. It takes the label's ink, so it reads in every variant. */
+.s-btn__spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--radius-pill);
+  animation: s-btn-spin 600ms linear infinite;
+}
+
+@keyframes s-btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A spin under a reduced-motion setting is the one thing worse than no feedback. */
+@media (prefers-reduced-motion: reduce) {
+  .s-btn__spinner {
+    animation: none;
+    border-top-color: currentColor;
+    opacity: 0.5;
+  }
+}
+
+/* In flight is not the same as unavailable: the button keeps its own ink, so the
+   spinner reads, and only says it is not taking a second press. */
+.s-btn[aria-busy='true'] {
+  cursor: progress;
+  opacity: 0.8;
+}
+
 /* Disabled */
-.s-btn[disabled] {
+.s-btn[disabled]:not([aria-busy='true']) {
   background: var(--color-surface) !important;
   color: var(--color-disabled-text) !important;
   border-color: transparent !important;

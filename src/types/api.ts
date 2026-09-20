@@ -163,13 +163,19 @@ export interface ApiShipmentUpdate {
   cost_lines?: { label: string; amount_pesewas: number }[]
 }
 
-/** `POST /shipments/{id}/lines` and `PATCH .../lines/{lineId}`. */
+/** `POST /shipments/{id}/lines`. A new line needs the item, the count and the price. */
 export interface ApiShipmentLineWrite {
   item_id: number
   quantity: number
   unit_price_pesewas: number
   manual_allocation_pesewas?: number
 }
+
+/**
+ * `PATCH .../lines/{lineId}` — "fields to change; omitted fields are left
+ * untouched", so a caller changing one figure sends one figure.
+ */
+export type ApiShipmentLineUpdate = Partial<ApiShipmentLineWrite>
 
 /** `POST /items` — every field optional, so a name alone creates a stub item. */
 export interface ApiItemCreate {

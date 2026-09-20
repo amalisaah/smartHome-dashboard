@@ -7,9 +7,14 @@ const props = defineProps<{
   /** A received shipment has no exits to offer but the way out. */
   readOnly?: boolean
   receivedAt?: string | null
+  /** There is something unsaved to save. With nothing changed there is no offer. */
+  dirty?: boolean
+  /** The split does not yet add up, so there is nothing worth sending. */
+  saveBlocked?: boolean
+  saving?: boolean
 }>()
 
-defineEmits<{ back: []; draft: []; receive: []; close: [] }>()
+defineEmits<{ back: []; draft: []; discard: []; receive: []; close: [] }>()
 </script>
 
 <template>
@@ -19,10 +24,14 @@ defineEmits<{ back: []; draft: []; receive: []; close: [] }>()
         received {{ props.receivedAt ? formatShortDate(props.receivedAt) : '' }}
       </SBadge>
       <SBadge v-else variant="draft" size="state">still a draft</SBadge>
+      <!-- While there is something unsaved, this says why there is nothing to
+           receive with — the reason sits next to the action that is missing. -->
       <SText type="row-meta" color="fg-2-soft">
         {{ readOnly
           ? 'Stock and costs moved when you received it.'
-          : 'Stock and costs change only when you receive it.' }}
+          : dirty
+            ? 'Save or discard your changes before receiving.'
+            : 'Stock and costs change only when you receive it.' }}
       </SText>
     </span>
 
@@ -32,11 +41,24 @@ defineEmits<{ back: []; draft: []; receive: []; close: [] }>()
       </template>
 
       <!-- Two exits, deliberately unequal: quiet-and-safe, then a primary whose
-           label states its consequence. -->
+           label states its consequence.
+
+           With something unsaved there is no receiving: the primary is the save,
+           and beside it the way out of the changes. Receiving cannot commit
+           figures the server has not been given, because it is not there to press. -->
       <template v-else>
         <SButton variant="ghost" size="md" @click="$emit('back')">Back to lines</SButton>
-        <SButton variant="secondary" size="md" @click="$emit('draft')">Keep as draft</SButton>
-        <SButton size="md" @click="$emit('receive')">
+
+        <template v-if="dirty">
+          <SButton variant="ghost" size="md" :disabled="saving" @click="$emit('discard')">
+            Discard changes
+          </SButton>
+          <SButton size="md" :disabled="saveBlocked" :loading="saving" @click="$emit('draft')">
+            Save as draft
+          </SButton>
+        </template>
+
+        <SButton v-else size="md" @click="$emit('receive')">
           Receive shipment — {{ formatCount(unitCount) }} units in
         </SButton>
       </template>

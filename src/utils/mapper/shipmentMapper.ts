@@ -177,7 +177,7 @@ export function toPreviewRow(
     group: item?.group?.name ?? null,
     markupBps,
     qty: line.quantity,
-    productPesewas: line.line_product_value_pesewas ?? line.quantity * line.unit_price_pesewas,
+    productPesewas: line.line_product_value_pesewas ?? 0,
     sharePercent: sharedTotalPesewas === 0 ? 0 : (added / sharedTotalPesewas) * 100,
     sharedAddedPesewas: added,
     manualPesewas: line.manual_allocation_pesewas,

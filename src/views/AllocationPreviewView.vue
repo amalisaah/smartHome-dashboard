@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { catalogueKeys, useCatalogueGroups, useCatalogueItems } from '@/api/hooks/catalogue'
 import { shipmentKeys, useShipmentPreview } from '@/api/hooks/shipments'
 import { receiveShipment, updateItem, updateShipment, updateShipmentLine } from '@/api/shipments'
@@ -19,6 +16,9 @@ import {
 import type { AllocationBasis } from '@/types/shipment'
 import { allocationFacts, readoutChips, receiveConsequences } from '@/utils/allocationFacts'
 import { basisToApi, toPreviewRow, toShipmentMeta } from '@/utils/mapper/shipmentMapper'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 const props = defineProps<{ shipmentId: number }>()
 
@@ -46,86 +46,118 @@ const shipment = computed(() => {
 })
 const readOnly = computed(() => shipment.value.state === 'received')
 
-const sharedTotal = computed(() =>
-  (previewQuery.data.value?.cost_lines ?? []).reduce((sum, cost) => sum + cost.amount_pesewas, 0),
-)
+/** Both totals are the shipment's own, summed by the API. */
+const sharedTotal = computed(() => previewQuery.data.value?.shared_cost_total_pesewas ?? 0)
+const productTotal = computed(() => previewQuery.data.value?.product_value_total_pesewas ?? 0)
 
 /**
  * The table. Every allocated figure is the API's; what it costs to sell comes
  * from the item's group, which is why a row without one has no price to show.
+ *
+ * The split he is typing is laid over it here, and only here: the draft holds
+ * the rows he has spoken for, so this is the one place that knows a row carries
+ * his figure if he has given one and the server's if he has not. Everything
+ * downstream reads `manualPesewas` without knowing there was a choice.
  */
 const rows = computed(() =>
   (previewQuery.data.value?.lines ?? []).map((line) => {
     const item = items.value.find((candidate) => candidate.id === line.item_id)
     const group = groups.value.find((candidate) => candidate.id === item?.group?.id)
-    return toPreviewRow(line, item, group, sharedTotal.value)
+    const row = toPreviewRow(line, item, group, sharedTotal.value)
+    const typed = allocation.value.sharedValue?.find((entry) => entry.rowId === line.id)
+    return typed ? { ...row, manualPesewas: typed.value } : row
   }),
 )
 
-const productTotal = computed(() => rows.value.reduce((sum, row) => sum + row.productPesewas, 0))
 const units = computed(() => rows.value.reduce((sum, row) => sum + row.qty, 0))
 const lineCount = computed(() => rows.value.length)
 
 const confirming = ref(false)
 
 /**
- * The basis is the shipment's, not the screen's: it is `allocation_method` on
- * the record, and the preview allocates by it. So the control writes it through
- * and asks for the figures again — the segment moves at once, because he chose
- * it, and the table catches up when the server has re-spread the costs.
+ * Everything on this screen that is his and not yet the record's: the basis he
+ * chose, and the lines he has typed a figure into. Nothing here goes to the
+ * server until he saves, so the table never re-costs itself under his caret.
  */
-const basis = ref<AllocationBasis>(shipment.value.basis)
-watch(() => shipment.value.basis, (saved) => { basis.value = saved })
+const allocation = ref<{
+  basis: AllocationBasis
+  sharedValue?: { rowId: number; value: number }[]
+}>({ basis: shipment.value.basis, sharedValue: undefined })
 
-const basisMutation = useMutation({
-  mutationFn: (next: AllocationBasis) =>
-    updateShipment(props.shipmentId, { allocation_method: basisToApi(next) }),
-  onSuccess: async () => {
-    await queryClient.invalidateQueries({ queryKey: shipmentKeys.preview(props.shipmentId) })
-    await queryClient.invalidateQueries({ queryKey: shipmentKeys.detail(props.shipmentId) })
-    await queryClient.invalidateQueries({ queryKey: shipmentKeys.list() })
-  },
-  // It did not take, so the control goes back to what the shipment still says.
-  onError: () => { basis.value = shipment.value.basis },
-})
+// Until he has touched it, the basis is whatever the shipment says.
+watch(() => shipment.value.basis, (saved) => { allocation.value.basis = saved })
 
 function setBasis(next: AllocationBasis) {
-  if (next === basis.value) return
-  basis.value = next
-  basisMutation.mutate(next)
+  if (next === allocation.value.basis) return
+  allocation.value.basis = next
 }
 
-/**
- * The split he decided himself, line by line.
- *
- * `manual_allocation_pesewas` lives on the shipment line, so this is a write to
- * the line and not to the shipment — and the rest of the line has to go with it,
- * because that is the shape `PATCH .../lines/{id}` takes. The amounts are
- * accepted as typed; it is receiving that insists they add up.
- */
-const manual = computed(() => basis.value === 'override')
+const manual = computed(() => allocation.value.basis === 'override')
 
 const assignedPesewas = computed(() =>
   rows.value.reduce((sum, row) => sum + (row.manualPesewas ?? 0), 0),
 )
 
-const manualMutation = useMutation({
-  mutationFn: ({ rowId, pesewas }: { rowId: number; pesewas: number }) => {
-    const line = (previewQuery.data.value?.lines ?? []).find((candidate) => candidate.id === rowId)
-    if (!line) throw new Error('That line is no longer on this shipment.')
-    return updateShipmentLine(props.shipmentId, rowId, {
-      item_id: line.item_id,
-      quantity: line.quantity,
-      unit_price_pesewas: line.unit_price_pesewas,
-      manual_allocation_pesewas: pesewas,
+const dirty = computed(
+  () => allocation.value.sharedValue !== undefined || allocation.value.basis !== shipment.value.basis,
+)
+
+const balanced = computed(() => assignedPesewas.value === sharedTotal.value)
+
+/** A hand-made split has to come to the whole shared cost before it can be sent. */
+const saveBlocked = computed(() => manual.value && !balanced.value)
+
+/**
+ * TODO: the lines go one PATCH each — there is no batch endpoint yet, so a
+ * failure partway leaves some of them saved. Collapses to a single call once
+ * the server takes them together.
+ */
+const draftMutation = useMutation({
+  mutationFn: async () => {
+    await updateShipment(props.shipmentId, {
+      allocation_method: basisToApi(allocation.value.basis),
     })
+    if (!manual.value) return
+    await Promise.all(
+      (allocation.value.sharedValue ?? []).map((entry) =>
+        updateShipmentLine(props.shipmentId, entry.rowId, {
+          manual_allocation_pesewas: entry.value,
+        }),
+      ),
+    )
   },
-  // The landed costs downstream of it are the server's to work out again.
-  onSuccess: () =>
-    queryClient.invalidateQueries({ queryKey: shipmentKeys.preview(props.shipmentId) }),
+  onSuccess: async () => {
+    await queryClient.invalidateQueries({ queryKey: shipmentKeys.all })
+    // Saved is no longer his alone, so the draft goes back to being untouched.
+    allocation.value.sharedValue = undefined
+    toList()
+  },
 })
 
-const setManual = (rowId: number, pesewas: number) => manualMutation.mutate({ rowId, pesewas })
+function saveDraft() {
+  if (saveBlocked.value) return
+  draftMutation.mutate()
+}
+
+/** A group he picked is not here: that was written to the item when he picked it. */
+function discardChanges() {
+  allocation.value.sharedValue = undefined
+  allocation.value.basis = shipment.value.basis
+}
+
+/** Only a save that left and did not land. A split that does not add up never leaves. */
+const saveFailure = computed(() => {
+  const error = draftMutation.error.value
+  return error instanceof Error ? error.message : null
+})
+
+/** One entry per row: retyping a figure replaces what that row already carries. */
+const setManual = (rowId: number, pesewas: number) => {
+  if (!allocation.value.sharedValue) allocation.value.sharedValue = []
+  const existing = allocation.value.sharedValue.find((entry) => entry.rowId === rowId)
+  if (existing) existing.value = pesewas
+  else allocation.value.sharedValue.push({ rowId, value: pesewas })
+}
 
 /**
  * What receiving will do, counted once from the rows and said twice: as chips
@@ -195,14 +227,6 @@ function receive() {
   receiveMutation.mutate()
 }
 
-const failure = computed(() => {
-  const error =
-    receiveMutation.error.value ??
-    assignGroupMutation.error.value ??
-    basisMutation.error.value ??
-    manualMutation.error.value
-  return error instanceof Error ? error.message : null
-})
 </script>
 
 <template>
@@ -212,15 +236,15 @@ const failure = computed(() => {
     <div class="frame">
       <AllocationPreviewHeader
         :shipment-ref="shipment.ref"
-        :basis="basis"
+        :basis="allocation.basis"
         :shared-pesewas="sharedTotal"
         :product-pesewas="productTotal"
         :read-only="readOnly"
         @update:basis="setBasis"
       />
 
-      <SBanner v-if="failure" variant="error" label="error" title="That didn't go through.">
-        {{ failure }}
+      <SBanner v-if="saveFailure" variant="error" label="error" title="That didn't save.">
+        {{ saveFailure }}
       </SBanner>
 
       <!-- A received shipment's split is history: figures, not fields. -->
@@ -246,10 +270,14 @@ const failure = computed(() => {
 
       <AllocationActionBar
         :unit-count="units"
+        :dirty="dirty"
+        :save-blocked="saveBlocked"
+        :saving="draftMutation.isPending.value"
         :read-only="readOnly"
         :received-at="shipment.receivedAt"
         @back="backToLines"
-        @draft="toList"
+        @draft="saveDraft"
+        @discard="discardChanges"
         @receive="confirming = true"
         @close="toList"
       />
