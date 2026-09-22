@@ -25,9 +25,11 @@ const props = defineProps<{
   /**
    * `md` / `lg` are the laptop and phone doors. `field` is the shipment meta
    * strip; `row` and `row-figure` are the two in-table fields (a label and the
-   * figure beside it); `split` is the 92px override input.
+   * figure beside it); `split` is the 92px override input. `cell` is a table
+   * cell's own words made editable — the metrics of `SText type="cell"`, so a
+   * row holding one keeps the height it had as text.
    */
-  size?: 'md' | 'lg' | 'field' | 'row' | 'row-figure' | 'split'
+  size?: 'md' | 'lg' | 'field' | 'row' | 'row-figure' | 'split' | 'cell'
   /** Every figure is mono and tabular — these tables are read by column. */
   mono?: boolean
   align?: 'left' | 'right'
@@ -299,6 +301,20 @@ defineExpose({ focus: () => inputEl.value?.focus() })
 .s-input-wrap--flat .s-input {
   padding: 2px 6px;
   font-size: 13px;
+}
+
+/* A cell's words, not its figure: 14px, the size the column reads at. Flat sets
+   the metrics of a figure, so a size passed alongside it has to win. */
+.s-input-wrap--flat .s-input--cell,
+.s-input--cell {
+  padding: 6px 8px;
+  font-size: 14px;
+}
+
+/* `flat` pulls the value back to where plain text sat, so the offset follows
+   the padding: 1px of border plus the padding above and to the left. */
+.s-input-wrap--flat.s-input-wrap--size-cell {
+  margin: -7px -9px;
 }
 
 .s-input::placeholder {

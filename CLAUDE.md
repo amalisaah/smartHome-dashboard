@@ -187,6 +187,7 @@ a screen reader as well as to the eye.
 <SInput label="Order date" size="field" mono />              <!-- meta strip: 11px/12px, 14px -->
 <SInput label="Rate you actually got" size="field" mono align="right" prefix="1 USD =" />
 <SInput size="row" dashed placeholder="Name a cost…" />      <!-- in-table label field -->
+<SInput size="cell" variant="flat" />                        <!-- a cell's words, editable -->
 <SInput size="row-figure" dashed mono align="right" placeholder="0.00" />
 <SInput size="split" variant="accent" mono align="right" suffix="%" />  <!-- the 92px override -->
 <SInput variant="flat" mono align="right" ariaLabel="Quantity" />       <!-- a figure in a row -->
@@ -198,6 +199,9 @@ a screen reader as well as to the eye.
 - `variant="flat"` draws no box until you reach for it, so a table of editable figures still
   reads as figures. Put `min-width: 0` on the grid items of any row holding one, or the field's
   intrinsic width widens the column and the row stops lining up under the head.
+- `size="cell"` is `flat`'s counterpart for words: the metrics of `SText type="cell"`, so a
+  column of editable names reads as the names it is and the row keeps the height it had as
+  text. Flat alone sets a figure's metrics — pass `size="cell"` alongside it for a name.
 - `variant="accent"` carries the action border at rest — a value he decided rather than was given.
 - `prefix` is a fact about the field and is fenced off by a border; `suffix` is part of the
   value's reading and is not.

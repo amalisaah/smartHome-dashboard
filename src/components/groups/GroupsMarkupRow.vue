@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { SInput, SText } from '@/components/atoms'
+import { SBadge, SInput, SText } from '@/components/atoms'
 import type { MarkupRow } from '@/composables/useGroupsMarkup'
 import { formatMargin, formatMoney } from '@/utils/format'
 
 const props = defineProps<{ row: MarkupRow }>()
 
-defineEmits<{ 'update:draft': [text: string]; normalise: [] }>()
+defineEmits<{
+  'update:draft': [text: string]
+  'update:name': [text: string]
+  normalise: []
+  'normalise-name': []
+}>()
 
-const dirty = computed(() => props.row.projection !== null)
+/** The row holds a change of some kind — what tints it. */
+const dirty = computed(() => props.row.projection !== null || props.row.rename !== null)
 
 /**
  * Old, arrow, new — in the one cell, at the one size, in the one ink. The arrow
@@ -28,25 +34,39 @@ const capital = computed(() => formatMoney(props.row.group.capitalInStockPesewas
 </script>
 
 <template>
-  <div class="row" :class="{ 'row--dirty': dirty }" role="row">
-    <!-- The name takes weight the moment the row is holding a change, so the
-         column reads which rows moved without reading their numbers. -->
-    <SText :type="dirty ? 'ui' : 'cell'" role="cell">{{ row.group.name }}</SText>
+  <div
+    class="row"
+    :class="{ 'row--dirty': dirty, 'row--blocked': !!row.nameError }"
+    role="row"
+    :data-slug="row.group.slug"
+  >
+    <!-- The name is a field, but it draws no box until he reaches for it: the
+         column has to read as the eight names it is, not as eight inputs. -->
+    <span class="cell--name" role="cell" @focusout="$emit('normalise-name')">
+      <SInput
+        class="name"
+        variant="flat"
+        size="cell"
+        data-column="name"
+        :aria-label="`Name of the ${row.group.name} group`"
+        :error="!!row.nameError"
+        :model-value="row.nameDraft"
+        @update:model-value="$emit('update:name', $event)"
+      />
+      <!-- Said in the row that has it, as the thing it stops. -->
+      <SBadge v-if="row.nameError" variant="incomplete" size="row">{{ row.nameError }}</SBadge>
+    </span>
 
     <SText type="money" class="num" role="cell">{{ row.group.itemCount }}</SText>
 
     <!-- A field's intrinsic width would widen the column and pull the row out
          from under the head, so the grid item may be narrower than its content. -->
-    <span
-      class="cell--field"
-      role="cell"
-      :data-slug="row.group.slug"
-      @focusout="$emit('normalise')"
-    >
+    <span class="cell--field" role="cell" @focusout="$emit('normalise')">
       <SInput
         class="markup"
         size="split"
-        :variant="dirty ? 'accent' : undefined"
+        data-column="markup"
+        :variant="row.projection ? 'accent' : undefined"
         mono
         align="right"
         :aria-label="`Markup for ${row.group.name}`"
@@ -88,6 +108,32 @@ const capital = computed(() => formatMoney(props.row.group.capitalInStockPesewas
 
 .row--dirty:hover {
   background: var(--color-row-hover-action);
+}
+
+/* A row that cannot be saved reads as the warning it is, and keeps reading as
+   one on hover — the tint is the state, not the pointer. */
+.row--blocked,
+.row--blocked:hover {
+  background: var(--color-row-risk-tint);
+}
+
+.cell--name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The field takes the column; the flag that follows it keeps its own width. */
+.name {
+  min-width: 0;
+  flex: 1;
+}
+
+/* The name still takes weight the moment the row is holding a change, so the
+   column reads which rows moved without reading their numbers. */
+.row--dirty .name :deep(.s-input) {
+  font-weight: 500;
 }
 
 .cell--field {

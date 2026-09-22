@@ -6,6 +6,8 @@ defineProps<{
   summary: CommitSummary
   /** The one thing the network changes here. Typing is never blocked. */
   offline?: boolean
+  /** A row holds a name it cannot be saved under. That row says which. */
+  blocked?: boolean
 }>()
 
 defineEmits<{ discard: []; apply: [] }>()
@@ -28,8 +30,16 @@ defineEmits<{ discard: []; apply: [] }>()
       <!-- No confirm on either: the bar is the confirmation, and re-typing the
            number is the undo. -->
       <SButton variant="ghost" size="md" @click="$emit('discard')">Discard</SButton>
-      <SButton size="md" :disabled="offline" @click="$emit('apply')">
-        {{ offline ? 'Apply — waiting for connection' : summary.applyLabel }}
+      <!-- Blocked says only that it is waiting on a row; the row it is waiting
+           on carries the reason, so the bar does not repeat it here. -->
+      <SButton size="md" :disabled="offline || blocked" @click="$emit('apply')">
+        {{
+          blocked
+            ? 'Apply — a name needs fixing'
+            : offline
+            ? 'Apply — waiting for connection'
+            : summary.applyLabel
+        }}
       </SButton>
     </div>
   </div>

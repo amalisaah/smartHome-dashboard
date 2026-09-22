@@ -8,8 +8,20 @@ import GroupsMarkupRow from '@/components/groups/GroupsMarkupRow.vue'
 import { useGroupsMarkup } from '@/composables/useGroupsMarkup'
 import { useOnline } from '@/composables/useOnline'
 
-const { rows, commit, addGroup, nameTaken, setDraft, normalise, revert, discardAll, apply } =
-  useGroupsMarkup()
+const {
+  rows,
+  commit,
+  blocked,
+  addGroup,
+  nameTaken,
+  setDraft,
+  setName,
+  normalise,
+  normaliseName,
+  revert,
+  discardAll,
+  apply,
+} = useGroupsMarkup()
 const online = useOnline()
 
 const table = ref<HTMLElement | null>(null)
@@ -31,17 +43,29 @@ function onCreate(name: string, markup: string) {
 
 const COLUMNS = ['Group', 'Items', 'Markup', 'Avg margin', 'Capital in stock']
 
-/** He is replacing the number, not appending to it. */
+/**
+ * He is replacing the number, not appending to it. A name is not the same: he
+ * is as likely to be fixing one letter of it, so the caret lands where he put
+ * it and the name is left alone.
+ */
 function onFocusin(event: FocusEvent) {
-  if (event.target instanceof HTMLInputElement) event.target.select()
+  const input = event.target
+  if (!(input instanceof HTMLInputElement)) return
+  if (input.closest('[data-column="markup"]')) input.select()
 }
 
 /**
- * Enter walks down the markup column. At the foot of it there is nowhere to go,
- * so the caret stays where it is rather than wrapping back to the top.
+ * Enter walks down the column it is pressed in — the names or the markups, and
+ * never across from one to the other. At the foot of a column there is nowhere
+ * to go, so the caret stays where it is rather than wrapping back to the top.
  */
 function moveDown(current: HTMLInputElement) {
-  const inputs = Array.from(table.value?.querySelectorAll('input') ?? [])
+  const column = current.closest('[data-column]')?.getAttribute('data-column')
+  if (!column) return
+
+  const inputs = Array.from(
+    table.value?.querySelectorAll<HTMLInputElement>(`[data-column="${column}"] input`) ?? [],
+  )
   const next = inputs[inputs.indexOf(current) + 1] ?? current
   next.focus()
   next.select()
@@ -50,7 +74,7 @@ function moveDown(current: HTMLInputElement) {
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
     event.preventDefault()
-    if (commit.value && online.value) apply()
+    if (commit.value && online.value && !blocked.value) apply()
     return
   }
 
@@ -63,13 +87,14 @@ function onKeydown(event: KeyboardEvent) {
     return
   }
 
-  // The first Escape takes back the number under the caret. Once that row is
-  // clean, a second one takes back the rest.
+  // The first Escape takes back what the row under the caret is holding —
+  // its name and its markup both. Once that row is clean, a second one takes
+  // back the rest.
   if (event.key === 'Escape') {
     event.preventDefault()
     const slug = input.closest('[data-slug]')?.getAttribute('data-slug')
     const row = rows.value.find((candidate) => candidate.group.slug === slug)
-    if (slug && row?.projection) revert(slug)
+    if (slug && (row?.projection || row?.rename || row?.nameError)) revert(slug)
     else discardAll()
   }
 }
@@ -119,7 +144,9 @@ function onKeydown(event: KeyboardEvent) {
         :key="row.group.slug"
         :row="row"
         @update:draft="setDraft(row.group.slug, $event)"
+        @update:name="setName(row.group.slug, $event)"
         @normalise="normalise(row.group.slug)"
+        @normalise-name="normaliseName(row.group.slug)"
       />
     </div>
 
@@ -130,6 +157,7 @@ function onKeydown(event: KeyboardEvent) {
         v-if="commit"
         :summary="commit"
         :offline="!online"
+        :blocked="blocked"
         @discard="discardAll"
         @apply="apply"
       />
