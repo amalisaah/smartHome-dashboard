@@ -130,7 +130,6 @@ const draftMutation = useMutation({
     await queryClient.invalidateQueries({ queryKey: shipmentKeys.all })
     // Saved is no longer his alone, so the draft goes back to being untouched.
     allocation.value.sharedValue = undefined
-    toList()
   },
 })
 
