@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AllocationPreviewView from '@/views/AllocationPreviewView.vue'
 import CatalogueListView from '@/views/CatalogueListView.vue'
 import DesignSystemView from '@/views/DesignSystemView.vue'
+import GroupsMarkupView from '@/views/GroupsMarkupView.vue'
 import ShipmentBuilderView from '@/views/ShipmentBuilderView.vue'
 import ShipmentsListView from '@/views/ShipmentsListView.vue'
 
@@ -40,6 +41,11 @@ export const router = createRouter({
       name: 'shipment-preview',
       component: AllocationPreviewView,
       props: (route) => ({ shipmentId: Number(route.params.id) }),
+    },
+    {
+      path: '/groups',
+      name: 'groups',
+      component: GroupsMarkupView,
     },
     {
       path: '/design-system',
