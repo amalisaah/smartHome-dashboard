@@ -42,7 +42,12 @@ export interface MarkupProjection {
   projectedMarginPercent: number
   /** Items the change reaches: the group's count less its overridden ones. */
   affectedCount: number
-  example: MarkupExample
+  /**
+   * Null for a group that holds no items yet — there is nothing to name, and a
+   * made-up example would be the one part of the commit bar that is not
+   * checkable.
+   */
+  example: MarkupExample | null
 }
 
 /** One named item with both its prices — the checkable half of the consequence. */

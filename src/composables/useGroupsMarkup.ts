@@ -1,5 +1,5 @@
 import { computed, reactive, ref } from 'vue'
-import { MOCK_GROUPS_TABLE, projectMarkup } from '@/data/groupsMock'
+import { createGroup, MOCK_GROUPS_TABLE, projectMarkup, slugify } from '@/data/groupsMock'
 import {
   bpsToMarkup,
   markupToBps,
@@ -24,12 +24,16 @@ export interface MarkupRow {
  * `1.`, holds no change yet — the row stays at rest and no commit bar appears,
  * rather than the screen inventing an error state the design does not draw.
  */
-const usable = (text: string) => {
+export const usable = (text: string) => {
   const value = Number(text)
   return text.trim() !== '' && Number.isFinite(value) && value > 0
 }
 
-/** Digits and one decimal point, as the field accepts them. */
+/**
+ * Digits and one decimal point, as the field accepts them. This is the rule for
+ * a markup edited in a table row, where there is nowhere to put an error — the
+ * add-group dialog has an error slot, so it lets the text land and says so.
+ */
 function sanitise(text: string) {
   const kept = text.replace(/[^\d.]/g, '')
   const firstDot = kept.indexOf('.')
@@ -45,10 +49,13 @@ const exampleLine = (example: MarkupExample) =>
     example.newPricePesewas,
   )}.`
 
+/** What the bar says when every dirty row is a group with nothing in it. */
+const EMPTY_GROUP_DETAIL = 'Nothing reprices now — the markup prices items as you add them.'
+
 /**
- * The groups & markup screen: eight fixed rows, a draft markup at each, and the
- * consequence of every draft worked out while he types. Nothing here creates,
- * deletes or reorders a group.
+ * The groups & markup screen: a row per group, a draft markup at each, and the
+ * consequence of every draft worked out while he types. A group can be created
+ * here; nothing here deletes or reorders one.
  */
 export function useGroupsMarkup() {
   /** The saved side. Apply writes here; Discard reads back from it. */
@@ -98,18 +105,39 @@ export function useGroupsMarkup() {
 
     // One dirty row names its own numbers; several name how many groups moved.
     // Either way the worked example comes from the largest affected group.
+    const named = `${dirty[0].group.name} ${bpsToMarkup(dirty[0].group.markupBps)} → ${bpsToMarkup(
+      dirty[0].projection?.markupBps ?? dirty[0].group.markupBps,
+    )}`
+
     const lead =
       dirty.length === 1
-        ? `${dirty[0].group.name} ${bpsToMarkup(dirty[0].group.markupBps)} → ${bpsToMarkup(
-            dirty[0].projection!.markupBps,
-          )} moves the selling price of `
+        ? `${named} moves the selling price of `
         : `Changes in ${plural(dirty.length, 'group')} move the selling price of `
 
-    const largest = dirty.reduce((biggest, row) =>
-      (row.projection?.affectedCount ?? 0) > (biggest.projection?.affectedCount ?? 0)
-        ? row
-        : biggest,
-    )
+    // A group made on this screen holds nothing yet, so its markup moves no
+    // price at all. Said as that, rather than as "0 of 0 items".
+    if (affectedCount.value === 0) {
+      return {
+        sentence: {
+          lead: dirty.length === 1 ? `${named} — ` : `Changes in ${plural(dirty.length, 'group')} — `,
+          count: 'nothing',
+          tail: ' to reprice yet.',
+        },
+        detail: EMPTY_GROUP_DETAIL,
+        applyLabel: `Save ${plural(dirty.length, 'markup')}`,
+      }
+    }
+
+    // The example has to come from a group that has items to make one from.
+    const largest = dirty
+      .filter((row) => row.projection?.example)
+      .reduce<MarkupRow | null>(
+        (biggest, row) =>
+          !biggest || (row.projection?.affectedCount ?? 0) > (biggest.projection?.affectedCount ?? 0)
+            ? row
+            : biggest,
+        null,
+      )
 
     // Zero excluded is never said as "0" — the clause simply is not there.
     const keep = excluded
@@ -118,10 +146,39 @@ export function useGroupsMarkup() {
 
     return {
       sentence: { lead, count, tail: ' items.' },
-      detail: `${keep}${exampleLine(largest.projection!.example)}`,
+      detail: `${keep}${largest ? exampleLine(largest.projection!.example!) : ''}`.trim(),
       applyLabel: `Apply to ${plural(affectedCount.value, 'item')}`,
     }
   })
+
+  // --- making one ------------------------------------------------------------
+
+  /** By slug, so `Smoke` and `smoke` are the same group and not two. */
+  const nameTaken = (name: string) => {
+    const slug = slugify(name)
+    return slug !== '' && groups.value.some((group) => group.slug === slug)
+  }
+
+  /**
+   * A new group, saved the moment it is made — there is nothing to preview,
+   * because an empty group reprices nothing.
+   *
+   * The markup is optional: left blank, the group starts at `1.00`, which is
+   * the only honest reading of a blank markup — it sells at cost until he says
+   * otherwise. The dialog says so before he presses.
+   */
+  function addGroup(name: string, markupText: string) {
+    // Group names are a lowercase vocabulary — `lighting`, `switching`. A row
+    // reading `Smoke & gas` among eight of those is the odd one out, and the
+    // slug is lowercase regardless, so the name follows it.
+    const trimmed = name.trim().toLowerCase()
+    if (!trimmed || nameTaken(trimmed)) return null
+
+    const group = createGroup(trimmed, usable(markupText) ? markupToBps(markupText) : 0)
+    groups.value = [...groups.value, group]
+    drafts[group.slug] = bpsToMarkup(group.markupBps)
+    return group
+  }
 
   // --- what he does to a row -------------------------------------------------
 
@@ -172,5 +229,17 @@ export function useGroupsMarkup() {
     for (const group of groups.value) drafts[group.slug] = bpsToMarkup(group.markupBps)
   }
 
-  return { rows, dirtyRows, affectedCount, commit, setDraft, normalise, revert, discardAll, apply }
+  return {
+    rows,
+    dirtyRows,
+    affectedCount,
+    commit,
+    addGroup,
+    nameTaken,
+    setDraft,
+    normalise,
+    revert,
+    discardAll,
+    apply,
+  }
 }

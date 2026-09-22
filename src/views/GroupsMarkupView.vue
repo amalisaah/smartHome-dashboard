@@ -1,16 +1,33 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { SText } from '@/components/atoms'
+import { nextTick, ref } from 'vue'
+import { SButton, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
+import AddGroupDialog from '@/components/groups/AddGroupDialog.vue'
 import GroupsCommitBar from '@/components/groups/GroupsCommitBar.vue'
 import GroupsMarkupRow from '@/components/groups/GroupsMarkupRow.vue'
 import { useGroupsMarkup } from '@/composables/useGroupsMarkup'
 import { useOnline } from '@/composables/useOnline'
 
-const { rows, commit, setDraft, normalise, revert, discardAll, apply } = useGroupsMarkup()
+const { rows, commit, addGroup, nameTaken, setDraft, normalise, revert, discardAll, apply } =
+  useGroupsMarkup()
 const online = useOnline()
 
 const table = ref<HTMLElement | null>(null)
+
+const adding = ref(false)
+const addButton = ref<InstanceType<typeof SButton> | null>(null)
+
+/** Closing a dialog puts the keyboard back where it was opened from. */
+function closeAdd() {
+  adding.value = false
+  nextTick(() => (addButton.value?.$el as HTMLElement | undefined)?.focus())
+}
+
+/** The new row lands at the foot of the table, already saved at its markup. */
+function onCreate(name: string, markup: string) {
+  addGroup(name, markup)
+  closeAdd()
+}
 
 const COLUMNS = ['Group', 'Items', 'Markup', 'Avg margin', 'Capital in stock']
 
@@ -63,12 +80,18 @@ function onKeydown(event: KeyboardEvent) {
   <AppLayout>
     <div class="header">
       <SText type="frame-title" as="h1">Groups &amp; markup</SText>
-      <!-- This pre-empts "where is the add-group button" without a disabled
-           control or a tooltip, so nothing on screen has to be greyed out. -->
-      <SText type="row-meta" color="fg-2-soft">
-        <!-- TODO: update when ai is ready -->
-        Eight groups, fixed. Keywords carry everything else.
-      </SText>
+
+      <div class="header-right">
+        <!-- The count is live now that the table can grow. Groups are the
+             coarse cut; keywords still carry everything finer than one. -->
+        <SText type="row-meta" color="fg-2-soft">
+          <!-- TODO: update when ai is ready -->
+          {{ rows.length }} groups. Keywords carry everything else.
+        </SText>
+        <SButton ref="addButton" variant="primary" size="sm" @click="adding = true">
+          Add group
+        </SButton>
+      </div>
     </div>
 
     <div
@@ -111,6 +134,8 @@ function onKeydown(event: KeyboardEvent) {
         @apply="apply"
       />
     </Transition>
+
+    <AddGroupDialog v-if="adding" :taken="nameTaken" @create="onCreate" @dismiss="closeAdd" />
   </AppLayout>
 </template>
 
@@ -122,6 +147,13 @@ function onKeydown(event: KeyboardEvent) {
   gap: 16px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--color-line);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: none;
 }
 
 .head {

@@ -36,7 +36,8 @@ interface ExampleSeed {
 }
 
 interface GroupSeed extends Omit<MarkupGroup, 'id' | 'avgMarginPercent'> {
-  example: ExampleSeed
+  /** Null for a group made on this screen: it holds no items to name one from. */
+  example: ExampleSeed | null
 }
 
 /**
@@ -136,6 +137,58 @@ export const MOCK_GROUPS_TABLE: MarkupGroup[] = SEEDS.map((seed, index) => ({
 
 const SEED_BY_SLUG = new Map(SEEDS.map((seed) => [seed.slug, seed]))
 
+/** Stands in for the sequence behind the groups table. */
+let lastId = MOCK_GROUPS_TABLE.length
+
+/** `Smoke & gas` → `smoke-gas`. What the API will mint from the name. */
+export const slugify = (name: string) =>
+  name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+
+/**
+ * Stands in for `POST /groups`. A group made here starts empty: no items, so no
+ * capital standing on it, nothing overridden, and no example item to name. Its
+ * margin follows from the markup it was given, the same as every other row's.
+ *
+ * It is registered as a seed so that `projectMarkup` can answer for it the
+ * moment he edits its markup in the table — a group the preview cannot answer
+ * for would be a row that silently refuses to change.
+ */
+export function createGroup(name: string, markupBps: number): MarkupGroup {
+  const slug = slugify(name)
+  const seed: GroupSeed = {
+    name,
+    slug,
+    markupBps,
+    itemCount: 0,
+    capitalInStockPesewas: 0,
+    overriddenCount: 0,
+    example: null,
+  }
+
+  // The table reseeds from `MOCK_GROUPS_TABLE` on every mount, so a group made
+  // in a previous visit can be made again. It replaces its seed rather than
+  // leaving a second one behind.
+  const existing = SEEDS.findIndex((candidate) => candidate.slug === slug)
+  if (existing === -1) SEEDS.push(seed)
+  else SEEDS[existing] = seed
+  SEED_BY_SLUG.set(slug, seed)
+
+  return {
+    id: ++lastId,
+    name,
+    slug,
+    markupBps,
+    itemCount: 0,
+    avgMarginPercent: marginOf(markupBps),
+    capitalInStockPesewas: 0,
+    overriddenCount: 0,
+  }
+}
+
 /**
  * What a group's rows would become at `markupBps` — the answer the preview
  * endpoint will give. An overridden item keeps the price it was given, so the
@@ -152,7 +205,7 @@ export function projectMarkup(slug: string, markupBps: number): MarkupProjection
     markupBps,
     projectedMarginPercent: marginOf(markupBps),
     affectedCount: seed.itemCount - seed.overriddenCount,
-    example: {
+    example: seed.example && {
       itemName: seed.example.itemName,
       oldPricePesewas: seed.example.sellPricePesewas,
       newPricePesewas: Math.round(seed.example.landedCostPesewas * markup),
