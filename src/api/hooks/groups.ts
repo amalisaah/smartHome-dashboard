@@ -13,9 +13,9 @@ import { fetchMarkupGroups } from '@/api/groups'
  * change moves every derived selling price the catalogue is showing, and a
  * rename moves the group label on every item row.
  *
- * There is no preview hook. The projection the screen shows while he types has
- * no endpoint behind it; see the PROPOSED block in `@/types/groupsApi` for the
- * three fields that would let it be computed locally instead.
+ * There is no preview hook, and no longer anything for one to answer: the
+ * table's figures hold still while he types, and the commit bar's counts come
+ * from `item_count` and `overridden_item_count` on the row he is editing.
  */
 export const groupKeys = {
   all: ['groups'] as const,

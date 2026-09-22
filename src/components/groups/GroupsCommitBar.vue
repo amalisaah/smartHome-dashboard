@@ -23,7 +23,9 @@ defineEmits<{ discard: []; apply: [] }>()
         }}<b class="font-mono tabular-nums">{{ summary.sentence.count }}</b
         >{{ summary.sentence.tail }}
       </SText>
-      <SText type="caption">{{ summary.detail }}</SText>
+      <!-- Nothing excluded and nothing renamed leaves nothing to add, and an
+           empty line would still take its height. The bar closes up instead. -->
+      <SText v-if="summary.detail" type="caption">{{ summary.detail }}</SText>
     </div>
 
     <div class="exits">

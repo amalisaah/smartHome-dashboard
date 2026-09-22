@@ -1,14 +1,18 @@
 import { computed, reactive, ref } from 'vue'
-import { createGroup, MOCK_GROUPS_TABLE, projectMarkup, slugify } from '@/data/groupsMock'
+import {
+  createGroup,
+  MOCK_GROUPS_TABLE,
+  projectMarkup,
+  settledMargin,
+  slugify,
+} from '@/data/groupsMock'
 import {
   bpsToMarkup,
   markupToBps,
   type CommitSummary,
-  type MarkupExample,
   type MarkupGroup,
   type MarkupProjection,
 } from '@/types/groups'
-import { formatMoney } from '@/utils/format'
 
 /** One row as the table draws it: the saved group, plus what he is typing at it. */
 export interface MarkupRow {
@@ -58,12 +62,6 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
  * it in the one case every other row is in.
  */
 export const settled = (name: string) => name.trim().toLowerCase()
-
-/** `the 2-gang switch goes 373.00 → 410.19` — a name is checkable, a count is not. */
-const exampleLine = (example: MarkupExample) =>
-  `Example: the ${example.itemName} goes ${formatMoney(example.oldPricePesewas)} → ${formatMoney(
-    example.newPricePesewas,
-  )}.`
 
 /** What the bar says when every dirty row is a group with nothing in it. */
 const EMPTY_GROUP_DETAIL = 'Nothing reprices now — the markup prices items as you add them.'
@@ -228,25 +226,22 @@ export function useGroupsMarkup() {
       }
     }
 
-    // The example has to come from a group that has items to make one from.
-    const largest = priced
-      .filter((row) => row.projection?.example)
-      .reduce<MarkupRow | null>(
-        (biggest, row) =>
-          !biggest || (row.projection?.affectedCount ?? 0) > (biggest.projection?.affectedCount ?? 0)
-            ? row
-            : biggest,
-        null,
-      )
-
     // Zero excluded is never said as "0" — the clause simply is not there.
     const keep = excluded
       ? `${plural(excluded, 'overridden item')} keep their price${excluded === 1 ? '' : 's'}. `
       : ''
 
+    // TODO: the worked example belongs here — `Example: the 2-gang switch goes
+    // 373.00 → 410.19`, from the largest affected group. It is rule 3 of the
+    // screen: an aggregate count is abstract, a named item is checkable. It is
+    // out because naming an item needs an item, and no group-level figure
+    // carries one — `GET /groups/details` answers about the group. The source
+    // is `GET /items?group_id=`, where `name`, `landed_unit_cost_pesewas` and
+    // `selling_price_override_pesewas` are enough to pick an item the markup
+    // actually reaches and say what its price would become.
     return {
       sentence: { lead, count, tail: ' items.' },
-      detail: `${alsoRenamed}${keep}${largest ? exampleLine(largest.projection!.example!) : ''}`.trim(),
+      detail: `${alsoRenamed}${keep}`.trim(),
       applyLabel,
     }
   })
@@ -346,10 +341,13 @@ export function useGroupsMarkup() {
   }
 
   /**
-   * The press. Every dirty row's drafts become what is saved and its figures
-   * settle on the projection that was on screen — the bar dismisses because
-   * nothing is dirty any more, not because it was told to. A row whose name is
-   * not usable holds the press, and says why in the row itself.
+   * The press. Every dirty row's drafts become what is saved — the bar
+   * dismisses because nothing is dirty any more, not because it was told to.
+   * A row whose name is not usable holds the press, and says why in the row.
+   *
+   * The margin settles here to what the group reports *after* the write, which
+   * is the figure the refetch would bring back. It was never shown before the
+   * press: the row does not project it.
    */
   function apply() {
     if (!commit.value || blocked.value) return
@@ -361,7 +359,7 @@ export function useGroupsMarkup() {
       return {
         ...settledGroup,
         markupBps: projection.markupBps,
-        avgMarginPercent: projection.projectedMarginPercent,
+        avgMarginPercent: settledMargin(projection.markupBps),
       }
     })
 

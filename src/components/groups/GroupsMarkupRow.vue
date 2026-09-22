@@ -17,17 +17,12 @@ defineEmits<{
 const dirty = computed(() => props.row.projection !== null || props.row.rename !== null)
 
 /**
- * Old, arrow, new — in the one cell, at the one size, in the one ink. The arrow
- * is the signal that something moved; colour here is reserved for warnings, and
- * a markup change is not one.
+ * What the group's stock is actually earning today, and only that. It does not
+ * move while he types: projecting it needs the split between the items the
+ * markup reaches and the ones pricing themselves, which the group row does not
+ * carry. The consequence of the change is stated in the commit bar instead.
  */
-const margin = computed(() =>
-  props.row.projection
-    ? `${formatMargin(props.row.group.avgMarginPercent)} → ${formatMargin(
-        props.row.projection.projectedMarginPercent,
-      )}`
-    : formatMargin(props.row.group.avgMarginPercent),
-)
+const margin = computed(() => formatMargin(props.row.group.avgMarginPercent))
 
 /** What this group's stock cost to put on the shelf — what the markup rides on. */
 const capital = computed(() => formatMoney(props.row.group.capitalInStockPesewas))

@@ -28,15 +28,21 @@ export interface ApiGroupDetails {
   name: string
   /** Stable across renames — not re-derived when the name changes. */
   slug: string
-  /**
-   * Basis points — 6000 = a markup of 1.60. The field this screen edits.
-   *
-   * Being added to `/groups/details`; until then it lives only on
-   * `GET /groups`, and the table has to join the two by id to draw a row.
-   */
+  /** Basis points — 6000 = a markup of 1.60. The field this screen edits. */
   default_markup_bps: number
   /** Active items filed here, received or not. */
   item_count: number
+  /**
+   * How many of those price themselves — they carry a
+   * `selling_price_override_pesewas` instead of taking the group's markup.
+   *
+   * The two read as a fraction, which is what the commit bar says out loud:
+   * `item_count − overridden_item_count` is the reach of a markup change
+   * (`39 of 44`), and this is the remainder that keeps its prices. Zero means
+   * the whole group is priced off `default_markup_bps`, and `margin_bps` is
+   * then that markup restated.
+   */
+  overridden_item_count: number
   units_in_stock: number
   /** `SUM(stock_on_hand × landed_unit_cost_pesewas)` — money tied up right now. */
   capital_in_stock_pesewas: number
@@ -101,38 +107,16 @@ export interface ApiGroupUpdate {
 }
 
 /* ===========================================================================
- * PROPOSED — not in `openapi.json`. Two gaps between what the screen renders
- * and what the API can answer.
+ * TODO: the commit bar's worked example — `Example: the 2-gang switch goes
+ * 373.00 → 410.19` — is not built. It is rule 3 of the screen: an aggregate
+ * count is abstract, a named item is checkable.
  *
- * 1. THE OVERRIDDEN COUNT. The commit bar says "39 of 44" and "5 overridden
- *    items keep their prices" — rule 2 of the screen, the exclusion stated in
- *    numbers. Nothing in `/groups/details` carries it. It is derivable on the
- *    client by counting `selling_price_override_pesewas !== null` over
- *    `GET /items`, which the catalogue already loads unpaginated — a fallback,
- *    not a plan, since it ties this screen to that fetch.
+ * It is out because it needs an item, and nothing about a group can name one.
+ * `GET /items?group_id=` is the source: `name`, `landed_unit_cost_pesewas` and
+ * `selling_price_override_pesewas` are enough to pick an item the markup
+ * actually reaches and say what its price would become. Nothing new is needed
+ * on `/groups/details` for it.
  *
- * 2. THE PROJECTION WHILE HE TYPES. `33% → 39%` and the worked example need
- *    the margin at a markup that has not been saved. It cannot be computed
- *    from `/groups/details` as it stands, because the overridden items — the
- *    ones that will not move — are not separable from the ones that will.
- *
- *    Three fields close both gaps and need no new endpoint, which is why this
- *    is the recommendation over a preview call: with the overridden capital
- *    and retail split out, the projection is exact local arithmetic and costs
- *    no round trip per keystroke.
- *
- *      new_retail = (capital_in_stock − overridden_capital) × new_markup
- *                 + overridden_retail
- *      new_margin = 1 − capital_in_stock / new_retail
+ * The projected *margin* is not coming back — the Avg margin cell holds still
+ * while he types, by decision, and the bar states the consequence in counts.
  * ======================================================================== */
-export interface ApiGroupOverrideSplit {
-  /** Items carrying a `selling_price_override_pesewas`. A markup skips them. */
-  overridden_count: number
-  /** The `capital_in_stock_pesewas` those items account for. */
-  overridden_capital_in_stock_pesewas: number
-  /** The `retail_value_pesewas` those items account for — fixed under a re-markup. */
-  overridden_retail_value_pesewas: number
-}
-
-/** What `GET /groups/details` would return with the split above added. */
-export interface ApiGroupDetailsWithSplit extends ApiGroupDetails, ApiGroupOverrideSplit {}

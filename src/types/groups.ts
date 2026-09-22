@@ -39,23 +39,14 @@ export interface MarkupProjection {
   slug: string
   /** Basis points — what the draft in the input parses to. */
   markupBps: number
-  projectedMarginPercent: number
   /** Items the change reaches: the group's count less its overridden ones. */
   affectedCount: number
-  /**
-   * Null for a group that holds no items yet — there is nothing to name, and a
-   * made-up example would be the one part of the commit bar that is not
-   * checkable.
-   */
-  example: MarkupExample | null
 }
 
-/** One named item with both its prices — the checkable half of the consequence. */
-export interface MarkupExample {
-  itemName: string
-  oldPricePesewas: number
-  newPricePesewas: number
-}
+// TODO: a worked example belongs on a projection — one named item with both
+// its prices, which is what makes the consequence checkable rather than
+// abstract. It needs an item, and no group-level figure carries one; the
+// source is `GET /items?group_id=`. See the note in `@/types/groupsApi`.
 
 /**
  * The commit bar's first line, split where the count is bolded. Built as three
@@ -72,7 +63,7 @@ export interface CommitSentence {
 /** Everything the commit bar says, worked out before it is drawn. */
 export interface CommitSummary {
   sentence: CommitSentence
-  /** Second line: what is excluded and why, then the one worked example. */
+  /** Second line: what is excluded and why. Empty when there is nothing to say. */
   detail: string
   /** The count travels in the button label, so reading only buttons still works. */
   applyLabel: string

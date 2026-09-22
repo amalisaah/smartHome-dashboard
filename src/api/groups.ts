@@ -7,9 +7,10 @@
  * functions, called from a `useMutation` at the view — the shape the shipment
  * screens use, so invalidation is declared where the consequence is visible.
  *
- * The screen runs on `@/data/groupsMock` until this is wired. Two things it
- * mocks have no endpoint behind them yet — the projection while he types and
- * the overridden count — and both are spelled out in `@/types/groupsApi`.
+ * The screen runs on `@/data/groupsMock` until this is wired. One thing it
+ * mocks has no group-level source — the commit bar's worked example, which
+ * names an item — and that comes from `GET /items?group_id=`; see the note at
+ * the foot of `@/types/groupsApi`.
  */
 
 import type { ApiGroup } from '@/types/api'
