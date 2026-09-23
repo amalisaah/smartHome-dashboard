@@ -1,32 +1,71 @@
-import { useQuery } from '@tanstack/vue-query'
-import { fetchMarkupGroups } from '@/api/groups'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import {
+  applyGroupChanges,
+  createGroup,
+  fetchMarkupGroups,
+  updateGroup,
+  type GroupChange,
+} from '@/api/groups'
+import { catalogueKeys } from '@/api/hooks/catalogue'
+import type { ApiGroupCreate, ApiGroupUpdate } from '@/types/groupsApi'
 
-/**
- * Read hooks for the groups module. Thin on purpose — a key and a queryFn,
- * nothing else. Freshness, retry and refetch policy live once, in
- * `@/api/queryClient`.
- *
- * Writes are not here: `createGroup`, `updateGroup` and `applyGroupChanges` in
- * `@/api/groups` are called from a `useMutation` at the view, which is where
- * the invalidation they cause should be readable. After any of them,
- * invalidate `groupKeys.all` — and `catalogueKeys.all` too, since a markup
- * change moves every derived selling price the catalogue is showing, and a
- * rename moves the group label on every item row.
- *
- * There is no preview hook, and no longer anything for one to answer: the
- * table's figures hold still while he types, and the commit bar's counts come
- * from `item_count` and `overridden_item_count` on the row he is editing.
- */
 export const groupKeys = {
   all: ['groups'] as const,
-  /** The markup table — `GET /groups/details`. */
   table: (archived = false) => [...groupKeys.all, 'table', { archived }] as const,
 }
 
-/** The rows with their markups and derived figures. */
+/** `GET /groups/details` — the rows with their markups and derived figures. */
 export function useMarkupGroups(archived = false) {
   return useQuery({
     queryKey: groupKeys.table(archived),
     queryFn: ({ signal }) => fetchMarkupGroups({ archived }, signal),
+  })
+}
+
+/**
+ * The catalogue is in here because a markup moves the derived selling price of
+ * every non-overridden item, and a rename moves the group's label on every
+ * item row — neither visible from this screen.
+ */
+function useGroupWriteInvalidation() {
+  const queryClient = useQueryClient()
+
+  return async () => {
+    await queryClient.invalidateQueries({ queryKey: groupKeys.all })
+    await queryClient.invalidateQueries({ queryKey: catalogueKeys.all })
+  }
+}
+
+/** `POST /groups`. A duplicate name is a 409. */
+export function useCreateGroup() {
+  const invalidate = useGroupWriteInvalidation()
+
+  return useMutation({
+    mutationFn: (body: ApiGroupCreate) => createGroup(body),
+    onSuccess: invalidate,
+  })
+}
+
+/** `PATCH /groups/{id}` — one group's name, markup, or both. */
+export function useUpdateGroup() {
+  const invalidate = useGroupWriteInvalidation()
+
+  return useMutation({
+    mutationFn: ({ id, ...body }: GroupChange) => updateGroup(id, body as ApiGroupUpdate),
+    onSuccess: invalidate,
+  })
+}
+
+/**
+ * The press: every dirty row, in one call. Invalidates on settle, not success
+ * — it is a sequence of `PATCH`es, so a failure part-way leaves some of them
+ * saved and the client no longer knows which.
+ */
+export function useApplyGroupChanges() {
+  const invalidate = useGroupWriteInvalidation()
+
+  return useMutation({
+    mutationFn: (changes: GroupChange[]) => applyGroupChanges(changes),
+    onSettled: invalidate,
   })
 }
