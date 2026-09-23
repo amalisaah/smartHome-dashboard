@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AppLayout from '@/components/app/AppLayout.vue'
 import DerivedFigureCard from '@/components/item/DerivedFigureCard.vue'
+import DiscardDialog from '@/components/item/DiscardDialog.vue'
 import ItemEditableFields from '@/components/item/ItemEditableFields.vue'
+import ItemEditActionBar from '@/components/item/ItemEditActionBar.vue'
 import ItemPhoneHeader from '@/components/item/ItemPhoneHeader.vue'
 import ItemSectionRule from '@/components/item/ItemSectionRule.vue'
 import SellingPriceCard from '@/components/item/SellingPriceCard.vue'
@@ -10,6 +13,7 @@ import { useItemDetail } from '@/composables/useItemDetail'
 import { useOnline } from '@/composables/useOnline'
 import { mockItem } from '@/data/itemDetailMock'
 import { UNTITLED } from '@/types/item'
+import { toOverrideIntent } from '@/utils/mapper/itemMapper'
 
 /**
  * The phone's Edit form — B1's field set as one scrolling column.
@@ -25,14 +29,18 @@ import { UNTITLED } from '@/types/item'
 const props = defineProps<{ itemId: number }>()
 
 const online = useOnline()
+const router = useRouter()
 
 const item = ref(mockItem(props.itemId))
 
 const {
   draft,
-  savedLabel,
+  changes,
+  dirty,
+  status,
   tick,
-  saveOnBlur,
+  discard,
+  markSaved,
   state,
   derivedPrice,
   overrideDraft,
@@ -43,7 +51,44 @@ const {
   // This screen *is* the answer to "I want to change this", so its fields are
   // live the moment it opens. The laptop's detail screen gates them behind
   // `Edit`; getting here was that press.
-} = useItemDetail(item, { editable: true })
+} = useItemDetail(item, { editable: true, offline: () => !online.value })
+
+const discardOpen = ref(false)
+const saving = ref(false)
+
+/** The same sequence the real mutation's `onSuccess` will run. */
+async function onSave() {
+  saving.value = true
+  try {
+    const intent = toOverrideIntent(overrideDraft.value)
+    const overridePesewas =
+      state.value === 'derived'
+        ? null
+        : intent.kind === 'set'
+          ? intent.pesewas
+          : derived.value.price.overridePesewas
+
+    item.value = {
+      ...item.value,
+      draft: { ...draft, keywords: [...draft.keywords] },
+      derived: {
+        ...derived.value,
+        price: { ...derived.value.price, state: state.value, overridePesewas },
+      },
+    }
+    markSaved()
+    // Saved is the end of this screen's job, so it hands him back to the item.
+    router.push({ name: 'item-detail', params: { id: props.itemId } })
+  } finally {
+    saving.value = false
+  }
+}
+
+function confirmDiscard() {
+  discardOpen.value = false
+  discard()
+  router.push({ name: 'item-detail', params: { id: props.itemId } })
+}
 
 let clock: ReturnType<typeof setInterval> | undefined
 onMounted(() => (clock = setInterval(tick, 20_000)))
@@ -56,7 +101,6 @@ const crumb = computed(() => `‹ ${draft.name.trim() || UNTITLED}`)
 
 function onPhoto(file: File) {
   draft.photoUrl = URL.createObjectURL(file)
-  saveOnBlur()
 }
 </script>
 
@@ -69,8 +113,6 @@ function onPhoto(file: File) {
       title="Edit"
       :back-label="crumb"
       :back-to="{ name: 'item-detail', params: { id: itemId } }"
-      :saved-label="savedLabel"
-      :offline="!online"
     />
 
     <!-- Decided first, so the figures he is pricing against are read before the
@@ -97,7 +139,7 @@ function onPhoto(file: File) {
       />
     </div>
 
-    <div class="section section--typed" @focusout="saveOnBlur">
+    <div class="section section--typed">
       <ItemSectionRule>Editable</ItemSectionRule>
       <ItemEditableFields
         stacked
@@ -105,9 +147,24 @@ function onPhoto(file: File) {
         :groups="item.groups"
         :units="item.units"
         @photo="onPhoto"
-        @commit="saveOnBlur"
       />
     </div>
+
+    <!-- The way out, at the thumb: what is unsaved, then Save and Discard. -->
+    <ItemEditActionBar
+      :status="status"
+      :dirty="dirty"
+      :saving="saving"
+      @save="onSave"
+      @discard="discardOpen = true"
+    />
+
+    <DiscardDialog
+      v-if="discardOpen"
+      :changes="changes"
+      @discard="confirmDiscard"
+      @keep="discardOpen = false"
+    />
   </AppLayout>
 </template>
 

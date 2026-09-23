@@ -5,6 +5,7 @@ import AppLayout from '@/components/app/AppLayout.vue'
 import AdjustCountSheet from '@/components/item/AdjustCountSheet.vue'
 import ArchiveDialog from '@/components/item/ArchiveDialog.vue'
 import DerivedFigureCard from '@/components/item/DerivedFigureCard.vue'
+import DiscardDialog from '@/components/item/DiscardDialog.vue'
 import ItemDetailHeader from '@/components/item/ItemDetailHeader.vue'
 import ItemEditableFields from '@/components/item/ItemEditableFields.vue'
 import ItemFigureStrip from '@/components/item/ItemFigureStrip.vue'
@@ -21,6 +22,7 @@ import { useOnline } from '@/composables/useOnline'
 import { mockItem } from '@/data/itemDetailMock'
 import type { Movement } from '@/types/item'
 import { formatMoneyWhole, formatShortDate } from '@/utils/format'
+import { toOverrideIntent } from '@/utils/mapper/itemMapper'
 
 const props = defineProps<{ itemId: number }>()
 
@@ -44,9 +46,12 @@ const {
   stopEditing,
   draft,
   group,
-  savedLabel,
+  changes,
+  dirty,
+  status,
   tick,
-  saveOnBlur,
+  discard,
+  markSaved,
   state,
   derivedPrice,
   overrideDraft,
@@ -69,7 +74,55 @@ const {
   closeAdjust,
   recordMovement,
   archiveOpen,
-} = useItemDetail(item)
+} = useItemDetail(item, { offline: () => !online.value })
+
+const discardOpen = ref(false)
+const saving = ref(false)
+
+/**
+ * The press. The write itself is the endpoint's job — `useUpdateItem` is ready
+ * in `@/api/hooks/item` — so while the screen is on the mock this applies the
+ * draft to the record it is holding and then says it is saved, which is the same
+ * sequence the mutation's `onSuccess` will run.
+ */
+async function onSave() {
+  saving.value = true
+  try {
+    const intent = toOverrideIntent(overrideDraft.value)
+    const overridePesewas =
+      state.value === 'derived'
+        ? null
+        : intent.kind === 'set'
+          ? intent.pesewas
+          : derived.value.price.overridePesewas
+
+    item.value = {
+      ...item.value,
+      draft: { ...draft, keywords: [...draft.keywords] },
+      derived: {
+        ...derived.value,
+        price: { ...derived.value.price, state: state.value, overridePesewas },
+      },
+    }
+    markSaved()
+  } finally {
+    saving.value = false
+  }
+}
+
+/** Nothing typed means nothing to confirm — Cancel just closes the mode. */
+function onDiscard() {
+  if (!dirty.value) {
+    stopEditing()
+    return
+  }
+  discardOpen.value = true
+}
+
+function confirmDiscard() {
+  discardOpen.value = false
+  discard()
+}
 
 const fields = ref<InstanceType<typeof ItemEditableFields> | null>(null)
 
@@ -98,15 +151,19 @@ const phoneSell = computed(() =>
 )
 
 function onPhoto(file: File) {
-  // Nothing is uploaded — the zone just shows what was dropped on it.
+  // Nothing is uploaded, and nothing is saved — a dropped photo is a change to
+  // the draft like any other, and Save is what commits it.
   draft.photoUrl = URL.createObjectURL(file)
-  saveOnBlur()
 }
 
 /**
  * The sheet writes a movement; it never edits a total. The balance it carries is
  * the composable's, computed from the last row — the stand-in for what the
  * endpoint will hand back.
+ *
+ * Note it commits on the press, unlike the fields. Adjusting the count is its
+ * own act with its own reason, and the ledger is append-only — there is nothing
+ * for a Save button to batch it with.
  */
 function onRecord() {
   const movement = recordMovement()
@@ -126,7 +183,6 @@ function onRecord() {
     },
   }
   closeAdjust()
-  saveOnBlur()
 }
 
 function onArchive() {
@@ -170,19 +226,22 @@ const openAllMovements = () => {}
       <ItemDetailHeader
         :name="draft.name"
         :group="group"
-        :saved-label="savedLabel"
-        :offline="!online"
+        :status="status"
         :editing="editing"
+        :dirty="dirty"
+        :saving="saving"
         @edit="onEdit"
-        @done="stopEditing"
+        @save="onSave"
+        @discard="onDiscard"
+        @cancel="stopEditing"
         @archive="archiveOpen = true"
       />
 
       <div class="columns">
-        <!-- Left: what he types. White, and solid-bordered throughout.
-             `focusout` rather than `blur`, which does not bubble — the column
-             hears a field being left, so no atom has to announce it. -->
-        <div class="column column--typed" @focusout="saveOnBlur">
+        <!-- Left: what he types. White, and solid-bordered throughout. Nothing
+             here writes: every keystroke goes to the draft store, and the
+             header's Save is the only thing that commits it. -->
+        <div class="column column--typed">
           <ItemSectionRule>Editable</ItemSectionRule>
           <ItemEditableFields
             ref="fields"
@@ -191,7 +250,6 @@ const openAllMovements = () => {}
             :units="item.units"
             :locked="locked"
             @photo="onPhoto"
-            @commit="saveOnBlur"
           />
         </div>
 
@@ -251,6 +309,13 @@ const openAllMovements = () => {}
       :name="draft.name"
       @archive="onArchive"
       @dismiss="archiveOpen = false"
+    />
+
+    <DiscardDialog
+      v-if="discardOpen"
+      :changes="changes"
+      @discard="confirmDiscard"
+      @keep="discardOpen = false"
     />
   </AppLayout>
 </template>

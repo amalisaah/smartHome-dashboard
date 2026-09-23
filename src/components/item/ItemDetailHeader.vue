@@ -2,19 +2,26 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { SBadge, SButton, SText } from '@/components/atoms'
+import type { SaveStatus } from '@/composables/useItemDetail'
 import { NO_GROUP_LABEL, UNTITLED, type ItemGroupRef } from '@/types/item'
 
 const props = defineProps<{
   name: string
   group: ItemGroupRef | null
-  /** `Saved 2 minutes ago`, from the screen's own clock. */
-  savedLabel: string
-  offline?: boolean
-  /** The record is open for typing. `Edit` becomes `Done`. */
+  /**
+   * What the screen has to say about the work: the last save, or the changes
+   * that have not been saved, or what the connection means for them.
+   */
+  status: SaveStatus
+  /** The record is open for typing. */
   editing?: boolean
+  /** Something differs from the record, so there is something to save or throw away. */
+  dirty?: boolean
+  /** The write is in flight, so the header does not take a second press. */
+  saving?: boolean
 }>()
 
-defineEmits<{ archive: []; edit: []; done: [] }>()
+defineEmits<{ archive: []; edit: []; save: []; discard: []; cancel: [] }>()
 
 /** An emptied name still has to be referred to by something. */
 const title = computed(() => props.name.trim() || UNTITLED)
@@ -40,25 +47,50 @@ const untitled = computed(() => props.name.trim() === '')
     </div>
 
     <div class="status">
-      <!-- There is no Save button. This line is the confirmation. -->
+      <!-- Unsaved work reads in risk: it is the one state here where doing
+           nothing costs something. -->
       <SText
         type="cell-meta"
-        :color="offline ? 'risk' : undefined"
+        :color="status.tone === 'risk' ? 'risk' : undefined"
         role="status"
         aria-live="polite"
       >
-        {{ offline ? 'No connection — saved on this device' : savedLabel }}
+        {{ status.label }}
       </SText>
 
-      <!-- The record opens locked. `Done` is not a save — every field has
-           already saved on its own blur — it only puts the record back to
-           being read, which is why it is not a primary button. -->
-      <SButton v-if="editing" variant="secondary" size="md" @click="$emit('done')">Done</SButton>
+      <template v-if="editing">
+        <!-- Two exits, and never a third: with changes it is Save or Discard,
+             without them there is nothing to save and Cancel is the way out. -->
+        <SButton
+          v-if="dirty"
+          variant="ghost"
+          size="md"
+          :disabled="saving"
+          @click="$emit('discard')"
+        >
+          Discard
+        </SButton>
+        <SButton v-else variant="ghost" size="md" @click="$emit('cancel')">Cancel</SButton>
+
+        <SButton size="md" :disabled="!dirty" :loading="saving" @click="$emit('save')">
+          Save
+        </SButton>
+      </template>
+
       <SButton v-else variant="secondary" size="md" @click="$emit('edit')">Edit</SButton>
 
       <!-- The only removal there is, and it is reversible — so it is the
-           ordinary button carrying the warning, not a red one. -->
-      <SButton variant="secondary-risk" size="md" @click="$emit('archive')">Archive</SButton>
+           ordinary button carrying the warning, not a red one. Out of reach
+           while there is unsaved work: archiving with a draft open would be
+           archiving something other than what is on screen. -->
+      <SButton
+        variant="secondary-risk"
+        size="md"
+        :disabled="dirty || saving"
+        @click="$emit('archive')"
+      >
+        Archive
+      </SButton>
     </div>
   </div>
 </template>
