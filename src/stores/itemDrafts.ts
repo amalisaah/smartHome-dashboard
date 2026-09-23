@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import type { ItemDraft } from '@/types/item'
+import { isRecord, isString, isStringArray, sessionFamily } from '@/utils/storage'
 
 /**
  * Unsaved item edits, held for the tab's lifetime.
@@ -14,12 +15,11 @@ import type { ItemDraft } from '@/types/item'
  * mistaken Back; it is not worth surviving until next week, when the figures it
  * was typed against have moved. Closing the tab is the end of it.
  *
- * Storage is a convenience and never a requirement: every access is guarded, and
- * a browser that refuses it simply loses the draft on reload rather than
- * breaking the screen.
+ * Storage is reached through `@/utils/storage` rather than `sessionStorage`
+ * directly: the guarding, the namespacing and the shape check all live there, so
+ * this file is about what a draft *is* and not about what a private window does
+ * to a getter.
  */
-
-const KEY_PREFIX = 'item-draft:'
 
 /** What one unsaved edit is: every field he types, and the price he decided. */
 export interface ItemDraftEntry {
@@ -43,36 +43,30 @@ const drafts = reactive<Record<number, ItemDraftEntry>>({})
 /** Which ids have already been looked for in storage, so a miss is not re-read. */
 const hydrated = new Set<number>()
 
-const storageKey = (id: number) => `${KEY_PREFIX}${id}`
-
-function readStored(id: number): ItemDraftEntry | null {
-  try {
-    const raw = sessionStorage.getItem(storageKey(id))
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as ItemDraftEntry
-    // A shape from an older build is not worth guessing at.
-    if (!parsed?.fields || typeof parsed.override !== 'string') return null
-    return parsed
-  } catch {
-    return null
-  }
+/**
+ * The shape check. A draft written by an older build is dropped, not repaired:
+ * it is half-typed work against a form whose fields may have changed, and a
+ * guess at it would put values in front of him that he never typed.
+ *
+ * Only `fields` is checked structurally — the draft's own field list is
+ * `ItemDraft`, and a missing optional there is indistinguishable from a blank
+ * one, so what matters is that it is an object with the two keys the store
+ * itself relies on.
+ */
+const isDraftEntry = (raw: unknown): ItemDraftEntry | null => {
+  const record = isRecord(raw)
+  if (!record) return null
+  const fields = isRecord(record.fields)
+  if (!fields) return null
+  if (isString(record.override) === null) return null
+  if (isString(record.touchedAt) === null) return null
+  // `keywords` is the one field the screen iterates, so a bad one would throw
+  // in the tag input rather than read as empty.
+  if (isStringArray(fields.keywords) === null) return null
+  return record as unknown as ItemDraftEntry
 }
 
-function persist(id: number, entry: ItemDraftEntry) {
-  try {
-    sessionStorage.setItem(storageKey(id), JSON.stringify(entry))
-  } catch {
-    // Out of quota, or storage disabled. The draft still lives in memory.
-  }
-}
-
-function forget(id: number) {
-  try {
-    sessionStorage.removeItem(storageKey(id))
-  } catch {
-    // Nothing to do — the in-memory delete below is what the screen reads.
-  }
-}
+const stored = sessionFamily<ItemDraftEntry>('item-draft', isDraftEntry)
 
 /**
  * The draft for an item, or null. Hydrates from session storage the first time
@@ -81,8 +75,8 @@ function forget(id: number) {
 export function getDraft(id: number): ItemDraftEntry | null {
   if (!hydrated.has(id)) {
     hydrated.add(id)
-    const stored = readStored(id)
-    if (stored) drafts[id] = stored
+    const found = stored.read(id)
+    if (found) drafts[id] = found
   }
   return drafts[id] ?? null
 }
@@ -96,14 +90,36 @@ export function setDraft(id: number, fields: ItemDraft, override: string) {
     touchedAt: new Date().toISOString(),
   }
   drafts[id] = entry
-  persist(id, entry)
+  stored.write(id, entry)
 }
 
-/** Discard, and a successful Save. Either way there is no longer an unsaved edit. */
+/**
+ * Discard, Cancel, and a successful Save. Every one of them means there is no
+ * longer an unsaved edit, so every one of them comes through here — and it
+ * clears memory and storage together, because a draft left in only one of them
+ * is a draft that comes back on the next reload.
+ */
 export function clearDraft(id: number) {
   delete drafts[id]
-  forget(id)
+  stored.clear(id)
 }
 
 /** For a screen that wants to know before it reads. */
 export const hasDraft = (id: number) => getDraft(id) !== null
+
+/**
+ * Which items are carrying unsaved work. The app bar can ask this without
+ * knowing how a draft key is spelled — it is the honest source for a global
+ * "unsaved changes" line, which currently still reads `all changes saved`.
+ */
+export function draftedItemIds(): number[] {
+  const fromMemory = Object.keys(drafts).map(Number)
+  const fromStorage = stored.ids().map(Number).filter(Number.isInteger)
+  return [...new Set([...fromMemory, ...fromStorage])]
+}
+
+/** Everything, on sign-out or a hard reset. */
+export function clearAllDrafts() {
+  for (const id of Object.keys(drafts).map(Number)) delete drafts[id]
+  stored.clearAll()
+}

@@ -9,9 +9,16 @@ import {
   type SortColumn,
   type SortDirection,
 } from '@/types/catalogue'
+import { isString, sessionValue } from '@/utils/storage'
 
 const SEARCH_DEBOUNCE_MS = 150
-const GROUP_FILTER_KEY = 'catalogue.groupFilter'
+
+/**
+ * The group he last filtered to, for the tab's lifetime. A slug rather than an
+ * id, and validated only as a string here: whether it still names a live group
+ * cannot be known until `GET /groups` lands, which the watcher below checks.
+ */
+const storedGroupFilter = sessionValue<GroupFilter>('catalogue:group-filter', isString)
 
 export const SORT_COLUMN_LABELS: Record<SortColumn, string> = {
   name: 'name',
@@ -40,15 +47,6 @@ function compareText(a: string | null, b: string | null, direction: SortDirectio
   return direction === 'asc' ? a.localeCompare(b) : b.localeCompare(a)
 }
 
-function readStoredGroup(): GroupFilter {
-  try {
-    return sessionStorage.getItem(GROUP_FILTER_KEY) ?? ALL_GROUPS
-  } catch {
-    // Session storage can be unavailable; the default is fine.
-    return ALL_GROUPS
-  }
-}
-
 /**
  * Search, filter and sort over a catalogue that is already loaded. It owns no
  * requests: the view fetches with the hooks in `@/api/hooks/catalogue` and hands
@@ -69,7 +67,7 @@ export function useCatalogueList(
 
   const query = ref('')
   const debouncedQuery = ref('')
-  const groupFilter = ref<GroupFilter>(readStoredGroup())
+  const groupFilter = ref<GroupFilter>(storedGroupFilter.readOr(ALL_GROUPS))
   const lowStockOnly = ref(false)
   const attentionOnly = ref(false)
   const sortColumn = ref<SortColumn>('name')
@@ -84,13 +82,9 @@ export function useCatalogueList(
     debounceTimer = setTimeout(() => (debouncedQuery.value = value), SEARCH_DEBOUNCE_MS)
   })
 
-  watch(groupFilter, (value) => {
-    try {
-      sessionStorage.setItem(GROUP_FILTER_KEY, value)
-    } catch {
-      // Persisting the group is a convenience, never a requirement.
-    }
-  })
+  // Persisting the group is a convenience, never a requirement — the store
+  // swallows a browser that refuses it.
+  watch(groupFilter, (value) => storedGroupFilter.write(value))
 
   // The stored slug came from a previous session, and a group can have been
   // renamed away or archived since. Checked when the groups land, not before —

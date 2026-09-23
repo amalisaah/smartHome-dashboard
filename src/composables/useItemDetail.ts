@@ -89,7 +89,21 @@ export function useItemDetail(
   const editing = ref(options?.editable === true || getDraft(item.value.id) !== null)
 
   const startEditing = () => (editing.value = true)
-  const stopEditing = () => (editing.value = false)
+
+  /**
+   * Leave edit mode, and leave nothing behind in the store.
+   *
+   * `Cancel` only appears when nothing differs, and the watcher below has
+   * already cleared the draft in that case — but not always: a draft restored
+   * from a previous page load that happens to *equal* the record is not dirty,
+   * so nothing has changed for the watcher to fire on, and it would sit in
+   * session storage being re-read on every mount. Clearing unconditionally here
+   * means one rule holds without exception: no edit mode, no draft.
+   */
+  const stopEditing = () => {
+    clearDraft(item.value.id)
+    editing.value = false
+  }
 
   /** The fields are inert unless he has said he is editing. */
   const locked = computed(() => !editing.value)

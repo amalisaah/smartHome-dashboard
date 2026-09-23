@@ -341,3 +341,22 @@ that opened over another)
 - **The dot, never the spinner.** Local-first saving is a state, not progress, and no screen
   where something is being typed may wait on the network or disable a control when it drops.
 - **New atoms go in** `src/components/atoms/` and must be prefixed `S`.
+- **Browser storage goes through** `@/utils/storage` — never `sessionStorage`, `localStorage` or
+  `document.cookie` directly. Every access there is guarded (the *getter* throws in a private
+  window, not just the setter), every key is namespaced `sho:`, and every value passes a
+  `Validator<T>` on the way out, so a caller gets `T` or `null` and never a stale half-shape.
+  Anything invalid or unparseable is dropped rather than re-rejected on the next mount, and a
+  store that cannot be reached falls back to memory so the page still works.
+
+  ```ts
+  const filter = sessionValue<GroupFilter>('catalogue:group-filter', isString)
+  filter.readOr(ALL_GROUPS)
+
+  const drafts = sessionFamily<ItemDraftEntry>('item-draft', isDraftEntry)  // keyed by id
+  drafts.read(42); drafts.ids(); drafts.clearAll()
+  ```
+
+  Session for anything half-finished; `localValue` only for a setting he would resent setting
+  twice — never for unsaved work, which goes stale against figures that move. To add another
+  backing store (cookies, IndexedDB), write a `StorageDriver` and export an accessor beside
+  `sessionValue`; nothing above that file changes.
