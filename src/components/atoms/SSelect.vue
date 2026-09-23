@@ -12,8 +12,11 @@ defineProps<{
   required?: boolean
   /** `chip` matches the filter-chip metrics — used on the phone filter row. */
   variant?: 'default' | 'chip'
-  /** `field` is the shipment meta strip's door, one step taller than `md`. */
-  size?: 'md' | 'field'
+  /**
+   * `field` is the shipment meta strip's door, one step taller than `md`; `lg`
+   * is the 48px phone door, matching `SInput`'s.
+   */
+  size?: 'md' | 'field' | 'lg'
   /** Use when the control has no visible label. */
   ariaLabel?: string
 }>()
@@ -148,9 +151,12 @@ const fieldId = useId()
   pointer-events: none;
 }
 
+/* Not live. One disabled vocabulary across every field: onto `--surface`, inert,
+   and the value still at full ink — an opacity here would fade the one thing a
+   locked field exists to show. */
 .s-select-wrap--disabled {
   background: var(--color-surface);
-  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .s-select {
@@ -176,9 +182,17 @@ const fieldId = useId()
   padding: 11px 36px 11px 12px;
 }
 
+/* The phone door, matching SInput's `lg`: same height, same text size, so a
+   stacked form of fields and selects reads as one column of doors. */
+.s-select--lg {
+  padding: 12px 36px 12px 12px;
+  font-size: 15px;
+  min-height: 48px;
+}
+
 .s-select:disabled {
   cursor: not-allowed;
-  color: var(--color-fg-2);
+  color: var(--color-fg);
 }
 
 .s-select-icon {

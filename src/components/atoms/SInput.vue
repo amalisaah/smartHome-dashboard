@@ -76,6 +76,7 @@ defineExpose({ focus: () => inputEl.value?.focus() })
           's-input-wrap--derived': derived,
           's-input-wrap--dashed': showDashes,
           's-input-wrap--has-prefix': prefix,
+          's-input-wrap--disabled': disabled && !derived,
         },
       ]"
     >
@@ -141,8 +142,22 @@ defineExpose({ focus: () => inputEl.value?.focus() })
 }
 
 /* Reaching for a field firms up its border before you are in it. */
-.s-input-wrap:hover:not(:focus-within):not(.s-input-wrap--derived):not(.s-input-wrap--error):not(.s-input-wrap--accent) {
+.s-input-wrap:hover:not(:focus-within):not(.s-input-wrap--derived):not(.s-input-wrap--error):not(.s-input-wrap--accent):not(.s-input-wrap--disabled) {
   border-color: var(--color-fg-3);
+}
+
+/* Not live. The field recedes onto `--surface` and stops answering — but the
+   value keeps full ink, because a locked field still holds something he needs
+   to read. Greying the value would be the one treatment that makes his own
+   record harder to read than the screen's.
+   Scoped to the plain variant: `flat` draws no box by design, and `accent`
+   carries a border that means something, so neither takes a fill. */
+.s-input-wrap--default.s-input-wrap--disabled {
+  background: var(--color-surface);
+}
+
+.s-input-wrap--disabled {
+  cursor: not-allowed;
 }
 
 .s-input-wrap--accent:hover:not(:focus-within) {
@@ -335,6 +350,16 @@ defineExpose({ focus: () => inputEl.value?.focus() })
   font-size: 13px;
   color: var(--color-fg-2);
   cursor: not-allowed;
+}
+
+/* The value it holds is still the value. Only the field is inert. */
+.s-input:disabled {
+  color: var(--color-fg);
+  cursor: not-allowed;
+}
+
+.s-input--derived:disabled {
+  color: var(--color-fg-2);
 }
 
 .s-input-hint {

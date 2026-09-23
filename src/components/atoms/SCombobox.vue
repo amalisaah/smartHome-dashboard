@@ -363,9 +363,11 @@ watch(() => props.modelValue, () => {
   flex-shrink: 0;
 }
 
+/* Not live — the same treatment every other field takes. The value keeps full
+   ink; only the field stops answering. */
 .s-cbx-wrap--disabled {
   background: var(--color-surface);
-  opacity: 0.6;
+  cursor: not-allowed;
   pointer-events: none;
 }
 

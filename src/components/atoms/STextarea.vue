@@ -45,7 +45,10 @@ defineExpose({ focus: () => textareaEl.value?.focus() })
     >
       {{ label }}<span v-if="required" class="s-textarea-required"> *</span>
     </label>
-    <div class="s-textarea-wrap" :class="{ 's-textarea-wrap--error': error }">
+    <div
+      class="s-textarea-wrap"
+      :class="{ 's-textarea-wrap--error': error, 's-textarea-wrap--disabled': disabled }"
+    >
       <textarea
         ref="textareaEl"
         :id="fieldId"
@@ -97,8 +100,15 @@ defineExpose({ focus: () => textareaEl.value?.focus() })
 }
 
 /* Reaching for a field firms up its border before you are in it. */
-.s-textarea-wrap:hover:not(:focus-within):not(.s-textarea-wrap--error) {
+.s-textarea-wrap:hover:not(:focus-within):not(.s-textarea-wrap--error):not(.s-textarea-wrap--disabled) {
   border-color: var(--color-fg-3);
+}
+
+/* Not live — the same treatment every other field takes: onto `--surface`,
+   inert, and the prose still readable. */
+.s-textarea-wrap--disabled {
+  background: var(--color-surface);
+  cursor: not-allowed;
 }
 
 .s-textarea-wrap:focus-within {
@@ -138,8 +148,11 @@ defineExpose({ focus: () => textareaEl.value?.focus() })
 }
 
 .s-textarea:disabled {
-  color: var(--color-fg-2);
+  color: var(--color-fg);
   cursor: not-allowed;
+  /* Not resizable while it is not editable: the handle would be the one thing
+     on a locked field that still answered. */
+  resize: none;
 }
 
 .s-textarea-hint {

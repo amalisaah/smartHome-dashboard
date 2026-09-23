@@ -29,6 +29,13 @@ const SHORT_MONTH = new Intl.DateTimeFormat('en-US', { month: 'short' })
 /** Money inside a table cell or a phone row — two decimals, no currency mark. */
 export const formatMoney = (pesewas: number) => TWO_DP.format(pesewas / 100)
 
+/**
+ * Money with the decimals dropped — the phone's `Sell` figure, and only that.
+ * It is the number he says out loud in a customer's house, and nobody says the
+ * pesewas out loud. Everywhere else money keeps two decimals.
+ */
+export const formatMoneyWhole = (pesewas: number) => WHOLE.format(pesewas / 100)
+
 /** A summary figure — `GH₵` appears here and in form prefixes, nowhere else. */
 export const formatCurrency = (pesewas: number) => `GH₵ ${WHOLE.format(pesewas / 100)}`
 

@@ -3,6 +3,8 @@ import AllocationPreviewView from '@/views/AllocationPreviewView.vue'
 import CatalogueListView from '@/views/CatalogueListView.vue'
 import DesignSystemView from '@/views/DesignSystemView.vue'
 import GroupsMarkupView from '@/views/GroupsMarkupView.vue'
+import ItemDetailView from '@/views/ItemDetailView.vue'
+import ItemEditView from '@/views/ItemEditView.vue'
 import ShipmentBuilderView from '@/views/ShipmentBuilderView.vue'
 import ShipmentsListView from '@/views/ShipmentsListView.vue'
 
@@ -13,6 +15,22 @@ export const router = createRouter({
       path: '/',
       name: 'catalogue',
       component: CatalogueListView,
+    },
+    {
+      // One catalogue item. `/items` rather than `/catalogue` because that is
+      // the resource the API names, and the list at `/` is a view of it.
+      path: '/items/:id(\\d+)',
+      name: 'item-detail',
+      component: ItemDetailView,
+      props: (route) => ({ itemId: Number(route.params.id) }),
+    },
+    {
+      // The phone's Edit form. Its own address, so the back gesture closes the
+      // form rather than leaving the item.
+      path: '/items/:id(\\d+)/edit',
+      name: 'item-edit',
+      component: ItemEditView,
+      props: (route) => ({ itemId: Number(route.params.id) }),
     },
     {
       path: '/shipments',

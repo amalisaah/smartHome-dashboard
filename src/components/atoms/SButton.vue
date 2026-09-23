@@ -1,7 +1,11 @@
 <script setup lang="ts">
 defineProps<{
-  /** `create` is the inline-create chip beside a combobox: mono, action text. */
-  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive' | 'create'
+  /**
+   * `create` is the inline-create chip beside a combobox: mono, action text.
+   * `secondary-risk` is the secondary door carrying risk ink — a removal that
+   * is reversible, and so must not read as a red destructive button.
+   */
+  variant?: 'primary' | 'secondary' | 'secondary-risk' | 'ghost' | 'destructive' | 'create'
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
   /** The action is in flight. The button is inert while it holds, so it goes once. */
@@ -93,6 +97,22 @@ defineProps<{
 }
 
 .s-btn--secondary:hover:not([disabled]) {
+  background: var(--color-surface);
+}
+
+/* Archive, and any removal like it. The same box as `secondary` — it is not a
+   louder button, it is the ordinary one — with the ink saying what it costs.
+   `destructive`'s solid risk fill is for the act that cannot be undone; this is
+   for the act that hides a record and keeps every movement under it. The ink
+   holds through hover: the warning is what the button is, not a reaction. */
+.s-btn--secondary-risk {
+  background: var(--color-bg);
+  color: var(--color-risk);
+  border-color: var(--color-line);
+  box-shadow: var(--shadow-elev-1);
+}
+
+.s-btn--secondary-risk:hover:not([disabled]) {
   background: var(--color-surface);
 }
 

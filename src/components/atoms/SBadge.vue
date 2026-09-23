@@ -15,6 +15,7 @@ defineProps<{
     | 'draft'
     | 'received'
     | 'neutral'
+    | 'missing'
   /**
    * `row` is the in-row flag chip: lowercase, untracked, tighter box.
    * `state` is the sentence-shaped chip — `draft · arrives 24 Sep` — at 11px.
@@ -72,6 +73,16 @@ defineProps<{
   background: transparent;
   color: var(--color-fg-2);
   border: 1px dashed var(--color-fg-3);
+}
+
+/* `draft` in risk ink: a blank that is holding something up — `no group`. Dashed
+   because it is not-yet rather than not-yours, and risk because the blank costs
+   something. It completes the chip vocabulary's one open corner: `draft` is the
+   quiet not-yet, `incomplete` the solid-bordered problem, this the loud not-yet. */
+.s-badge--missing {
+  background: transparent;
+  color: var(--color-risk);
+  border: 1px dashed var(--color-risk);
 }
 
 /* A chip that reports a count rather than labelling a category, so it reads at

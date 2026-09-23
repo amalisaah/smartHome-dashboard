@@ -64,8 +64,10 @@ const showEmptyState = computed(
 // A shipment started from here has no ref yet — it is numbered by the save.
 const logShipment = () => router.push({ name: 'shipment-new' })
 
+const openItem = (item: CatalogueItem) =>
+  router.push({ name: 'item-detail', params: { id: item.id } })
+
 // The screens these lead to are out of scope for this handoff.
-const openItem = (_item: CatalogueItem) => {}
 const openDraft = () => {}
 const addItemManually = () => {}
 const addFromQuery = () => {}

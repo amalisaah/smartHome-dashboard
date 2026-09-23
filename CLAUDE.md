@@ -19,6 +19,7 @@ with inline styles or arbitrary values when a design system primitive exists.
 | `<STextarea>` | `@/components/atoms/STextarea.vue` | Prose — notes, reasons, anything that wraps |
 | `<SSelect>` | `@/components/atoms/SSelect.vue` | Fixed-option dropdowns |
 | `<SCombobox>` | `@/components/atoms/SCombobox.vue` | Searchable dropdowns, free-text entry |
+| `<STagInput>` | `@/components/atoms/STagInput.vue` | A field whose value is a list of short words — keywords |
 | `<SDate>` | `@/components/atoms/SDate.vue` | Any date the user picks — order date, expected arrival |
 | `<SSegmented>` | `@/components/atoms/SSegmented.vue` | 2–3 option toggle controls (e.g. Grouped / Itemised) |
 | `<SFilterChip>` | `@/components/atoms/SFilterChip.vue` | Toggleable filter chips (low stock, needs attention, group) |
@@ -103,6 +104,7 @@ Only pass `color` when deviating from the type role's default.
 ```vue
 <SButton>Accept quote</SButton>                          <!-- primary, md -->
 <SButton variant="secondary">Save draft</SButton>
+<SButton variant="secondary-risk">Archive</SButton>       <!-- secondary door, risk ink -->
 <SButton variant="ghost">Cancel</SButton>
 <SButton variant="destructive">Archive item</SButton>
 <SButton :disabled="true">Send</SButton>
@@ -118,6 +120,11 @@ horizontally compact so it still shares a 390px action bar. Both use `rounded-md
 gets the nearest of these, not a fourth size: the shipment builder's header and action-bar
 buttons are `lg`, its primaries are `md`. Consequence to expect — a 14px button comes out
 6–8px taller than drawn, and every label reads at weight 500 rather than 600.
+
+`variant="secondary-risk"` is a **reversible** removal — Archive. Same box as `secondary`, with
+the ink saying what it costs, and the ink holds through hover because the warning is what the
+button is rather than a reaction to being approached. `destructive`'s solid risk fill is for the
+act that cannot be undone; hiding a record whose movements are all kept is not that act.
 
 `variant="create"` is the inline-create chip beside a combobox — mono, because what it
 creates is the query quoted back, and action-blue because creating is the affordance. At
@@ -140,12 +147,16 @@ creates is the query quoted back, and action-blue because creating is the afford
 <SBadge variant="draft" size="state">draft · arrives 24 Sep</SBadge>
 <SBadge variant="received" size="state">received 12 Aug</SBadge>
 <SBadge variant="neutral" size="state">3 costs down</SBadge>
+<SBadge variant="missing" size="state">no group</SBadge>
 ```
 
 `size="state"` is the sentence-shaped chip at 11px (`5px 9px`, `rounded-chip`, no tracking),
 for a chip that says a state or a count rather than labelling a category. `draft` is dashed
 `--color-fg-3` on nothing; `received` is a solid `--color-line` fill with no border at all.
-Keep the two vocabularies apart: **dashed means not-yet, solid means committed.**
+Keep the two vocabularies apart: **dashed means not-yet, solid means committed.** `missing` is the
+loud not-yet — dashed in risk, for a blank that is holding something up (`no group`). That closes
+the vocabulary's one open corner: `draft` is the quiet not-yet, `incomplete` the solid-bordered
+problem, `missing` the not-yet that costs something.
 
 `size="row"` is the in-row flag chip — lowercase, untracked, `3px 6px`, `rounded-flag`. Use it
 for flags that state a problem in words inside a table row:
@@ -224,6 +235,31 @@ a figure is never prose, and prose never sits in a table row. Text is 14px at 1.
 (the fields that hold values declare no leading; prose that wraps takes it). It resizes
 vertically only — widening it would break the frame it sits in.
 
+### STagInput
+
+The field whose value is a list rather than a value. It labels, hovers and focuses exactly as
+`SInput` does — it is a field — but its value is committed in front of him, chip by chip, instead
+of sitting in a box waiting to be read back. The chips are `SBadge variant="neutral" size="state"`:
+solid, because a keyword is his. The entry at the end is mono at chip size, so a word looks the
+same while it is typed as it will once it is a chip.
+
+```vue
+<STagInput v-model="draft.keywords" label="Keywords" />
+<STagInput :model-value="item.keywords" readonly ariaLabel="Keywords" />  <!-- the phone's posture -->
+```
+
+- **Enter or comma commits**; blurring with a word half-typed commits it too — leaving is not
+  discarding. Escape clears what is half-typed and stays in the field, as `SCombobox` does.
+- **Backspace in an empty entry arms the last chip; a second Backspace takes it.** Nothing goes on
+  the first press, and the armed chip shows the ring — this system's one selection signal.
+- `readonly` drops the `×` and the entry and takes the box away with them: the words, with nothing
+  to suggest they can be changed here.
+- `size="lg"` is the phone door. The chips keep their size — a keyword is the same word on either
+  device — so the room goes into the box around them.
+- The `×` is **out of the tab order**: the field is one tab stop, and Backspace is the keyboard
+  path. Its touch target grows around the mark and stops at half the chip gap; a 48px one would
+  force the chips 48px apart, and a chip list is drawn at 6px.
+
 ### SDate
 
 A date is picked, never typed as prose. `SDate` is SInput with the browser's date
@@ -292,6 +328,14 @@ that opened over another)
 - **One focus treatment.** Every field focuses the same way: a 1px `--color-action` border plus a
   2px `--color-action` outline at `-1px` offset. Reaching for a field firms its border to
   `--color-fg-3` first. Buttons and rows take a 2px `--color-action` outline instead.
+- **One disabled treatment.** A field that is not live recedes onto `--color-surface`, keeps its
+  solid `--color-line` border, stops firming on hover, and takes `cursor: not-allowed` — but its
+  **value stays at full `--color-fg`**. A locked field still holds something he needs to read, and
+  greying the value is the one treatment that makes his own record harder to read than the
+  screen's. Same on `SInput`, `SSelect`, `SCombobox`, `STextarea` and `STagInput`; `flat` and
+  `accent` take no fill, since one draws no box by design and the other's border means something.
+  Not to be confused with `derived`, which is dashed: disabled is *yours, not now*; dashed is
+  *never yours*.
 - **Validation appears in the row that has the problem**, expressed as the consequence
   (`blocks receiving`), never as a banner or a summary list elsewhere.
 - **The dot, never the spinner.** Local-first saving is a state, not progress, and no screen
