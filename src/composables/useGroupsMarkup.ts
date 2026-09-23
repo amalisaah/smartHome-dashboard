@@ -1,18 +1,19 @@
-import { computed, reactive, ref } from 'vue'
-import {
-  createGroup,
-  MOCK_GROUPS_TABLE,
-  projectMarkup,
-  settledMargin,
-  slugify,
-} from '@/data/groupsMock'
+import { computed, reactive, toValue, watch, type MaybeRefOrGetter } from 'vue'
 import {
   bpsToMarkup,
   markupToBps,
+  slugify,
   type CommitSummary,
   type MarkupGroup,
   type MarkupProjection,
 } from '@/types/groups'
+
+/** One row's press, as the screen holds it. The view maps it to the wire. */
+export interface PendingEdit {
+  id: number
+  name?: string
+  markupBps?: number
+}
 
 /** One row as the table draws it: the saved group, plus what he is typing at it. */
 export interface MarkupRow {
@@ -75,25 +76,54 @@ const RENAME_DETAIL =
  * consequence of every draft worked out while he types. A group can be created
  * here; nothing here deletes or reorders one.
  */
-export function useGroupsMarkup() {
-  /** The saved side. Apply writes here; Discard reads back from it. */
-  const groups = ref<MarkupGroup[]>(MOCK_GROUPS_TABLE.map((group) => ({ ...group })))
+export function useGroupsMarkup(source: MaybeRefOrGetter<MarkupGroup[]>) {
+  /** The saved side, as the server last answered it. Discard reads back from it. */
+  const groups = computed(() => toValue(source))
 
-  /** What each field holds, by slug. Seeded from the saved markup at two decimals. */
-  const drafts = reactive<Record<string, string>>(
-    Object.fromEntries(groups.value.map((group) => [group.slug, bpsToMarkup(group.markupBps)])),
-  )
+  /** What each markup field holds — text, because it is mid-typed most of its life. */
+  const drafts = reactive<Record<string, string>>({})
 
   /**
    * What each name field holds. The slug is never one of these: it is the
    * group's identity, and every catalogue item points at it, so a rename
    * changes the label and nothing else.
    */
-  const names = reactive<Record<string, string>>(
-    Object.fromEntries(groups.value.map((group) => [group.slug, group.name])),
+  const names = reactive<Record<string, string>>({})
+
+  /**
+   * What the server last said each field was. A field still holding that
+   * follows the next answer; a field he has typed into keeps his text. Without
+   * it a background refetch would either stamp on what he is writing or leave
+   * a row reading dirty against a value nobody edited.
+   */
+  const answered = new Map<string, { markup: string; name: string }>()
+
+  watch(
+    groups,
+    (list) => {
+      const live = new Set(list.map((group) => group.slug))
+      for (const slug of Object.keys(drafts)) {
+        if (live.has(slug)) continue
+        delete drafts[slug]
+        delete names[slug]
+        answered.delete(slug)
+      }
+
+      for (const group of list) {
+        const markup = bpsToMarkup(group.markupBps)
+        const last = answered.get(group.slug)
+        if (!last || drafts[group.slug] === last.markup) drafts[group.slug] = markup
+        if (!last || names[group.slug] === last.name) names[group.slug] = group.name
+        answered.set(group.slug, { markup, name: group.name })
+      }
+    },
+    { immediate: true },
   )
 
-  /** The change a row is holding, or null when it is holding none. */
+  /**
+   * The change a row is holding, or null when it is holding none. An overridden
+   * item keeps the price it was given, so the change reaches the rest.
+   */
   function changeAt(group: MarkupGroup): MarkupProjection | null {
     const text = drafts[group.slug] ?? ''
     if (!usable(text)) return null
@@ -101,7 +131,11 @@ export function useGroupsMarkup() {
     const bps = markupToBps(text)
     if (bps === group.markupBps) return null
 
-    return projectMarkup(group.slug, bps)
+    return {
+      slug: group.slug,
+      markupBps: bps,
+      affectedCount: group.itemCount - group.overriddenCount,
+    }
   }
 
   /** The name a row would be saved under, or null when it has not moved. */
@@ -269,25 +303,21 @@ export function useGroupsMarkup() {
   }
 
   /**
-   * A new group, saved the moment it is made — there is nothing to preview,
-   * because an empty group reprices nothing.
+   * A new group as `POST /groups` wants it, or null when the name is not one.
    *
-   * The markup is optional: left blank, the group starts at `1.00`, which is
-   * the only honest reading of a blank markup — it sells at cost until he says
-   * otherwise. The dialog says so before he presses.
+   * Group names are a lowercase vocabulary — `lighting`, `switching` — and the
+   * slug is lowercase regardless, so the name follows it. The markup is
+   * optional: blank means 0 bps, a markup of 1.00, which is the only honest
+   * reading of a blank — it sells at cost until he says otherwise.
    */
-  function addGroup(name: string, markupText: string) {
-    // Group names are a lowercase vocabulary — `lighting`, `switching`. A row
-    // reading `Smoke & gas` among eight of those is the odd one out, and the
-    // slug is lowercase regardless, so the name follows it.
-    const trimmed = name.trim().toLowerCase()
+  function newGroup(name: string, markupText: string) {
+    const trimmed = settled(name)
     if (!trimmed || nameTaken(trimmed)) return null
 
-    const group = createGroup(trimmed, usable(markupText) ? markupToBps(markupText) : 0)
-    groups.value = [...groups.value, group]
-    drafts[group.slug] = bpsToMarkup(group.markupBps)
-    names[group.slug] = group.name
-    return group
+    return {
+      name: trimmed,
+      default_markup_bps: usable(markupText) ? markupToBps(markupText) : 0,
+    }
   }
 
   // --- what he does to a row -------------------------------------------------
@@ -341,33 +371,23 @@ export function useGroupsMarkup() {
   }
 
   /**
-   * The press. Every dirty row's drafts become what is saved — the bar
-   * dismisses because nothing is dirty any more, not because it was told to.
-   * A row whose name is not usable holds the press, and says why in the row.
+   * What the press would send: one entry per dirty row, carrying only the
+   * halves that moved. Empty while a row's name is not usable — that row holds
+   * the whole press, and says why in itself.
    *
-   * The margin settles here to what the group reports *after* the write, which
-   * is the figure the refetch would bring back. It was never shown before the
-   * press: the row does not project it.
+   * Nothing settles locally. The rows re-read from the server's answer, so the
+   * bar dismisses because the drafts match what came back, not because it was
+   * told to — and a write that fails leaves everything he typed where it is.
    */
-  function apply() {
-    if (!commit.value || blocked.value) return
+  const pendingEdits = computed<PendingEdit[]>(() => {
+    if (blocked.value) return []
 
-    groups.value = groups.value.map((group) => {
-      const projection = changeAt(group)
-      const settledGroup = { ...group, name: renameAt(group) ?? group.name }
-      if (!projection) return settledGroup
-      return {
-        ...settledGroup,
-        markupBps: projection.markupBps,
-        avgMarginPercent: settledMargin(projection.markupBps),
-      }
-    })
-
-    for (const group of groups.value) {
-      drafts[group.slug] = bpsToMarkup(group.markupBps)
-      names[group.slug] = group.name
-    }
-  }
+    return dirtyRows.value.map((row) => ({
+      id: row.group.id,
+      ...(row.rename === null ? {} : { name: row.rename }),
+      ...(row.projection === null ? {} : { markupBps: row.projection.markupBps }),
+    }))
+  })
 
   return {
     rows,
@@ -375,7 +395,8 @@ export function useGroupsMarkup() {
     affectedCount,
     blocked,
     commit,
-    addGroup,
+    pendingEdits,
+    newGroup,
     nameTaken,
     setDraft,
     setName,
@@ -383,6 +404,5 @@ export function useGroupsMarkup() {
     normaliseName,
     revert,
     discardAll,
-    apply,
   }
 }

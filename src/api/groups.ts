@@ -1,7 +1,6 @@
 /**
  * The seam between the wire and the groups & markup screen. Answers are mapped
  * through `@/utils/mapper/groupsMapper`, so no component sees a snake_case key.
- * The screen runs on `@/data/groupsMock` until this is wired.
  */
 
 import type { ApiGroup } from '@/types/api'

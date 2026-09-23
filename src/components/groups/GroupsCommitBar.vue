@@ -8,6 +8,8 @@ defineProps<{
   offline?: boolean
   /** A row holds a name it cannot be saved under. That row says which. */
   blocked?: boolean
+  /** The write is in flight, so the bar does not take a second press. */
+  saving?: boolean
 }>()
 
 defineEmits<{ discard: []; apply: [] }>()
@@ -31,10 +33,17 @@ defineEmits<{ discard: []; apply: [] }>()
     <div class="exits">
       <!-- No confirm on either: the bar is the confirmation, and re-typing the
            number is the undo. -->
-      <SButton variant="ghost" size="md" @click="$emit('discard')">Discard</SButton>
+      <SButton variant="ghost" size="md" :disabled="saving" @click="$emit('discard')">
+        Discard
+      </SButton>
       <!-- Blocked says only that it is waiting on a row; the row it is waiting
            on carries the reason, so the bar does not repeat it here. -->
-      <SButton size="md" :disabled="offline || blocked" @click="$emit('apply')">
+      <SButton
+        size="md"
+        :disabled="offline || blocked"
+        :loading="saving"
+        @click="$emit('apply')"
+      >
         {{
           blocked
             ? 'Apply — a name needs fixing'

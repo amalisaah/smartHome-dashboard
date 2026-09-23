@@ -15,8 +15,12 @@ export interface MarkupGroup {
   /** The saved markup — what the input reverts to. Basis points. */
   markupBps: number
   itemCount: number
-  /** Whole percent, as drawn. */
-  avgMarginPercent: number
+  /**
+   * Whole percent, as drawn. Null where there is no priced stock to take a
+   * share of — an empty group, or one nothing has been received into. Null
+   * rather than 0, which would read as selling at cost.
+   */
+  avgMarginPercent: number | null
   /**
    * What the stock in this group cost to put on the shelf — integer pesewas,
    * stock × landed unit cost, the same figure the catalogue calls capital in
@@ -74,3 +78,15 @@ export const markupToBps = (text: string) => Math.round((Number(text) - 1) * 10_
 
 /** Basis points → the two decimals the field holds. */
 export const bpsToMarkup = (bps: number) => (1 + bps / 10_000).toFixed(2)
+
+/**
+ * `Smoke & gas` → `smoke-gas`. The server mints the real slug on create; this
+ * is the client's copy of the rule, so a name that would collide is refused
+ * before the press rather than coming back a 409.
+ */
+export const slugify = (name: string) =>
+  name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')

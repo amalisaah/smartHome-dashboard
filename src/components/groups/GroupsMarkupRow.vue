@@ -22,7 +22,11 @@ const dirty = computed(() => props.row.projection !== null || props.row.rename !
  * markup reaches and the ones pricing themselves, which the group row does not
  * carry. The consequence of the change is stated in the commit bar instead.
  */
-const margin = computed(() => formatMargin(props.row.group.avgMarginPercent))
+const margin = computed(() =>
+  props.row.group.avgMarginPercent === null
+    ? '—'
+    : formatMargin(props.row.group.avgMarginPercent),
+)
 
 /** What this group's stock cost to put on the shelf — what the markup rides on. */
 const capital = computed(() => formatMoney(props.row.group.capitalInStockPesewas))

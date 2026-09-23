@@ -1,18 +1,29 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
-import { SButton, SText } from '@/components/atoms'
+import { computed, nextTick, ref } from 'vue'
+import { SBanner, SButton, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import AddGroupDialog from '@/components/groups/AddGroupDialog.vue'
 import GroupsCommitBar from '@/components/groups/GroupsCommitBar.vue'
 import GroupsMarkupRow from '@/components/groups/GroupsMarkupRow.vue'
+import {
+  useApplyGroupChanges,
+  useCreateGroup,
+  useMarkupGroups,
+} from '@/api/hooks/groups'
+import type { GroupChange } from '@/api/groups'
 import { useGroupsMarkup } from '@/composables/useGroupsMarkup'
 import { useOnline } from '@/composables/useOnline'
+
+const groupsQuery = useMarkupGroups()
+const createMutation = useCreateGroup()
+const applyMutation = useApplyGroupChanges()
 
 const {
   rows,
   commit,
   blocked,
-  addGroup,
+  pendingEdits,
+  newGroup,
   nameTaken,
   setDraft,
   setName,
@@ -20,8 +31,8 @@ const {
   normaliseName,
   revert,
   discardAll,
-  apply,
-} = useGroupsMarkup()
+} = useGroupsMarkup(() => groupsQuery.data.value ?? [])
+
 const online = useOnline()
 
 const table = ref<HTMLElement | null>(null)
@@ -29,16 +40,38 @@ const table = ref<HTMLElement | null>(null)
 const adding = ref(false)
 const addButton = ref<InstanceType<typeof SButton> | null>(null)
 
+/** Either write is in flight — the bar says so rather than taking a second press. */
+const saving = computed(() => applyMutation.isPending.value || createMutation.isPending.value)
+
 /** Closing a dialog puts the keyboard back where it was opened from. */
 function closeAdd() {
   adding.value = false
   nextTick(() => (addButton.value?.$el as HTMLElement | undefined)?.focus())
 }
 
-/** The new row lands at the foot of the table, already saved at its markup. */
+/**
+ * A new group is saved on the press — there is nothing to preview, because an
+ * empty group reprices nothing. The row appears when the refetch brings it
+ * back, with the id and slug the server minted.
+ */
 function onCreate(name: string, markup: string) {
-  addGroup(name, markup)
+  const body = newGroup(name, markup)
+  if (!body) return
+  createMutation.mutate(body)
   closeAdd()
+}
+
+/** The press. Nothing settles locally: the rows re-read from the answer. */
+function apply() {
+  if (!commit.value || blocked.value || !online.value || saving.value) return
+
+  const changes: GroupChange[] = pendingEdits.value.map(({ id, name, markupBps }) => ({
+    id,
+    ...(name === undefined ? {} : { name }),
+    ...(markupBps === undefined ? {} : { default_markup_bps: markupBps }),
+  }))
+
+  applyMutation.mutate(changes)
 }
 
 const COLUMNS = ['Group', 'Items', 'Markup', 'Avg margin', 'Capital in stock']
@@ -119,6 +152,35 @@ function onKeydown(event: KeyboardEvent) {
       </div>
     </div>
 
+    <SBanner
+      v-if="groupsQuery.isError.value"
+      variant="error"
+      label="error"
+      title="Couldn't load groups."
+    >
+      {{ (groupsQuery.error.value as Error)?.message }}
+    </SBanner>
+
+    <!-- A write that failed leaves what he typed where it is; the table has
+         refetched, so the rows still holding a draft are the ones to try again. -->
+    <SBanner
+      v-if="applyMutation.isError.value"
+      variant="error"
+      label="error"
+      title="Couldn't save every change."
+    >
+      {{ (applyMutation.error.value as Error)?.message }}
+    </SBanner>
+
+    <SBanner
+      v-if="createMutation.isError.value"
+      variant="error"
+      label="error"
+      title="Couldn't create the group."
+    >
+      {{ (createMutation.error.value as Error)?.message }}
+    </SBanner>
+
     <div
       ref="table"
       role="table"
@@ -148,6 +210,12 @@ function onKeydown(event: KeyboardEvent) {
         @normalise="normalise(row.group.slug)"
         @normalise-name="normaliseName(row.group.slug)"
       />
+
+      <div v-if="!rows.length" class="empty">
+        <SText type="cell" color="fg-2-soft">
+          {{ groupsQuery.isPending.value ? 'Loading groups…' : 'No groups yet.' }}
+        </SText>
+      </div>
     </div>
 
     <!-- The card has no footer at rest: the bar exists only while something is
@@ -158,6 +226,7 @@ function onKeydown(event: KeyboardEvent) {
         :summary="commit"
         :offline="!online"
         :blocked="blocked"
+        :saving="saving"
         @discard="discardAll"
         @apply="apply"
       />
@@ -195,6 +264,10 @@ function onKeydown(event: KeyboardEvent) {
 
 .num {
   text-align: right;
+}
+
+.empty {
+  padding: 20px;
 }
 
 /* It arrives; it does not leave slowly. Once it is there the figures inside it
