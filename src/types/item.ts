@@ -119,6 +119,36 @@ export interface ItemDetail {
   savedAt: string
 }
 
+/**
+ * What `GET /items/{id}` on its own can say.
+ *
+ * The screen needs three calls — the item, the groups, the movements — and each
+ * has its own fate: a movements list that 500s should cost the screen its ledger
+ * and not its fields. So the item's own answer is a type of its own, and
+ * `toItemDerived` composes it with the other two where all three have landed.
+ *
+ * Money stays in integer pesewas here; the formatting happens where the figure
+ * is built into a card.
+ */
+export interface ItemRecord {
+  id: number
+  draft: ItemDraft
+  /** Derived by the server: quantity-weighted across received lots, 0 if never received. */
+  landedCostPesewas: number
+  /** Derived by the server: **the override if one is set**, else the group default. */
+  sellPricePesewas: number
+  /** Null while the item is priced by its group's markup. */
+  overridePesewas: number | null
+  /** Derived by the server: the sum of every movement in the ledger. */
+  stockOnHand: number
+  /** Resolved on read, so a renamed group is named correctly without a refetch. */
+  groupName: string | null
+  /** Set → the item is hidden from the catalogue and from new shipments. */
+  archivedAt: string | null
+  /** The header's `Saved 2 minutes ago` reads from this. */
+  updatedAt: string
+}
+
 /** What the header chip renders when nothing has been filed into a group. */
 export const NO_GROUP_LABEL = 'no group'
 
