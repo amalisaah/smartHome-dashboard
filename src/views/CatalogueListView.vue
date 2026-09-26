@@ -18,6 +18,7 @@ import { useCatalogueList } from '@/composables/useCatalogueList'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
 import { EMPTY_SUMMARY, type CatalogueItem } from '@/types/catalogue'
+import SBanner from '@/components/atoms/SBanner.vue'
 
 /** Below ~900px the phone layout takes over. There is no third layout. */
 const isPhone = useMediaQuery('(max-width: 899px)')
@@ -92,9 +93,9 @@ const addFromQuery = () => {}
         @toggle-attention="attentionOnly = !attentionOnly"
       />
 
-      <SText v-if="itemsQuery.isError.value" type="body" color="risk" class="load-error">
+      <SBanner v-if="itemsQuery.isError.value" variant="error">
         Could not load the catalogue.
-      </SText>
+      </SBanner>
       <CataloguePhoneSkeleton v-else-if="loading" />
       <CatalogueEmptyState
         v-else-if="showEmptyState"
@@ -124,9 +125,9 @@ const addFromQuery = () => {}
 
     <!-- A1 — laptop 1440 -->
     <template v-else>
-      <SText v-if="summaryQuery.isError.value" type="body" color="risk" class="load-error">
+      <SBanner v-if="summaryQuery.isError.value" variant="error">
         Could not load the summary figures.
-      </SText>
+      </SBanner>
       <CatalogueSummaryStrip
         v-else
         :loading="summaryQuery.isPending.value"
@@ -147,9 +148,9 @@ const addFromQuery = () => {}
         @toggle-attention="attentionOnly = !attentionOnly"
       />
 
-      <SText v-if="itemsQuery.isError.value" type="body" color="risk" class="load-error">
+      <SBanner v-if="itemsQuery.isError.value" variant="error">
         Could not load the catalogue.
-      </SText>
+      </SBanner>
       <CatalogueEmptyState
         v-else-if="showEmptyState"
         :query="debouncedQuery.trim()"
