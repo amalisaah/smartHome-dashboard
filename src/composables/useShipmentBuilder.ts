@@ -1,13 +1,13 @@
 import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 import { createItem } from '@/api/item'
 import {
-  addShipmentLine,
+  addShipmentLines,
   createShipment,
   removeShipmentLine,
   updateShipment,
   updateShipmentLine,
 } from '@/api/shipments'
-import type { ApiShipmentDetail, ApiShipmentUpdate } from '@/types/api'
+import type { ApiShipmentDetail, ApiShipmentLineWrite, ApiShipmentUpdate } from '@/types/api'
 import type { CatalogueItem } from '@/types/catalogue'
 import {
   toApiDate,
@@ -272,22 +272,40 @@ async function saveDraft(): Promise<number | null> {
       await updateShipment(id, body)
     }
 
+    // Every line gets its body first, because a name the catalogue has never
+    // heard of has to become an item before any line can point at it.
+    const pending: { line: InvoiceLine; body: ApiShipmentLineWrite }[] = []
     for (const line of lines.value) {
-      const itemId = await itemIdFor(line)
-      const lineBody = {
-        item_id: itemId,
-        quantity: toCount(line.qty),
-        unit_price_pesewas: unitPriceToPesewas(line.unitPrice, rateHundredths),
-      }
+      pending.push({
+        line,
+        body: {
+          item_id: await itemIdFor(line),
+          quantity: toCount(line.qty),
+          unit_price_pesewas: unitPriceToPesewas(line.unitPrice, rateHundredths),
+        },
+      })
+    }
 
-      if (line.serverId === null) {
-        const created = await addShipmentLine(id, lineBody)
+    // A line the server already has is edited where it lives; there is no batch
+    // for that, and each one is its own row.
+    for (const { line, body } of pending) {
+      if (line.serverId === null) continue
+      await updateShipmentLine(id, line.serverId, body)
+      Object.assign(line, { itemId: body.item_id, isNew: false })
+    }
+
+    // The ones it has never seen go up together, in the order he typed them —
+    // one insert that lands whole or not at all, answered line for line.
+    const fresh = pending.filter(({ line }) => line.serverId === null)
+    if (fresh.length > 0) {
+      const created = await addShipmentLines(
+        id,
+        fresh.map(({ body }) => body),
+      )
+      fresh.forEach(({ line, body }, index) => {
         // Written back so a second save updates this line rather than doubling it.
-        Object.assign(line, { serverId: created.id, itemId, isNew: false })
-      } else {
-        await updateShipmentLine(id, line.serverId, lineBody)
-        Object.assign(line, { itemId, isNew: false })
-      }
+        Object.assign(line, { serverId: created[index].id, itemId: body.item_id, isNew: false })
+      })
     }
 
     // Anything the server still holds that is no longer on screen.

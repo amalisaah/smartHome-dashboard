@@ -37,8 +37,14 @@ export const createShipment = (body: ApiShipmentCreate) =>
 export const updateShipment = (id: number, body: ApiShipmentUpdate) =>
   apiSend<ApiShipmentDetail>('PATCH', `/shipments/${id}`, body)
 
-export const addShipmentLine = (id: number, body: ApiShipmentLineWrite) =>
-  apiSend<ApiShipmentLine>('POST', `/shipments/${id}/lines`, body)
+/**
+ * `POST /shipments/{id}/lines`. The body is an array even for one line, and an
+ * empty one is a 400 — so a caller with nothing to add sends nothing. The batch
+ * is a single insert: all of them land or none do, and the created lines come
+ * back in the order they were sent.
+ */
+export const addShipmentLines = (id: number, body: ApiShipmentLineWrite[]) =>
+  apiSend<ApiShipmentLine[]>('POST', `/shipments/${id}/lines`, body)
 
 export const updateShipmentLine = (id: number, lineId: number, body: ApiShipmentLineUpdate) =>
   apiSend<ApiShipmentLine>('PATCH', `/shipments/${id}/lines/${lineId}`, body)

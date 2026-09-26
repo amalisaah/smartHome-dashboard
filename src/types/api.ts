@@ -163,7 +163,10 @@ export interface ApiShipmentUpdate {
   cost_lines?: { label: string; amount_pesewas: number }[]
 }
 
-/** `POST /shipments/{id}/lines`. A new line needs the item, the count and the price. */
+/**
+ * One entry of the array `POST /shipments/{id}/lines` takes. A new line needs
+ * the item, the count and the price.
+ */
 export interface ApiShipmentLineWrite {
   item_id: number
   quantity: number
