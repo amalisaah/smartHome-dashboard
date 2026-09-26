@@ -67,9 +67,8 @@ export function useItemDetail(
     /** The header says what the connection means for the work he has typed. */
     offline?: MaybeRefOrGetter<boolean>
     /**
-     * The record does not exist yet. Everything else here is the same — the same
-     * fields, the same draft store, the same diff — but there is no last save to
-     * report, so the status counts what he has filled in instead.
+     * The record does not exist yet. Everything else here is the same; there is
+     * simply no last save to report, so the status counts what he has filled in.
      */
     creating?: boolean
   },
@@ -209,8 +208,7 @@ export function useItemDetail(
     const plural = n === 1 ? 'change' : 'changes'
 
     if (offline.value) {
-      // Creating needs the network in a way that editing does not: the draft is
-      // still kept here, but there is no record for it to be kept against.
+      // The draft is still kept here, but there is no record to keep it against.
       if (creating) return { label: 'No connection — cannot create yet', tone: 'risk' }
       return {
         label: n > 0 ? `No connection — ${n} ${plural} kept on this device` : 'No connection',

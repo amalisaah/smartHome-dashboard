@@ -129,18 +129,16 @@ export interface ItemRecord {
 export const NO_GROUP_LABEL = 'no group'
 export const UNTITLED = 'Untitled item'
 
-/** An item being typed for the first time has no name to head the screen with. */
 export const NEW_ITEM_TITLE = 'New item'
 
 /**
- * The id of the item that does not exist yet. Item ids are positive on the wire,
- * so `0` is free to mean *not created* — it addresses nothing, and the only thing
- * that reads it is the draft store, which needs a key to hold what he has typed
- * before the backend has minted the real one.
+ * The item that does not exist yet. Ids are positive on the wire, so `0` is free
+ * to mean *not created*: it addresses nothing, and the only thing that reads it
+ * is the draft store, which needs a key before the backend has minted a real one.
  */
 export const NEW_ITEM_ID = 0
 
-/** Every field empty: what the create screen diffs against to know what he filled in. */
+/** What the create screen diffs against to know what he has filled in. */
 export const blankItemDraft = (): ItemDraft => ({
   name: '',
   groupId: null,
@@ -156,10 +154,9 @@ export const blankItemDraft = (): ItemDraft => ({
 })
 
 /**
- * The record behind a blank create form. Every derived figure is zero because
- * nothing has happened to it yet — `toItemDerived` turns that into the captions
- * the screen shows (`never received`, `no price yet`), which are the same words
- * the item will carry the moment after it is created.
+ * The record behind a blank create form. Every figure is zero, which
+ * `toItemDerived` turns into the captions the item will carry the moment it is
+ * created — `never received`, `no price yet`.
  */
 export const blankItemRecord = (): ItemRecord => ({
   id: NEW_ITEM_ID,

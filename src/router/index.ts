@@ -18,14 +18,13 @@ export const router = createRouter({
       component: CatalogueListView,
     },
     {
-      // An item he has just started has no id, because it does not have one:
-      // `POST /items` gives it a number when he creates it, not the click that
-      // opened a blank form. Declared above `:id` so it wins.
+      // An item he has just started has no id: `POST /items` gives it a number
+      // when he creates it, not the click that opened a blank form. Declared
+      // above `:id` so it wins.
       path: '/items/new',
       name: 'item-new',
       component: ItemNewView,
-      // The catalogue's empty state hands over what he searched for: the name he
-      // could not find is the name he is about to enter.
+      // The name he could not find is the name he is about to enter.
       props: (route) => ({
         initialName: typeof route.query.name === 'string' ? route.query.name : '',
       }),

@@ -59,9 +59,8 @@ function useItemWriteInvalidation() {
 }
 
 /**
- * `POST /items`. The answer is the whole item, so it is put in the cache under
- * its brand-new id: the screen this redirects to opens on the record rather than
- * on `Loading…` for a record it already has. The catalogue has a new row.
+ * `POST /items`. The answer is the whole item, cached under its brand-new id so
+ * the screen this redirects to opens on the record rather than on `Loading…`.
  */
 export function useCreateItem() {
   const queryClient = useQueryClient()

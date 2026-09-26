@@ -15,27 +15,16 @@ import { NEW_ITEM_TITLE, type ItemDetail } from '@/types/item'
 import { toItemCreate } from '@/utils/mapper/itemMapper'
 
 /**
- * The item screen before there is an item: B1's field set, the same order and the
- * same rules, with nothing on it that an unmade record cannot answer for.
- *
- * What it drops, and why:
- *
- *   - **Movements and Adjust count.** Stock moves by an append to a ledger that
- *     does not exist yet. The first movement is the shipment that brings it in.
- *   - **Archive.** There is nothing to put away; Discard is the way out.
- *   - **The selling price.** A price is decided against a landed cost, and this
- *     item has not been bought yet — the group's markup prices it the moment a
- *     shipment does, and the override is one press away on the item itself.
- *
- * What it keeps is the whole left column, because that is the screen: every
- * field is typed here exactly as it is typed there, by the same component.
+ * The item screen before there is an item: B1's field set, minus what an unmade
+ * record cannot answer for — the movements and the Adjust sheet (no ledger yet),
+ * Archive (nothing to put away), and the selling price (a price is decided
+ * against a landed cost, and nothing has been bought).
  */
 const props = defineProps<{
   /** The blank record: what the fields are diffed against, and the zero figures. */
   item: ItemDetail
   isPhone: boolean
   offline: boolean
-  /** A name he already typed into the catalogue's search box. */
   initialName?: string
 }>()
 
@@ -46,8 +35,7 @@ const { draft, group, changes, dirty, status, discard, markSaved } = useItemDeta
   { editable: true, creating: true, offline: () => props.offline },
 )
 
-// The search he came from is the name he meant. Never over a draft he left here:
-// what is in the store is newer than the box he typed the query into.
+// Never over a draft left here: the store is newer than the box he searched in.
 if (props.initialName && draft.name === '') draft.name = props.initialName
 
 const create = useCreateItem()
@@ -55,7 +43,7 @@ const create = useCreateItem()
 const discardOpen = ref(false)
 const createError = ref('')
 
-/** Nothing is red until he has tried to create — as the Adjust sheet does it. */
+/** Nothing is red until he has tried to create. */
 const pressed = ref(false)
 
 const fields = ref<InstanceType<typeof ItemEditableFields> | null>(null)
@@ -64,10 +52,6 @@ const saving = computed(() => create.isPending.value)
 
 const derived = computed(() => props.item.derived)
 
-/**
- * The one field the item cannot be made without. Said as the consequence, in the
- * row that has the problem — an item with no name is a row he cannot find again.
- */
 const nameError = computed(() =>
   pressed.value && draft.name.trim() === ''
     ? 'Blocks creating — an item is found by its name.'
@@ -79,11 +63,7 @@ const message = (error: unknown) =>
 
 const leave = () => router.push({ name: 'catalogue' })
 
-/**
- * The id is minted here, by the save — which is why this screen had no id to be
- * addressed by until now. `replace`, so the back gesture goes to the catalogue
- * rather than to a form that no longer has anything to create.
- */
+/** `replace`, so back goes to the catalogue and not to a form already spent. */
 async function onCreate() {
   pressed.value = true
   createError.value = ''
@@ -103,7 +83,6 @@ async function onCreate() {
 }
 
 function onDiscard() {
-  // Nothing typed is nothing to confirm: the press is just the way out.
   if (!dirty.value) {
     leave()
     return
@@ -122,10 +101,7 @@ function onPhoto(file: File) {
   draft.photoUrl = URL.createObjectURL(file)
 }
 
-/**
- * He came here to name something. Not on the phone, where it would open the
- * keyboard over a form he has not read yet.
- */
+/** Not on the phone, where it would open the keyboard over an unread form. */
 onMounted(async () => {
   if (props.isPhone) return
   await nextTick()
@@ -223,9 +199,6 @@ onMounted(async () => {
           <DerivedFigureCard :figure="derived.margin" />
         </div>
 
-        <!-- The zeros are honest rather than decorative: this is where he will
-             read them, and these are the words they will carry until the first
-             shipment lands. -->
         <SText type="caption" class="promise">
           None of this is typed. Cost, stock and margin fill in when a shipment brings this item in,
           and the selling price follows its group's markup from then on — you can fix a price of
@@ -245,8 +218,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* The detail screen's geometry, so the form he creates in and the record he
-   reads afterwards are the same screen. */
+/* The detail screen's geometry: the form he creates in and the record he reads
+   afterwards are the same screen. */
 .columns {
   display: grid;
   grid-template-columns: 1.15fr 1fr;
@@ -279,7 +252,6 @@ onMounted(async () => {
   line-height: 1.6;
 }
 
-/* The phone: one column, the same two grounds. */
 .section {
   display: flex;
   flex-direction: column;

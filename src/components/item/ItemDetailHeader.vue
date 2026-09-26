@@ -17,9 +17,8 @@ const props = defineProps<{
   /** The write is in flight, so the header does not take a second press. */
   saving?: boolean
   /**
-   * The record does not exist yet. The form is always open, the primary creates
-   * rather than saves, and there is nothing to archive — an item he has not made
-   * cannot be put away.
+   * The record does not exist yet: the form is always open, the primary creates
+   * rather than saves, and there is nothing to archive.
    */
   creating?: boolean
 }>()
@@ -57,7 +56,6 @@ const untitled = computed(() => props.name.trim() === '')
         {{ status.label }}
       </SText>
 
-      <!-- A record being created is never not being edited. -->
       <template v-if="editing || creating">
         <!-- Two exits, never a third: Save or Discard, or Cancel when clean. -->
         <SButton

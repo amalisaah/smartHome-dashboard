@@ -10,7 +10,7 @@ defineProps<{
   status: SaveStatus
   dirty?: boolean
   saving?: boolean
-  /** The record does not exist yet, so the press that ends this form creates it. */
+  /** The record does not exist yet, so the press creates rather than saves. */
   creating?: boolean
 }>()
 

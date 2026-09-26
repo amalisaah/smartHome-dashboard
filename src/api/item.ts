@@ -36,9 +36,9 @@ export async function fetchItemMovements(id: number, signal?: AbortSignal): Prom
 }
 
 /**
- * `POST /items`. Every field is optional on the wire, so this serves both callers
- * it has: the create screen, which sends what he filled in, and the shipment
- * builder, which sends a name alone to turn a line into a stub item.
+ * `POST /items`. Every field is optional on the wire, so it serves both callers:
+ * the create screen, and the shipment builder naming a line the catalogue has
+ * never heard of.
  */
 export async function createItem(body: ApiItemCreate): Promise<ItemRecord> {
   return toItemRecord(await apiSend<ApiItemDetail>('POST', '/items', body))

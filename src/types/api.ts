@@ -179,9 +179,8 @@ export type ApiShipmentLineUpdate = Partial<ApiShipmentLineWrite>
 
 /**
  * `POST /items` — every field optional, so a name alone creates a stub item.
- *
- * Unlike `PATCH`, nothing here is a *clear*: a field left out is a field he has
- * not filled in, so the create screen omits blanks rather than sending `""`.
+ * Unlike `PATCH`, nothing here is a *clear*: a field left out is one he has not
+ * filled in.
  */
 export interface ApiItemCreate {
   name?: string

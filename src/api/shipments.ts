@@ -50,13 +50,6 @@ export const removeShipmentLine = (id: number, lineId: number) =>
 export const receiveShipment = (id: number) =>
   apiSend<ApiShipmentDetail>('POST', `/shipments/${id}/receive`)
 
-/**
- * `PATCH /items/{id}` — used by the preview to give a blocked row its group.
- *
- * The create it pairs with lives in `@/api/item` (`createItem`), which is where
- * the item's own endpoints are: naming an item in a shipment creates the same
- * stub the catalogue's create screen would, with no group — exactly the state
- * the preview then asks him to resolve.
- */
+/** `PATCH /items/{id}` — used by the preview to give a blocked row its group. */
 export const updateItem = (id: number, body: Partial<ApiItemCreate>) =>
   apiSend<ApiItem>('PATCH', `/items/${id}`, body)

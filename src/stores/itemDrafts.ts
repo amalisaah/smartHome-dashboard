@@ -13,8 +13,8 @@ import { isRecord, isString, isStringArray, sessionFamily } from '@/utils/storag
  * **Session, not local.** A half-finished edit is worth surviving a reload; it is
  * not worth surviving until the figures it was typed against have moved.
  *
- * The item being created is held here too, under `NEW_ITEM_ID` — it is the same
- * form holding the same fields, and the only thing it lacks is an id of its own.
+ * The item being created is held here too, under `NEW_ITEM_ID`: the same form
+ * holding the same fields, lacking only an id of its own.
  */
 
 /** Every field he types, and the price he decided. */
@@ -85,8 +85,8 @@ export const hasDraft = (id: number) => getDraft(id) !== null
 
 /**
  * The honest source for a global "unsaved changes" line. The item being created
- * is left out: `NEW_ITEM_ID` leads to no item, and a caller that turns these into
- * links would offer one to a record that does not exist.
+ * is left out: `NEW_ITEM_ID` leads to no item, so a caller linking these would
+ * offer a link to a record that does not exist.
  */
 export function draftedItemIds(): number[] {
   const fromMemory = Object.keys(drafts).map(Number)

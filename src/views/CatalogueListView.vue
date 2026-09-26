@@ -70,8 +70,8 @@ const openItem = (item: CatalogueItem) =>
 // An item started from here has no id either — the create mints it.
 const addItemManually = () => router.push({ name: 'item-new' })
 
-// The search that found nothing is the name of the item he is about to add, so
-// it is carried over rather than typed a second time.
+// The search that found nothing is the name he is about to add, carried over
+// rather than typed twice.
 const addFromQuery = () =>
   router.push({ name: 'item-new', query: { name: debouncedQuery.value.trim() } })
 

@@ -281,15 +281,10 @@ export function toItemUpdate(draft: ItemDraft): ItemUpdatePlan {
 }
 
 /**
- * A blank draft onto `POST /items`. Nothing here is a clear — the record does not
- * exist yet — so **an empty field is omitted** rather than sent as `""`: it is
- * something he has not filled in, and the API's own defaults are the right answer
- * for it. That is also why this has no `unexpressible`: a group he did not pick
+ * A draft onto `POST /items`. **An empty field is omitted** rather than sent as
+ * `""`: nothing here is a clear, so the API's own defaults are the right answer
+ * for it — which is also why this has no `unexpressible`. A group he did not pick
  * is not a group he emptied.
- *
- * The price override is left to the caller for the same reason `toItemUpdate`
- * does, though nothing sets it today: a price is decided against a landed cost,
- * and a new item has not been bought yet.
  */
 export function toItemCreate(draft: ItemDraft): ApiItemCreate {
   const body: ApiItemCreate = {}
