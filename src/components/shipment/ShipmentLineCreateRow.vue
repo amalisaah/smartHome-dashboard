@@ -68,12 +68,20 @@ defineExpose({ focus: () => field.value?.focus() })
       @update:model-value="onSettle"
     />
 
-    <!-- Appears only when there is nothing to match, and creates in place. -->
+    <!-- Appears only when there is nothing to match, and creates in place.
+
+         On `mousedown`, not `click`: the combobox closes itself on any mousedown
+         outside its own root, and this chip is outside it. That close empties the
+         query, which empties `trimmed` and takes this button back out of the DOM
+         — all before a `click` could ever fire. Mousedown at the button runs
+         before the document-level one that closes the field, so the name is still
+         here to read. `.prevent` keeps the caret in the field rather than handing
+         it to a button that is about to disappear. -->
     <SButton
       v-if="noMatch"
       variant="create"
       size="md"
-      @click="onSettle(trimmed)"
+      @mousedown.prevent="onSettle(trimmed)"
     >
       + create "{{ trimmed }}" inline
     </SButton>
