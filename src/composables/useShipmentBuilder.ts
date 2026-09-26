@@ -1,7 +1,7 @@
 import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
+import { createItem } from '@/api/item'
 import {
   addShipmentLine,
-  createItem,
   createShipment,
   removeShipmentLine,
   updateShipment,

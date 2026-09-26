@@ -9,6 +9,7 @@ import type {
   Movement,
   MovementKind,
 } from '@/types/item'
+import type { ApiItemCreate } from '@/types/api'
 import type { ApiItemDetail, ApiItemUpdate, ApiMovement, ApiMovementReason } from '@/types/itemApi'
 import { formatMarkup, formatMoney, formatShortDate } from '@/utils/format'
 import { formatShipmentRef } from '@/utils/mapper/shipmentMapper'
@@ -227,6 +228,13 @@ export function toItemDerived(
 /** What a `PATCH` was asked to do but the endpoint has no way to express. */
 export type UnexpressibleClear = 'group' | 'leadTime'
 
+/** A whole number as typed, or undefined when the field holds nothing usable. */
+function whole(value: string): number | undefined {
+  const trimmed = value.trim()
+  if (trimmed === '' || !/^\d+$/.test(trimmed)) return undefined
+  return Number(trimmed)
+}
+
 export interface ItemUpdatePlan {
   body: ApiItemUpdate
   /**
@@ -250,12 +258,6 @@ export interface ItemUpdatePlan {
 export function toItemUpdate(draft: ItemDraft): ItemUpdatePlan {
   const unexpressible: UnexpressibleClear[] = []
 
-  const whole = (value: string) => {
-    const trimmed = value.trim()
-    if (trimmed === '' || !/^\d+$/.test(trimmed)) return undefined
-    return Number(trimmed)
-  }
-
   const leadDays = whole(draft.leadDays)
   if (leadDays === undefined && draft.leadDays.trim() === '') unexpressible.push('leadTime')
   if (draft.groupId === null) unexpressible.push('group')
@@ -276,6 +278,56 @@ export function toItemUpdate(draft: ItemDraft): ItemUpdatePlan {
   if (draft.photoUrl !== null) body.image_url = draft.photoUrl
 
   return { body, unexpressible }
+}
+
+/**
+ * A blank draft onto `POST /items`. Nothing here is a clear — the record does not
+ * exist yet — so **an empty field is omitted** rather than sent as `""`: it is
+ * something he has not filled in, and the API's own defaults are the right answer
+ * for it. That is also why this has no `unexpressible`: a group he did not pick
+ * is not a group he emptied.
+ *
+ * The price override is left to the caller for the same reason `toItemUpdate`
+ * does, though nothing sets it today: a price is decided against a landed cost,
+ * and a new item has not been bought yet.
+ */
+export function toItemCreate(draft: ItemDraft): ApiItemCreate {
+  const body: ApiItemCreate = {}
+
+  const text = (value: string) => {
+    const trimmed = value.trim()
+    return trimmed === '' ? undefined : trimmed
+  }
+
+  const name = text(draft.name)
+  if (name) body.name = name
+  if (draft.groupId !== null) body.group_id = draft.groupId
+  if (draft.keywords.length > 0) body.keywords = [...draft.keywords]
+
+  const unit = text(draft.unit)
+  if (unit) body.unit = unit
+
+  const supplier = text(draft.supplier)
+  if (supplier) body.supplier_name = supplier
+
+  const supplierLink = text(draft.supplierLink)
+  if (supplierLink) body.supplier_url = supplierLink
+
+  const supplierContact = text(draft.supplierContact)
+  if (supplierContact) body.supplier_contact = supplierContact
+
+  const leadDays = whole(draft.leadDays)
+  if (leadDays !== undefined) body.lead_time_days = leadDays
+
+  const reorderLevel = whole(draft.reorderLevel)
+  if (reorderLevel !== undefined) body.reorder_level = reorderLevel
+
+  const notes = text(draft.notes)
+  if (notes) body.notes = notes
+
+  if (draft.photoUrl !== null) body.image_url = draft.photoUrl
+
+  return body
 }
 
 /**

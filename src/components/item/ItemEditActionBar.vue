@@ -10,6 +10,8 @@ defineProps<{
   status: SaveStatus
   dirty?: boolean
   saving?: boolean
+  /** The record does not exist yet, so the press that ends this form creates it. */
+  creating?: boolean
 }>()
 
 defineEmits<{ save: []; discard: [] }>()
@@ -37,7 +39,7 @@ defineEmits<{ save: []; discard: [] }>()
         Discard
       </SButton>
       <SButton size="lg" class="save" :disabled="!dirty" :loading="saving" @click="$emit('save')">
-        Save
+        {{ creating ? 'Create item' : 'Save' }}
       </SButton>
     </div>
   </div>

@@ -7,6 +7,7 @@
  * was typing into.
  */
 
+import type { ApiItemCreate } from '@/types/api'
 import type { ItemRecord } from '@/types/item'
 import type {
   ApiAdjustmentCreate,
@@ -32,6 +33,15 @@ export async function fetchItem(id: number, signal?: AbortSignal): Promise<ItemR
  */
 export async function fetchItemMovements(id: number, signal?: AbortSignal): Promise<ApiMovement[]> {
   return apiGet<ApiMovement[]>(`/items/${id}/movements`, undefined, signal)
+}
+
+/**
+ * `POST /items`. Every field is optional on the wire, so this serves both callers
+ * it has: the create screen, which sends what he filled in, and the shipment
+ * builder, which sends a name alone to turn a line into a stub item.
+ */
+export async function createItem(body: ApiItemCreate): Promise<ItemRecord> {
+  return toItemRecord(await apiSend<ApiItemDetail>('POST', '/items', body))
 }
 
 /** `PATCH /items/{id}`. The answer re-derives cost, price and stock. */

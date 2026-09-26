@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { SBadge, SButton, SText } from '@/components/atoms'
 import type { SaveStatus } from '@/composables/useItemDetail'
-import { NO_GROUP_LABEL, UNTITLED, type ItemGroupRef } from '@/types/item'
+import { NEW_ITEM_TITLE, NO_GROUP_LABEL, UNTITLED, type ItemGroupRef } from '@/types/item'
 
 const props = defineProps<{
   name: string
@@ -16,11 +16,17 @@ const props = defineProps<{
   dirty?: boolean
   /** The write is in flight, so the header does not take a second press. */
   saving?: boolean
+  /**
+   * The record does not exist yet. The form is always open, the primary creates
+   * rather than saves, and there is nothing to archive — an item he has not made
+   * cannot be put away.
+   */
+  creating?: boolean
 }>()
 
 defineEmits<{ archive: []; edit: []; save: []; discard: []; cancel: [] }>()
 
-const title = computed(() => props.name.trim() || UNTITLED)
+const title = computed(() => props.name.trim() || (props.creating ? NEW_ITEM_TITLE : UNTITLED))
 const untitled = computed(() => props.name.trim() === '')
 </script>
 
@@ -51,7 +57,8 @@ const untitled = computed(() => props.name.trim() === '')
         {{ status.label }}
       </SText>
 
-      <template v-if="editing">
+      <!-- A record being created is never not being edited. -->
+      <template v-if="editing || creating">
         <!-- Two exits, never a third: Save or Discard, or Cancel when clean. -->
         <SButton
           v-if="dirty"
@@ -65,7 +72,7 @@ const untitled = computed(() => props.name.trim() === '')
         <SButton v-else variant="ghost" size="md" @click="$emit('cancel')">Cancel</SButton>
 
         <SButton size="md" :disabled="!dirty" :loading="saving" @click="$emit('save')">
-          Save
+          {{ creating ? 'Create item' : 'Save' }}
         </SButton>
       </template>
 
@@ -74,6 +81,7 @@ const untitled = computed(() => props.name.trim() === '')
       <!-- Reversible, so the ordinary button carrying the warning. Out of reach
            while dirty: it would archive something other than what is on screen. -->
       <SButton
+        v-if="!creating"
         variant="secondary-risk"
         size="md"
         :disabled="dirty || saving"

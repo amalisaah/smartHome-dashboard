@@ -17,6 +17,11 @@ const props = defineProps<{
   stacked?: boolean
   /** Read, not typed. Every field goes inert; the values keep full ink. */
   locked?: boolean
+  /**
+   * Said in the row that has the problem, as its consequence. Only the name can
+   * have one: every other field is optional to the item and to the wire.
+   */
+  nameError?: string
 }>()
 
 const emit = defineEmits<{ photo: [file: File]; commit: [] }>()
@@ -47,6 +52,8 @@ function setGroup(value: number | string) {
         :size="door"
         :disabled="locked"
         placeholder="Untitled item"
+        :error="!!nameError"
+        :error-message="nameError"
       />
       <SSelect
         :model-value="draft.groupId ?? ''"

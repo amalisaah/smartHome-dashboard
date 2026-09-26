@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import {
   archiveItem,
   createAdjustment,
+  createItem,
   discontinueItem,
   fetchItem,
   fetchItemMovements,
@@ -10,6 +11,7 @@ import {
   updateItem,
 } from '@/api/item'
 import { catalogueKeys } from '@/api/hooks/catalogue'
+import type { ApiItemCreate } from '@/types/api'
 import type { ApiAdjustmentCreate, ApiItemUpdate } from '@/types/itemApi'
 
 /** Thin hooks over `@/api/item` — one per endpoint, no composition. */
@@ -54,6 +56,23 @@ function useItemWriteInvalidation() {
     }
     await queryClient.invalidateQueries({ queryKey: catalogueKeys.all })
   }
+}
+
+/**
+ * `POST /items`. The answer is the whole item, so it is put in the cache under
+ * its brand-new id: the screen this redirects to opens on the record rather than
+ * on `Loading…` for a record it already has. The catalogue has a new row.
+ */
+export function useCreateItem() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (body: ApiItemCreate) => createItem(body),
+    onSuccess: async (record) => {
+      queryClient.setQueryData(itemKeys.detail(record.id), record)
+      await queryClient.invalidateQueries({ queryKey: catalogueKeys.all })
+    },
+  })
 }
 
 export interface ItemUpdateVariables {

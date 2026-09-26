@@ -177,16 +177,27 @@ export interface ApiShipmentLineWrite {
  */
 export type ApiShipmentLineUpdate = Partial<ApiShipmentLineWrite>
 
-/** `POST /items` — every field optional, so a name alone creates a stub item. */
+/**
+ * `POST /items` — every field optional, so a name alone creates a stub item.
+ *
+ * Unlike `PATCH`, nothing here is a *clear*: a field left out is a field he has
+ * not filled in, so the create screen omits blanks rather than sending `""`.
+ */
 export interface ApiItemCreate {
   name?: string
   group_id?: number
   keywords?: string[]
   unit?: string
   supplier_name?: string
+  supplier_url?: string
+  supplier_contact?: string
+  /** At most 1000 on the wire. */
   lead_time_days?: number
   reorder_level?: number
+  /** A fixed price that beats the group markup, in integer pesewas. */
+  selling_price_override_pesewas?: number
   notes?: string
+  image_url?: string
 }
 
 /** The error envelope every route shares. */

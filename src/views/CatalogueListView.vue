@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCatalogueGroups, useCatalogueItems, useCatalogueSummary } from '@/api/hooks/catalogue'
-import { SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import CatalogueEmptyState from '@/components/catalogue/CatalogueEmptyState.vue'
 import CatalogueFooter from '@/components/catalogue/CatalogueFooter.vue'
@@ -68,10 +67,16 @@ const logShipment = () => router.push({ name: 'shipment-new' })
 const openItem = (item: CatalogueItem) =>
   router.push({ name: 'item-detail', params: { id: item.id } })
 
-// The screens these lead to are out of scope for this handoff.
+// An item started from here has no id either — the create mints it.
+const addItemManually = () => router.push({ name: 'item-new' })
+
+// The search that found nothing is the name of the item he is about to add, so
+// it is carried over rather than typed a second time.
+const addFromQuery = () =>
+  router.push({ name: 'item-new', query: { name: debouncedQuery.value.trim() } })
+
+// The screen this leads to is out of scope for this handoff.
 const openDraft = () => {}
-const addItemManually = () => {}
-const addFromQuery = () => {}
 </script>
 
 <template>

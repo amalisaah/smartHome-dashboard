@@ -10,6 +10,8 @@ import { SButton, SText } from '@/components/atoms'
 const props = defineProps<{
   /** The fields that differ, as the labels above them read. */
   changes: string[]
+  /** Nothing was created, so there is no record left behind holding what it had. */
+  creating?: boolean
 }>()
 
 const emit = defineEmits<{ discard: []; keep: [] }>()
@@ -65,10 +67,15 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       aria-labelledby="discard-title"
     >
       <SText id="discard-title" type="dialog-title" as="h2">
-        Discard {{ changes.length === 1 ? 'this change' : 'these changes' }}?
+        <template v-if="creating">Discard this new item?</template>
+        <template v-else>Discard {{ changes.length === 1 ? 'this change' : 'these changes' }}?</template>
       </SText>
 
-      <SText type="body" class="consequence">
+      <SText v-if="creating" type="body" class="consequence">
+        What you typed for <SText type="ref" color="fg">{{ listed }}</SText> goes, and no item is
+        created. Nothing was saved, so there is nothing to undo afterwards.
+      </SText>
+      <SText v-else type="body" class="consequence">
         Your edits to <SText type="ref" color="fg">{{ listed }}</SText> go, and the item keeps what
         it had. Nothing was saved, so there is nothing to undo afterwards.
       </SText>

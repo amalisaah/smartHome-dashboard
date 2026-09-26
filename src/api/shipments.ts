@@ -51,12 +51,12 @@ export const receiveShipment = (id: number) =>
   apiSend<ApiShipmentDetail>('POST', `/shipments/${id}/receive`)
 
 /**
- * `POST /items` with a name and nothing else. Every field is optional on the
- * wire, so naming an item in a shipment is enough to create it — it arrives with
- * no group, which is exactly the state the preview asks him to resolve.
+ * `PATCH /items/{id}` — used by the preview to give a blocked row its group.
+ *
+ * The create it pairs with lives in `@/api/item` (`createItem`), which is where
+ * the item's own endpoints are: naming an item in a shipment creates the same
+ * stub the catalogue's create screen would, with no group — exactly the state
+ * the preview then asks him to resolve.
  */
-export const createItem = (body: ApiItemCreate) => apiSend<ApiItem>('POST', '/items', body)
-
-/** `PATCH /items/{id}` — used by the preview to give a blocked row its group. */
 export const updateItem = (id: number, body: Partial<ApiItemCreate>) =>
   apiSend<ApiItem>('PATCH', `/items/${id}`, body)
