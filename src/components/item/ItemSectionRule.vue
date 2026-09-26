@@ -2,9 +2,8 @@
 import { SText } from '@/components/atoms'
 
 /**
- * What opens each of the two columns. The label says which authority the column
- * answers to; the rule carries it across so the two columns read as a pair
- * rather than as two unrelated stacks.
+ * What opens each column. The label says which authority it answers to; the rule
+ * carries it across so the two read as a pair.
  */
 </script>
 

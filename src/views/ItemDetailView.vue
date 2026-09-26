@@ -1,355 +1,84 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useCatalogueGroups } from '@/api/hooks/catalogue'
+import { useItem, useItemMovements } from '@/api/hooks/item'
+import { SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
-import AdjustCountSheet from '@/components/item/AdjustCountSheet.vue'
-import ArchiveDialog from '@/components/item/ArchiveDialog.vue'
-import DerivedFigureCard from '@/components/item/DerivedFigureCard.vue'
-import DiscardDialog from '@/components/item/DiscardDialog.vue'
-import ItemDetailHeader from '@/components/item/ItemDetailHeader.vue'
-import ItemEditableFields from '@/components/item/ItemEditableFields.vue'
-import ItemFigureStrip from '@/components/item/ItemFigureStrip.vue'
-import ItemInfoBlock from '@/components/item/ItemInfoBlock.vue'
-import ItemPhoneActionBar from '@/components/item/ItemPhoneActionBar.vue'
-import ItemPhoneHeader from '@/components/item/ItemPhoneHeader.vue'
-import ItemPhoneMovements from '@/components/item/ItemPhoneMovements.vue'
-import ItemSectionRule from '@/components/item/ItemSectionRule.vue'
-import MovementsCard from '@/components/item/MovementsCard.vue'
-import SellingPriceCard from '@/components/item/SellingPriceCard.vue'
-import { useItemDetail } from '@/composables/useItemDetail'
+import ItemDetailScreen from '@/components/item/ItemDetailScreen.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
-import { mockItem } from '@/data/itemDetailMock'
-import type { Movement } from '@/types/item'
-import { formatMoneyWhole, formatShortDate } from '@/utils/format'
-import { toOverrideIntent } from '@/utils/mapper/itemMapper'
+import { ITEM_UNITS } from '@/data/itemOptions'
+import type { ItemDetail } from '@/types/item'
+import { toItemDerived, toItemGroups } from '@/utils/mapper/itemMapper'
 
 const props = defineProps<{ itemId: number }>()
 
 /** Below ~900px the phone layout takes over. There is no third layout. */
 const isPhone = useMediaQuery('(max-width: 899px)')
 
-const router = useRouter()
 const online = useOnline()
 
 /**
- * Local stand-in for `GET /items/{id}`. Every figure it holds is the reference
- * frame's, because this handoff is UI and UX — the arithmetic behind a landed
- * cost, a price and a balance all live behind this line.
- */
-const item = ref(mockItem(props.itemId))
-
-const {
-  editing,
-  locked,
-  startEditing,
-  stopEditing,
-  draft,
-  group,
-  changes,
-  dirty,
-  status,
-  tick,
-  discard,
-  markSaved,
-  state,
-  derivedPrice,
-  overrideDraft,
-  startOverride,
-  clearOverride,
-  cancelOverrideEdit,
-  commitOverride,
-  adjustOpen,
-  basis,
-  countDraft,
-  deltaDraft,
-  reason,
-  freeReason,
-  pressed,
-  stockNow,
-  reasonError,
-  amountError,
-  consequence,
-  openAdjust,
-  closeAdjust,
-  recordMovement,
-  archiveOpen,
-} = useItemDetail(item, { offline: () => !online.value })
-
-const discardOpen = ref(false)
-const saving = ref(false)
-
-/**
- * The press. The write itself is the endpoint's job — `useUpdateItem` is ready
- * in `@/api/hooks/item` — so while the screen is on the mock this applies the
- * draft to the record it is holding and then says it is saved, which is the same
- * sequence the mutation's `onSuccess` will run.
- */
-async function onSave() {
-  saving.value = true
-  try {
-    const intent = toOverrideIntent(overrideDraft.value)
-    const overridePesewas =
-      state.value === 'derived'
-        ? null
-        : intent.kind === 'set'
-          ? intent.pesewas
-          : derived.value.price.overridePesewas
-
-    item.value = {
-      ...item.value,
-      draft: { ...draft, keywords: [...draft.keywords] },
-      derived: {
-        ...derived.value,
-        price: { ...derived.value.price, state: state.value, overridePesewas },
-      },
-    }
-    markSaved()
-  } finally {
-    saving.value = false
-  }
-}
-
-/** Nothing typed means nothing to confirm — Cancel just closes the mode. */
-function onDiscard() {
-  if (!dirty.value) {
-    stopEditing()
-    return
-  }
-  discardOpen.value = true
-}
-
-function confirmDiscard() {
-  discardOpen.value = false
-  discard()
-}
-
-const fields = ref<InstanceType<typeof ItemEditableFields> | null>(null)
-
-/**
- * Pressing `Edit` puts the caret in the first field. Unlocking a form and then
- * making him find his way into it is half an action.
- */
-async function onEdit() {
-  startEditing()
-  await nextTick()
-  fields.value?.focus()
-}
-
-/** So `Saved just now` becomes `Saved 1 minute ago` without a reload. */
-let clock: ReturnType<typeof setInterval> | undefined
-onMounted(() => (clock = setInterval(tick, 20_000)))
-onBeforeUnmount(() => clearInterval(clock))
-
-const derived = computed(() => item.value.derived)
-
-/** What the phone strip says out loud. `Sell` is the one figure without decimals. */
-const phoneSell = computed(() =>
-  state.value === 'overridden' && overrideDraft.value.trim() !== ''
-    ? overrideDraft.value
-    : formatMoneyWhole(derived.value.price.derivedPesewas),
-)
-
-function onPhoto(file: File) {
-  // Nothing is uploaded, and nothing is saved — a dropped photo is a change to
-  // the draft like any other, and Save is what commits it.
-  draft.photoUrl = URL.createObjectURL(file)
-}
-
-/**
- * The sheet writes a movement; it never edits a total. The balance it carries is
- * the composable's, computed from the last row — the stand-in for what the
- * endpoint will hand back.
+ * Three calls, three fates. The item carries the fields and the figures; the
+ * groups carry the select's options *and* the markup the price is rebuilt from
+ * while overridden; the ledger carries the movements.
  *
- * Note it commits on the press, unlike the fields. Adjusting the count is its
- * own act with its own reason, and the ledger is append-only — there is nothing
- * for a Save button to batch it with.
+ * Kept apart so a ledger that fails costs the screen its movements card and not
+ * the fields he was typing into.
  */
-function onRecord() {
-  const movement = recordMovement()
-  if (!movement) return
-  item.value = {
-    ...item.value,
-    derived: {
-      ...derived.value,
-      movements: [
-        ...derived.value.movements,
-        { ...movement, id: Date.now(), date: formatShortDate(new Date().toISOString()) },
-      ],
-      stockOnHand: {
-        ...derived.value.stockOnHand,
-        figure: String(movement.balance),
-      },
-    },
+const itemQuery = useItem(() => props.itemId)
+const groupsQuery = useCatalogueGroups()
+const movementsQuery = useItemMovements(() => props.itemId)
+
+/**
+ * The markup lives on the group, never on the item, so the price's group default
+ * cannot be rebuilt until `GET /groups` lands. Null until then — the mapper
+ * falls back to the server's own figure rather than inventing one.
+ */
+const markupBps = computed(() => {
+  const record = itemQuery.data.value
+  const group = groupsQuery.data.value?.find((it) => it.id === record?.draft.groupId)
+  return group?.defaultMarkupBps ?? null
+})
+
+/** Null until the item lands — the screen below is not mounted before then. */
+const item = computed<ItemDetail | null>(() => {
+  const record = itemQuery.data.value
+  if (!record) return null
+
+  return {
+    id: record.id,
+    draft: record.draft,
+    derived: toItemDerived(record, markupBps.value, movementsQuery.data.value ?? null),
+    groups: toItemGroups(groupsQuery.data.value ?? []),
+    units: ITEM_UNITS,
+    savedAt: record.updatedAt,
   }
-  closeAdjust()
-}
+})
 
-function onArchive() {
-  archiveOpen.value = false
-  // Archived is its own screen and is not in this handoff, so the way out of an
-  // archived item is back to the list it has just left.
-  router.push({ name: 'catalogue' })
-}
-
-// The screens these lead to are out of scope for this handoff.
-const openMovement = (_movement: Movement) => {}
-const openAllMovements = () => {}
+/** `isPending` is "nothing cached yet", so revalidating never blanks the screen. */
+const loading = computed(() => itemQuery.isPending.value)
 </script>
 
 <template>
   <AppLayout :chrome="!isPhone">
-    <!-- B2 — phone 390. Read-first: figures, then words, then one action. -->
-    <template v-if="isPhone">
-      <ItemPhoneHeader :name="draft.name" :group="group" />
-      <ItemFigureStrip
-        :stock="derived.stockOnHand.figure"
-        :sell="phoneSell"
-        :cost="derived.landedCost.figure"
-      />
-      <ItemInfoBlock
-        :keywords="draft.keywords"
-        :notes="draft.notes"
-        :supplier="draft.supplier"
-        :lead-days="draft.leadDays"
-        :reorder-level="draft.reorderLevel"
-      />
-      <ItemPhoneMovements :movements="derived.movements" @open-all="openAllMovements" />
-      <ItemPhoneActionBar
-        @adjust="openAdjust"
-        @edit="router.push({ name: 'item-edit', params: { id: itemId } })"
-      />
-    </template>
+    <SText v-if="itemQuery.isError.value" type="body" color="risk" class="state">
+      Could not load this item.
+    </SText>
+    <SText v-else-if="loading" type="body" color="fg-2" class="state">Loading…</SText>
 
-    <!-- B1 — laptop 1440. Edit-first: everything visible at once. -->
-    <template v-else>
-      <ItemDetailHeader
-        :name="draft.name"
-        :group="group"
-        :status="status"
-        :editing="editing"
-        :dirty="dirty"
-        :saving="saving"
-        @edit="onEdit"
-        @save="onSave"
-        @discard="onDiscard"
-        @cancel="stopEditing"
-        @archive="archiveOpen = true"
-      />
-
-      <div class="columns">
-        <!-- Left: what he types. White, and solid-bordered throughout. Nothing
-             here writes: every keystroke goes to the draft store, and the
-             header's Save is the only thing that commits it. -->
-        <div class="column column--typed">
-          <ItemSectionRule>Editable</ItemSectionRule>
-          <ItemEditableFields
-            ref="fields"
-            :draft="draft"
-            :groups="item.groups"
-            :units="item.units"
-            :locked="locked"
-            @photo="onPhoto"
-          />
-        </div>
-
-        <!-- Right: what the system decides. Surface, and dashed throughout —
-             except the override input, which is solid action because it is the
-             one figure in this column that is his. -->
-        <div class="column column--derived">
-          <ItemSectionRule>Comes from shipments &amp; movements — not typed</ItemSectionRule>
-
-          <div class="figures">
-            <DerivedFigureCard :figure="derived.landedCost" />
-            <DerivedFigureCard :figure="derived.stockOnHand" />
-            <DerivedFigureCard :figure="derived.margin" />
-          </div>
-
-          <SellingPriceCard
-            v-model:override-draft="overrideDraft"
-            :price="derived.price"
-            :state="state"
-            :derived-price="derivedPrice"
-            :landed-cost="derived.landedCost.figure"
-            :locked="locked"
-            @override="startOverride"
-            @clear="clearOverride"
-            @cancel-edit="cancelOverrideEdit"
-            @commit="commitOverride"
-          />
-
-          <MovementsCard
-            :movements="derived.movements"
-            @adjust="openAdjust"
-            @open="openMovement"
-          />
-        </div>
-      </div>
-    </template>
-
-    <AdjustCountSheet
-      v-if="adjustOpen"
-      v-model:basis="basis"
-      v-model:count-draft="countDraft"
-      v-model:delta-draft="deltaDraft"
-      v-model:reason="reason"
-      v-model:free-reason="freeReason"
-      :stock-now="stockNow"
-      :reason-error="reasonError"
-      :amount-error="amountError"
-      :consequence="consequence"
-      :pressed="pressed"
-      :phone="isPhone"
-      @record="onRecord"
-      @dismiss="closeAdjust"
-    />
-
-    <ArchiveDialog
-      v-if="archiveOpen"
-      :name="draft.name"
-      @archive="onArchive"
-      @dismiss="archiveOpen = false"
-    />
-
-    <DiscardDialog
-      v-if="discardOpen"
-      :changes="changes"
-      @discard="confirmDiscard"
-      @keep="discardOpen = false"
+    <ItemDetailScreen
+      v-else-if="item"
+      :item="item"
+      :is-phone="isPhone"
+      :offline="!online"
     />
   </AppLayout>
 </template>
 
 <style scoped>
-/* Two columns, two authorities. The divider is the left column's own border, so
-   there is no gap for the two grounds to bleed into each other across. */
-.columns {
-  display: grid;
-  grid-template-columns: 1.15fr 1fr;
-}
-
-.column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 24px;
-  min-width: 0;
-}
-
-.column--typed {
-  background: var(--color-bg);
-  border-right: 1px solid var(--color-line);
-}
-
-/* The background difference is the first signal that this side is not typed;
-   the section label is the second; the dashed borders are the third. */
-.column--derived {
-  background: var(--color-surface);
-}
-
-.figures {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+/* Sits where the columns would have been, on the same gutter. */
+.state {
+  padding: 24px 20px;
 }
 </style>

@@ -12,10 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ select: [file: File] }>()
 
-/**
- * Drag-over is the one place on this screen where a border changes to solid
- * `--action`: the zone is saying it will take what is over it.
- */
+/** Drag-over is the one place here a border goes solid action. */
 const over = ref(false)
 
 const fileEl = ref<HTMLInputElement | null>(null)
@@ -46,8 +43,7 @@ function onPick(event: Event) {
       {{ label }}
     </SText>
 
-    <!-- A drop zone that only takes drops is unusable by keyboard, so it is a
-         button that also takes them. -->
+    <!-- A zone that only takes drops is unusable by keyboard, so it is a button. -->
     <button
       type="button"
       class="zone"
@@ -92,8 +88,7 @@ function onPick(event: Event) {
   text-align: center;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
-  /* The stripe says "nothing here yet" without drawing an icon that would then
-     have to mean something. */
+  /* "Nothing here yet", without an icon that would have to mean something. */
   background: repeating-linear-gradient(
     135deg,
     var(--color-surface) 0 6px,
@@ -108,8 +103,7 @@ function onPick(event: Event) {
   border-color: var(--color-fg-3);
 }
 
-/* Locked. The stripe is already the quietest surface on the screen, so it needs
-   nothing added — it just stops answering. */
+/* The stripe is already the quietest surface here, so it just stops answering. */
 .zone:disabled {
   cursor: not-allowed;
 }
@@ -119,14 +113,12 @@ function onPick(event: Event) {
   outline-offset: 2px;
 }
 
-/* Solid action, because it is about to accept — the one moment a dashed-or-quiet
-   border on this screen goes solid and blue. */
+/* About to accept. */
 .zone--over {
   border: 1px solid var(--color-action);
   background: var(--color-row-action-tint);
 }
 
-/* A photo needs no stripe behind it. */
 .zone--filled {
   background: var(--color-surface);
   padding: 0;

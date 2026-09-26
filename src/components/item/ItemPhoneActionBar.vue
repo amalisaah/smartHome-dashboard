@@ -2,9 +2,8 @@
 import { SButton } from '@/components/atoms'
 
 /**
- * Figures, then words, then one primary action. Adjusting the count is the thing
- * he actually does on site; editing the record is the thing he does afterwards,
- * so it is beside it and not the same size.
+ * Adjusting the count is what he does on site; editing the record is what he
+ * does afterwards, so it is beside it and not the same size.
  */
 defineEmits<{ adjust: []; edit: [] }>()
 </script>

@@ -31,10 +31,8 @@ const back = computed(
     <RouterLink :to="backTo ?? { name: 'catalogue' }" class="back">
       <SText type="cell-meta" color="muted-dark" class="crumb">{{ back }}</SText>
     </RouterLink>
-    <!-- The name wraps freely. In a customer's house it is the first thing he
-         has to confirm he is looking at the right thing, so it is never cut. -->
+    <!-- Wraps freely: it is the first thing he confirms, so it is never cut. -->
     <SText type="heading" as="h1" color="inverse" class="name">{{ heading }}</SText>
-    <!-- There is no Save button here either. This line is the confirmation. -->
     <SText
       v-if="savedLabel"
       type="cell-meta"
@@ -56,9 +54,8 @@ const back = computed(
   background: var(--color-fg);
 }
 
-/* Flex, so the box is the height of the 11px mono crumb inside it. As a block it
-   would take the header's own 15px sans strut and stand 19px — 5px taller than
-   the line it draws, which the whole header would then inherit. */
+/* Flex, so the box is the height of the 11px mono crumb. As a block it takes the
+   header's 15px sans strut and stands 19px, 5px past the drawn geometry. */
 .back {
   position: relative;
   display: flex;
@@ -68,9 +65,7 @@ const back = computed(
   text-decoration: none;
 }
 
-/* The door reaches 48px without the header growing to hold it. Stretching the
-   link itself would push the whole header 4px past the drawn geometry, so the
-   target is an overlay instead: it takes the thumb, and takes no space. */
+/* 48px of thumb without the header growing to hold it. */
 .back::after {
   content: '';
   position: absolute;
@@ -87,7 +82,6 @@ const back = computed(
   border-radius: var(--radius-flag);
 }
 
-/* A crumb naming a long item runs out of room before the title does. */
 .crumb {
   overflow: hidden;
   text-overflow: ellipsis;

@@ -3,13 +3,9 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { SButton, SText } from '@/components/atoms'
 
 /**
- * The one confirm on this screen that guards typed work rather than a record.
- * Archive is reversible and says so; this is not — a discarded draft is gone
- * from the store and from session storage together.
- *
- * It **names the fields** rather than counting them. "Discard 4 changes?" asks
- * him to remember which four; the point of a confirm is to tell him what he is
- * about to lose while he can still keep it.
+ * The one confirm here that guards typed work rather than a record — and unlike
+ * Archive, it is not reversible. It **names the fields** rather than counting
+ * them: "Discard 4 changes?" asks him to remember which four.
  */
 const props = defineProps<{
   /** The fields that differ, as the labels above them read. */
@@ -18,7 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ discard: []; keep: [] }>()
 
-/** `name, group and selling price` — a list read as a sentence, not a bullet. */
+/** A list read as a sentence, not a bullet. */
 const listed = computed(() => {
   const all = props.changes
   if (all.length === 1) return all[0]

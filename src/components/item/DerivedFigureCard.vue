@@ -3,10 +3,8 @@ import { SText } from '@/components/atoms'
 import type { DerivedFigure } from '@/types/item'
 
 /**
- * A figure the system decided. The dashed border is the system-wide rule —
- * **dashed means not-yours-to-type** — and these three cards are where it is
- * taught, so they must not read as fields: no hover, no focus, no cursor
- * change, and nothing in the tab order.
+ * A figure the system decided. Dashed means not-yours-to-type, and these cards
+ * are where that is taught — so no hover, no focus, and nothing in the tab order.
  */
 defineProps<{ figure: DerivedFigure }>()
 </script>
@@ -15,7 +13,7 @@ defineProps<{ figure: DerivedFigure }>()
   <div class="card">
     <SText type="micro" color="micro">{{ figure.label }}</SText>
     <SText type="total">{{ figure.figure }}</SText>
-    <!-- Where it came from. A derived figure that cannot say why is a rumour. -->
+    <!-- A derived figure that cannot say where it came from is a rumour. -->
     <SText type="caption" class="source">{{ figure.source }}</SText>
   </div>
 </template>
@@ -29,7 +27,7 @@ defineProps<{ figure: DerivedFigure }>()
   background: var(--color-bg);
   border: 1px dashed var(--color-fg-3);
   border-radius: var(--radius-md);
-  /* Not an input, not a disabled input. Nothing to reach for. */
+  /* Not an input, and not a disabled one. Nothing to reach for. */
   cursor: default;
 }
 

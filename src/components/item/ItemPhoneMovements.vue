@@ -3,10 +3,8 @@ import { SText } from '@/components/atoms'
 import { DELTA_COLOR, formatDelta, type Movement } from '@/types/item'
 
 /**
- * The last few movements, without the date or the balance — at 390px the
- * question is what happened, not when or what it left behind. The head counts
- * the rows underneath it rather than naming a number of its own, so the label
- * can never disagree with what is on screen.
+ * No date and no balance: at 390px the question is what happened. The head counts
+ * the rows under it, so the label can never disagree with what is on screen.
  */
 defineProps<{ movements: Movement[] }>()
 

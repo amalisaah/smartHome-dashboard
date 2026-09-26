@@ -5,10 +5,9 @@ import PhotoDropZone from '@/components/item/PhotoDropZone.vue'
 import type { ItemDraft, ItemGroupRef, ItemUnitOption } from '@/types/item'
 
 /**
- * Everything he types, in the handoff's order, and nothing the system decided.
- * The laptop lays it out in the grids the reference draws; the phone's Edit form
- * takes the same rows as one column, so the two can never drift apart in what
- * they offer or in the order they offer it.
+ * Everything he types, and nothing the system decided. One component for both
+ * frames, so the laptop and the phone can never drift apart in what they offer
+ * or the order they offer it in.
  */
 const props = defineProps<{
   draft: ItemDraft
@@ -16,36 +15,22 @@ const props = defineProps<{
   units: ItemUnitOption[]
   /** The phone's Edit form: one column, and every door at 48px. */
   stacked?: boolean
-  /**
-   * Read, not typed. Every field goes inert and recedes onto `--surface`; the
-   * values stay at full ink, because the locked record is still what he came to
-   * look at.
-   */
+  /** Read, not typed. Every field goes inert; the values keep full ink. */
   locked?: boolean
 }>()
 
-const emit = defineEmits<{
-  photo: [file: File]
-  /**
-   * A keyword landed or went. The column saves on a blur, and removing a chip
-   * by click blurs nothing — so the tag input says so itself.
-   */
-  commit: []
-}>()
+const emit = defineEmits<{ photo: [file: File]; commit: [] }>()
 
 const groupOptions = computed(() => props.groups.map((it) => ({ label: it.name, value: it.id })))
 const unitOptions = computed(() => props.units.map((it) => ({ label: it.label, value: it.value })))
 
-/** One door per posture: 42px on the laptop as drawn, the 48px one on a phone. */
+/** 42px on the laptop as drawn, 48px on a phone. */
 const door = computed(() => (props.stacked ? 'lg' : 'field') as 'lg' | 'field')
 
 const nameField = ref<InstanceType<typeof SInput> | null>(null)
 defineExpose({ focus: () => nameField.value?.focus() })
 
-/**
- * `<select>` yields strings even from numeric options, so the group comes back
- * as one. Null is the no-group state and has to survive the round trip.
- */
+/** `<select>` yields strings; null is the no-group state and must survive. */
 function setGroup(value: number | string) {
   props.draft.groupId = value === '' ? null : Number(value)
 }
@@ -87,7 +72,7 @@ function setGroup(value: number | string) {
     <div class="row row--three">
       <SInput v-model="draft.supplier" label="Supplier" :size="door" :disabled="locked" />
       <SInput v-model="draft.supplierLink" label="Supplier link" :size="door" :disabled="locked" />
-      <!-- A contact is read digit by digit, so it is mono like every figure. -->
+      <!-- Read digit by digit, so mono like every figure. -->
       <SInput
         v-model="draft.supplierContact"
         label="Supplier contact"
@@ -164,13 +149,11 @@ function setGroup(value: number | string) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-/* The notes take the room; the photo takes the width it is read at. */
 .row--notes {
   grid-template-columns: 1fr 200px;
   align-items: start;
 }
 
-/* The phone's Edit form: the same rows, one under another. */
 .fields--stacked .row {
   grid-template-columns: minmax(0, 1fr);
 }

@@ -1,5 +1,5 @@
 import { computed, reactive, ref, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
-import { OTHER_REASON } from '@/data/itemDetailMock'
+import { OTHER_REASON } from '@/data/itemOptions'
 import { clearDraft, getDraft, setDraft } from '@/stores/itemDrafts'
 import {
   formatDelta,
@@ -13,22 +13,18 @@ import { formatMoney } from '@/utils/format'
 import { toOverrideIntent } from '@/utils/mapper/itemMapper'
 
 /**
- * The UI state the item-detail screen holds: the draft he is typing into, what
- * in it differs from the record, the price-override state, and the adjust-count
- * draft.
+ * The item screen's UI state: the draft, what in it differs from the record, the
+ * price-override state, and the adjust-count draft.
  *
- * **Nothing saves until he says so.** What he types goes to
- * `@/stores/itemDrafts` — shared, and kept in session storage so a reload or a
- * mistaken Back does not lose it — and reaches the record only on Save. That is
- * why the header no longer reads only `Saved 2 minutes ago`: with an explicit
- * save there is a state between typed and stored, and a line that named only the
- * last save would be silent about exactly the work that could still be lost.
+ * **Nothing saves until he says so.** What he types goes to `@/stores/itemDrafts`
+ * and reaches the record only on Save — which is why the header says more than
+ * the last save: with an explicit save there is a state between typed and stored.
  *
- * Adjusting the count is not part of this. It appends to the ledger and is its
- * own act with its own reason, so it commits when the sheet is pressed.
+ * Adjusting the count is not part of this. It appends to the ledger with its own
+ * reason, so it commits when the sheet is pressed.
  */
 
-/** How long ago the record was last stored, in his words. */
+/** How long ago the record was last stored. */
 export function relativeSave(iso: string, now: number): string {
   const seconds = Math.round((now - Date.parse(iso)) / 1000)
   if (seconds < 45) return 'Saved just now'
@@ -77,28 +73,18 @@ export function useItemDetail(
   // --- the edit gate -------------------------------------------------------
 
   /**
-   * On the laptop the record opens locked and `Edit` unlocks it. The phone's
-   * Edit form is already the answer to "I want to change this", so it passes
-   * `editable` and has no gate of its own.
-   *
-   * A draft left in this session opens it too. Landing on a record that says
-   * `2 unsaved changes` with only an `Edit` button would be showing him work at
-   * stake and withholding the press that saves it — an edit in progress is an
-   * edit in progress, whichever page load found it.
+   * The laptop opens locked; the phone's Edit form passes `editable`. A draft
+   * left in this session opens it too — landing on `2 unsaved changes` with only
+   * an `Edit` button would show work at stake and withhold the press that saves it.
    */
   const editing = ref(options?.editable === true || getDraft(item.value.id) !== null)
 
   const startEditing = () => (editing.value = true)
 
   /**
-   * Leave edit mode, and leave nothing behind in the store.
-   *
-   * `Cancel` only appears when nothing differs, and the watcher below has
-   * already cleared the draft in that case — but not always: a draft restored
-   * from a previous page load that happens to *equal* the record is not dirty,
-   * so nothing has changed for the watcher to fire on, and it would sit in
-   * session storage being re-read on every mount. Clearing unconditionally here
-   * means one rule holds without exception: no edit mode, no draft.
+   * Clears unconditionally, so one rule holds without exception: no edit mode,
+   * no draft. The watcher below misses one case — a restored draft that happens
+   * to *equal* the record is not dirty, so nothing fires and it would linger.
    */
   const stopEditing = () => {
     clearDraft(item.value.id)
@@ -110,10 +96,7 @@ export function useItemDetail(
 
   // --- the fields he types -------------------------------------------------
 
-  /**
-   * What the fields are bound to. Seeded from the record, or from a draft left
-   * in this session — coming back to a half-finished edit finds it where it was.
-   */
+  /** Seeded from the record, or from a draft left in this session. */
   const stored = getDraft(item.value.id)
 
   const draft = reactive<ItemDraft>(
@@ -125,8 +108,8 @@ export function useItemDetail(
   const group = computed(() => item.value.groups.find((it) => it.id === draft.groupId) ?? null)
 
   // --- the selling price ---------------------------------------------------
-  // Declared before the change tracking below, which counts the price as one of
-  // the things that can differ from the record.
+  // Before the change tracking, which counts the price as one of the things
+  // that can differ from the record.
 
   const price = computed(() => item.value.derived.price)
 
@@ -149,33 +132,25 @@ export function useItemDetail(
   /** The derived figure, formatted once — it is shown in both states. */
   const derivedPrice = computed(() => formatMoney(price.value.derivedPesewas))
 
-  /**
-   * Pressing `Override` hands him the derived figure to edit rather than an
-   * empty box: overriding starts from what the system decided, so the first
-   * keystroke is a change to a real number and not the whole number retyped.
-   */
+  /** Prefilled with the derived figure: overriding starts from what it was. */
   function startOverride() {
     overrideDraft.value = derivedPrice.value
     overrideBefore = overrideDraft.value
     state.value = 'overridden'
   }
 
-  /**
-   * Back to the group default. Still no confirm — the figure it returns to is on
-   * screen in the formula line, and now it is only a change to the draft, which
-   * Discard undoes wholesale.
-   */
+  /** No confirm: it is a change to the draft, and Discard undoes it wholesale. */
   function clearOverride() {
     state.value = 'derived'
     overrideDraft.value = ''
   }
 
-  /** Escape while editing an override restores the previous value, in place. */
+  /** Escape restores the previous value without leaving the field. */
   function cancelOverrideEdit() {
     overrideDraft.value = overrideBefore
   }
 
-  /** Leaving the field settles what Escape would go back to. It saves nothing. */
+  /** Settles what Escape would go back to. It saves nothing. */
   function commitOverride() {
     overrideBefore = overrideDraft.value
   }
@@ -184,20 +159,15 @@ export function useItemDetail(
 
   const savedAt = ref(item.value.savedAt)
 
-  /**
-   * A clock the header re-reads, so `Saved just now` becomes `Saved 1 minute
-   * ago` without a reload. Ticked by the view, which owns the interval.
-   */
+  /** So `Saved just now` becomes `Saved 1 minute ago` without a reload. */
   const now = ref(Date.now())
   const tick = () => (now.value = Date.now())
 
   const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 
   /**
-   * Which fields he has actually changed, named as the labels above them. It is
-   * what the Save and Discard buttons count, and what the discard confirm shows
-   * him before it throws the work away — a confirm that says "4 changes" without
-   * saying which four is asking him to remember.
+   * Named as the labels above them, because the discard confirm shows them: a
+   * confirm that says "4 changes" without saying which four asks him to remember.
    */
   const changedFields = computed(() => {
     const record = item.value.draft
@@ -223,12 +193,9 @@ export function useItemDetail(
   const dirty = computed(() => changes.value.length > 0)
 
   /**
-   * The line in the header. With an explicit save there are three things it can
-   * be about, and only one of them is the last save: what is stored, what is
-   * typed and not stored, and whether the network could take it.
-   *
-   * Unsaved work reads in risk — `--color-risk` is this system's ink for data at
-   * stake, and it is the one state here where doing nothing costs something.
+   * Three things it can be about, only one of which is the last save: what is
+   * stored, what is typed and not stored, and whether the network could take it.
+   * Unsaved work reads in risk — the one state where doing nothing costs something.
    */
   const status = computed<SaveStatus>(() => {
     const n = changes.value.length
@@ -246,11 +213,7 @@ export function useItemDetail(
 
   // --- the store ------------------------------------------------------------
 
-  /**
-   * Every keystroke goes to the store, not to the API. Deep, because `keywords`
-   * is an array inside the draft, and flushing is cheap: it is one small object
-   * into session storage.
-   */
+  /** Every keystroke goes to the store, not to the API. Deep, for `keywords`. */
   watch(
     [draft, overrideDraft, state],
     () => {
@@ -263,7 +226,7 @@ export function useItemDetail(
     { deep: true },
   )
 
-  /** Put the fields back to the record, and drop the draft with them. */
+  /** Back to the record, and drop the draft with it. */
   function reset() {
     const record = item.value.draft
     Object.assign(draft, { ...record, keywords: [...record.keywords] })
@@ -280,11 +243,7 @@ export function useItemDetail(
     editing.value = false
   }
 
-  /**
-   * Commit. The caller does the writing — this only says the record now holds
-   * what the draft held, so there is no longer an unsaved edit and the clock
-   * starts again from now.
-   */
+  /** The caller does the writing; this says there is no longer an unsaved edit. */
   function markSaved() {
     savedAt.value = new Date().toISOString()
     now.value = Date.now()
@@ -300,13 +259,10 @@ export function useItemDetail(
   const deltaDraft = ref('')
   const reason = ref('')
   const freeReason = ref('')
-  /** Nothing is red until he has tried to record. A blank form is not an error. */
+  /** Nothing is red until he has tried to record. */
   const pressed = ref(false)
 
-  const stockNow = computed(() => {
-    const movements = item.value.derived.movements
-    return movements.length > 0 ? movements[movements.length - 1].balance : 0
-  })
+  const stockNow = computed(() => item.value.derived.stockCount)
 
   function openAdjust() {
     basis.value = 'delta'
@@ -325,12 +281,12 @@ export function useItemDetail(
     reason.value === OTHER_REASON ? freeReason.value.trim() : reason.value,
   )
 
-  /** Stated as what it stops, the way every other validation on this app is. */
+  /** Stated as what it stops, as every other validation here is. */
   const reasonError = computed(() =>
     reasonText.value ? '' : 'A movement needs a reason — it is what the history is for.',
   )
 
-  /** The change to stock, signed, as a number — or null while it is unusable. */
+  /** Signed, or null while unusable. */
   const resolvedDelta = computed<number | null>(() => {
     const raw = basis.value === 'delta' ? deltaDraft.value : countDraft.value
     const text = raw.trim()
@@ -352,9 +308,8 @@ export function useItemDetail(
   const canRecord = computed(() => !reasonError.value && !amountError.value)
 
   /**
-   * The movement this will write, in the Movements-row format, so what he is
-   * about to do is read back to him in the shape he will later read it. Split at
-   * the delta because the delta carries its own ink in a row, and has to here.
+   * Read back in the Movements-row format — the shape he will later read it in.
+   * Split at the delta because a delta carries its own ink in a row.
    */
   const consequence = computed(() => {
     if (resolvedDelta.value === null || resolvedDelta.value === 0) return null
@@ -367,10 +322,7 @@ export function useItemDetail(
     }
   })
 
-  /**
-   * What the sheet hands back. It writes a movement; it never edits a total —
-   * which is why there is no stock field anywhere on this screen.
-   */
+  /** It writes a movement, never a total — hence no stock field on this screen. */
   function recordMovement(): Omit<Movement, 'id' | 'date'> | null {
     pressed.value = true
     if (!canRecord.value || resolvedDelta.value === null) return null
@@ -397,8 +349,7 @@ export function useItemDetail(
     draft,
     group,
 
-    // Nothing here saves. `changes` names what differs, `status` is the line in
-    // the header, and `markSaved` is what the caller calls once the write lands.
+    // Nothing here saves: `markSaved` is what the caller calls once it lands.
     changes,
     dirty,
     status,

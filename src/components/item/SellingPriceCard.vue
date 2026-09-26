@@ -4,11 +4,8 @@ import { SBadge, SButton, SInput, SText } from '@/components/atoms'
 import type { ItemPrice, PriceState } from '@/types/item'
 
 /**
- * The one card on this screen that holds both authorities, and the reason the
- * screen exists: it has to be obvious which of the two prices is in effect.
- *
- * One card, two states. The reference draws them together to document them; the
- * running card shows one and switches in place:
+ * The reason the screen exists: which of the two prices is in effect has to be
+ * obvious. One card, two states, switching in place:
  *
  *   derived     — dashed chip, dashed display, `Override` button
  *   overridden  — solid action chip, solid action input, `Back to group default`
@@ -25,30 +22,17 @@ const props = defineProps<{
   landedCost: string
   /** The 48px door, and a value row that wraps rather than crushes. */
   phone?: boolean
-  /**
-   * The record is being read, not typed. The override input is the one field in
-   * this column, so it locks with the rest of them — and `Override`, which
-   * would open it, goes with it.
-   */
+  /** The override is the one field in this column, so it locks with the rest. */
   locked?: boolean
 }>()
 
 const overrideDraft = defineModel<string>('overrideDraft', { required: true })
 
-const emit = defineEmits<{
-  override: []
-  clear: []
-  /** Escape: put the previous value back without leaving the field. */
-  cancelEdit: []
-  commit: []
-}>()
+const emit = defineEmits<{ override: []; clear: []; cancelEdit: []; commit: [] }>()
 
 const overrideField = ref<InstanceType<typeof SInput> | null>(null)
 
-/**
- * Overriding hands him the derived figure, selected: the first keystroke
- * replaces a real number rather than starting from an empty box.
- */
+/** Prefilled and selected, so the first keystroke replaces a real number. */
 async function startOverride() {
   emit('override')
   await nextTick()
@@ -75,8 +59,7 @@ function onKeydown(event: KeyboardEvent) {
 
     <div class="value-row">
       <template v-if="state === 'derived'">
-        <!-- A display, not a disabled field: nothing to reach for, nothing in
-             the tab order, and no cursor that suggests otherwise. -->
+        <!-- A display, not a disabled field: nothing in the tab order. -->
         <div class="display">
           <SText type="money" color="micro" class="prefix">GH₵</SText>
           <SText type="list-figure" color="fg-2" class="figure">{{ derivedPrice }}</SText>
@@ -107,9 +90,7 @@ function onKeydown(event: KeyboardEvent) {
           @keydown="onKeydown"
           @change="emit('commit')"
         />
-        <!-- One visible link back. No confirm — the figure it returns to is
-             sitting in the formula line underneath. Gone while locked: there is
-             nothing to go back from when nothing can be changed. -->
+        <!-- Gone while locked: nothing to go back from when nothing can change. -->
         <button
           v-if="!locked"
           type="button"
@@ -121,8 +102,7 @@ function onKeydown(event: KeyboardEvent) {
       </template>
     </div>
 
-    <!-- The price in words. It stays while overridden, prefixed with the figure
-         he would go back to, so the default is never out of sight. -->
+    <!-- Prefixed while overridden, so the default is never out of sight. -->
     <SText type="caption" class="formula">
       <template v-if="state === 'overridden'"
         >Group default would be <SText type="ref" color="fg">{{ derivedPrice }}</SText> — </template
@@ -159,8 +139,7 @@ function onKeydown(event: KeyboardEvent) {
   flex-wrap: wrap;
 }
 
-/* The derived price. Dashed, surface-filled — the same vocabulary as the three
-   cards above it, so it reads as one of the figures the system decided. */
+/* The same vocabulary as the three cards above it. */
 .display {
   display: flex;
   align-items: stretch;
@@ -198,8 +177,7 @@ function onKeydown(event: KeyboardEvent) {
   flex: none;
 }
 
-/* A link, not a button — going back to the default is not an action with a
-   door, it is the way out of a state. */
+/* A link, not a button: it is the way out of a state, not an action with a door. */
 .link {
   display: inline-flex;
   align-items: center;
@@ -222,8 +200,7 @@ function onKeydown(event: KeyboardEvent) {
   outline-offset: 2px;
 }
 
-/* The price spelled out in words, with the figures in mono so they can be read
-   out of the sentence without reading the sentence. */
+/* Figures in mono, so they can be read out of the sentence. */
 .formula {
   line-height: 1.6;
 }

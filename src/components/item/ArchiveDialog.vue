@@ -4,12 +4,14 @@ import { SButton, SText } from '@/components/atoms'
 import { UNTITLED } from '@/types/item'
 
 /**
- * The only removal on this screen, and it is reversible — so the dialog names
- * what it costs rather than warning that it is dangerous, and neither button is
- * a red one. `Archive it` carries the same risk ink as the button that opened
- * it; `Keep` is the quiet way out.
+ * Reversible, so the dialog names what it costs rather than warning, and neither
+ * button is a red one.
  */
-const props = defineProps<{ name: string }>()
+const props = defineProps<{
+  name: string
+  /** The write is in flight, so the dialog does not take a second press. */
+  archiving?: boolean
+}>()
 
 const emit = defineEmits<{ archive: []; dismiss: [] }>()
 
@@ -66,8 +68,23 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       </SText>
 
       <div class="buttons">
-        <SButton variant="secondary-risk" size="md" @click="emit('archive')">Archive it</SButton>
-        <SButton ref="keepButton" variant="ghost" size="md" @click="emit('dismiss')">Keep</SButton>
+        <SButton
+          variant="secondary-risk"
+          size="md"
+          :loading="archiving"
+          @click="emit('archive')"
+        >
+          Archive it
+        </SButton>
+        <SButton
+          ref="keepButton"
+          variant="ghost"
+          size="md"
+          :disabled="archiving"
+          @click="emit('dismiss')"
+        >
+          Keep
+        </SButton>
       </div>
     </div>
   </div>

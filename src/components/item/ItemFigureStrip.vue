@@ -2,12 +2,9 @@
 import { SText } from '@/components/atoms'
 
 /**
- * The three questions he is asked in a customer's house, in the order he is
- * asked them: how many have you got, what does it cost me, what did it cost us.
- *
- * `Sell` drops its decimals — it is the number he says out loud, and nobody says
- * the pesewas out loud. `Cost` keeps them and sits a shade back, because it is
- * the one figure on this strip that is not the customer's business.
+ * The three questions he is asked in a customer's house, in that order. `Sell`
+ * drops its decimals — nobody says pesewas out loud. `Cost` sits a shade back:
+ * the one figure here that is not the customer's business.
  */
 defineProps<{
   stock: string
@@ -34,8 +31,8 @@ defineProps<{
 </template>
 
 <style scoped>
-/* The gutters are the background showing through, so the three cells read as one
-   instrument rather than as three cards. */
+/* The gutters are the background showing through, so the three read as one
+   instrument rather than three cards. */
 .strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

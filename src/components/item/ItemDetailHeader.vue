@@ -8,10 +8,7 @@ import { NO_GROUP_LABEL, UNTITLED, type ItemGroupRef } from '@/types/item'
 const props = defineProps<{
   name: string
   group: ItemGroupRef | null
-  /**
-   * What the screen has to say about the work: the last save, or the changes
-   * that have not been saved, or what the connection means for them.
-   */
+  /** The last save, the changes not yet saved, or what the connection means. */
   status: SaveStatus
   /** The record is open for typing. */
   editing?: boolean
@@ -23,7 +20,6 @@ const props = defineProps<{
 
 defineEmits<{ archive: []; edit: []; save: []; discard: []; cancel: [] }>()
 
-/** An emptied name still has to be referred to by something. */
 const title = computed(() => props.name.trim() || UNTITLED)
 const untitled = computed(() => props.name.trim() === '')
 </script>
@@ -31,7 +27,6 @@ const untitled = computed(() => props.name.trim() === '')
 <template>
   <div class="header">
     <div class="identity">
-      <!-- The breadcrumb is the way back to A, and the only navigation here. -->
       <RouterLink :to="{ name: 'catalogue' }" class="crumb">
         <SText type="cell-meta" color="micro">Catalogue ›</SText>
       </RouterLink>
@@ -40,15 +35,13 @@ const untitled = computed(() => props.name.trim() === '')
         {{ title }}
       </SText>
 
-      <!-- Solid, because the group is his to choose. Dashed and in risk when
-           there isn't one: a blank that is holding something up. -->
+      <!-- Solid: the group is his to choose. Dashed in risk when there isn't one. -->
       <SBadge v-if="group" variant="received" size="state">{{ group.name }}</SBadge>
       <SBadge v-else variant="missing" size="state">{{ NO_GROUP_LABEL }}</SBadge>
     </div>
 
     <div class="status">
-      <!-- Unsaved work reads in risk: it is the one state here where doing
-           nothing costs something. -->
+      <!-- Unsaved work reads in risk: doing nothing costs something. -->
       <SText
         type="cell-meta"
         :color="status.tone === 'risk' ? 'risk' : undefined"
@@ -59,8 +52,7 @@ const untitled = computed(() => props.name.trim() === '')
       </SText>
 
       <template v-if="editing">
-        <!-- Two exits, and never a third: with changes it is Save or Discard,
-             without them there is nothing to save and Cancel is the way out. -->
+        <!-- Two exits, never a third: Save or Discard, or Cancel when clean. -->
         <SButton
           v-if="dirty"
           variant="ghost"
@@ -79,10 +71,8 @@ const untitled = computed(() => props.name.trim() === '')
 
       <SButton v-else variant="secondary" size="md" @click="$emit('edit')">Edit</SButton>
 
-      <!-- The only removal there is, and it is reversible — so it is the
-           ordinary button carrying the warning, not a red one. Out of reach
-           while there is unsaved work: archiving with a draft open would be
-           archiving something other than what is on screen. -->
+      <!-- Reversible, so the ordinary button carrying the warning. Out of reach
+           while dirty: it would archive something other than what is on screen. -->
       <SButton
         variant="secondary-risk"
         size="md"
@@ -109,7 +99,6 @@ const untitled = computed(() => props.name.trim() === '')
   display: flex;
   align-items: center;
   gap: 12px;
-  /* The name is the one thing here allowed to run out of room. */
   min-width: 0;
 }
 

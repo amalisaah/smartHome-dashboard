@@ -3,10 +3,8 @@ import { SButton, SText } from '@/components/atoms'
 import type { SaveStatus } from '@/composables/useItemDetail'
 
 /**
- * The phone Edit form's way out. The laptop puts Save and Discard in the header
- * beside the status line; at 390px the header is the item's name and the action
- * bar is where a press belongs, so they go to the bottom edge — the same place
- * `Adjust count` sits on the screen this form opened from.
+ * The laptop puts Save and Discard in the header; at 390px a press belongs at the
+ * bottom edge, where `Adjust count` sits on the screen this form opened from.
  */
 defineProps<{
   status: SaveStatus
@@ -53,16 +51,14 @@ defineEmits<{ save: []; discard: [] }>()
   padding: 14px 16px;
   background: var(--color-surface);
   border-top: 1px solid var(--color-line);
-  /* The one press this screen exists for, kept against the thumb as the form
-     scrolls under it. */
+  /* Kept against the thumb as the form scrolls under it. */
   position: sticky;
   bottom: 0;
   z-index: 2;
 }
 
 .says {
-  /* Above the buttons rather than beside them: at 390px it is a sentence, and a
-     sentence and two 48px doors do not share a line. */
+  /* Above the buttons: a sentence and two 48px doors do not share a line. */
   min-width: 0;
 }
 
@@ -71,7 +67,6 @@ defineEmits<{ save: []; discard: [] }>()
   gap: 10px;
 }
 
-/* Save is the reason he is here, so it takes the room. */
 .save {
   flex: 1;
 }

@@ -8,18 +8,14 @@ import {
   SText,
   STextarea,
 } from '@/components/atoms'
-import { ADJUST_REASONS, OTHER_REASON } from '@/data/itemDetailMock'
+import { ADJUST_REASONS, OTHER_REASON } from '@/data/itemOptions'
 import { DELTA_COLOR, type MovementKind } from '@/types/item'
 import type { AdjustBasis } from '@/composables/useItemDetail'
 
 /**
  * The only way stock moves. It asks for a reason because a count that changed
- * without one is the thing this whole screen exists to prevent, and it writes a
- * movement rather than editing a total — which is why there is no stock field
- * anywhere else on the screen.
- *
- * A bottom sheet on the phone, a 420px dialog on the laptop. Same form either
- * way: he is doing the same thing, and the posture is the device's business.
+ * without one is what this screen exists to prevent, and it writes a movement
+ * rather than editing a total. A bottom sheet on the phone, a dialog on the laptop.
  */
 const props = defineProps<{
   /** What the count stands at now, so `New count` opens on it. */
@@ -31,6 +27,10 @@ const props = defineProps<{
   /** Nothing is red until he has tried to record. */
   pressed: boolean
   phone?: boolean
+  /** The write is in flight, so the sheet does not take a second press. */
+  recording?: boolean
+  /** The write came back refused. Said here, where the press was. */
+  writeError?: string
 }>()
 
 const basis = defineModel<AdjustBasis>('basis', { required: true })
@@ -113,8 +113,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     >
       <SText id="adjust-title" type="dialog-title" as="h2">Adjust count</SText>
 
-      <!-- Two ways of saying the same thing. `± Change` first: on site he knows
-           what went, not what is left. -->
+      <!-- `± Change` first: on site he knows what went, not what is left. -->
       <SSegmented v-model="basis" :options="BASIS_OPTIONS" size="lg" class="basis" />
 
       <SInput
@@ -153,8 +152,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         :error="pressed && !!reasonError"
         :error-message="reasonError"
       />
-      <!-- The common reasons cover most of it; the rest is prose, and prose
-           gets the field that holds prose. -->
+      <!-- The rest is prose, and prose gets the field that holds prose. -->
       <STextarea
         v-if="writingOwnReason"
         ref="freeField"
@@ -177,11 +175,25 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
         </SText>
       </div>
 
+      <SText v-if="writeError" type="row-meta" color="risk" class="write-error" role="alert">
+        {{ writeError }}
+      </SText>
+
       <div class="buttons">
-        <SButton :size="phone ? 'lg' : 'md'" class="record" @click="emit('record')">
+        <SButton
+          :size="phone ? 'lg' : 'md'"
+          class="record"
+          :loading="recording"
+          @click="emit('record')"
+        >
           Record movement
         </SButton>
-        <SButton variant="ghost" :size="phone ? 'lg' : 'md'" @click="emit('dismiss')">
+        <SButton
+          variant="ghost"
+          :size="phone ? 'lg' : 'md'"
+          :disabled="recording"
+          @click="emit('dismiss')"
+        >
           Cancel
         </SButton>
       </div>
@@ -252,14 +264,18 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   align-self: stretch;
 }
 
-/* The movement, read back. It sits above the button because it is what the
-   button will do, not a report of what it did. */
+/* Above the button, because it is what the button will do. */
 .consequence {
   display: flex;
   align-items: baseline;
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid var(--color-divider);
+}
+
+/* Above the press that failed, not in a banner behind the sheet. */
+.write-error {
+  line-height: 1.5;
 }
 
 .buttons {

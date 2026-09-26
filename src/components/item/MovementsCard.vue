@@ -3,9 +3,8 @@ import { SButton, SText } from '@/components/atoms'
 import { DELTA_COLOR, formatDelta, type Movement } from '@/types/item'
 
 /**
- * Every change to stock, and nothing overwritten. Stock on hand appears only in
- * the dashed card above — this screen never offers a total field, because a
- * count only moves through a movement that carries a reason.
+ * Every change to stock, nothing overwritten. There is no total field anywhere on
+ * this screen: a count only moves through a movement that carries a reason.
  */
 defineProps<{ movements: Movement[] }>()
 
@@ -33,8 +32,7 @@ defineEmits<{ adjust: []; open: [movement: Movement] }>()
     >
       <SText type="cell-meta">{{ movement.date }}</SText>
       <SText type="row-meta" color="fg" class="what">{{ movement.description }}</SText>
-      <!-- The delta's ink is its kind: received is action, a loss is risk, an
-           ordinary outflow is neither. -->
+      <!-- Received is action, a loss is risk, an ordinary outflow is neither. -->
       <SText type="money" :color="DELTA_COLOR[movement.kind]" class="figure">
         {{ formatDelta(movement.delta) }}
       </SText>
@@ -76,7 +74,7 @@ defineEmits<{ adjust: []; open: [movement: Movement] }>()
   align-items: center;
   padding: 10px 16px;
   border-bottom: 1px solid var(--color-divider);
-  /* The rows are a table, not a form: no box, no radius, full width. */
+    /* A table row, not a form: no box, no radius, full width. */
   background: none;
   border-left: none;
   border-right: none;
@@ -87,15 +85,13 @@ defineEmits<{ adjust: []; open: [movement: Movement] }>()
   color: inherit;
 }
 
-/* The last row's divider is the foot's own top border. Flagged by index rather
-   than `:last-of-type`, which counts buttons and divs apart and so would match
-   twice in a list where only some rows link somewhere. */
+/* Flagged by index, not `:last-of-type`, which counts buttons and divs apart and
+   would match twice when only some rows link somewhere. */
 .row--last {
   border-bottom: none;
 }
 
-/* Only a row that leads somewhere reacts. A write-off is a fact with no screen
-   behind it, and a hover on it would promise one. */
+/* Only a row that leads somewhere reacts. */
 .row--linked {
   cursor: pointer;
   transition: background-color 120ms ease-out;

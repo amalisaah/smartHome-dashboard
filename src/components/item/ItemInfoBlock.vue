@@ -2,10 +2,7 @@
 import { computed } from 'vue'
 import { STagInput, SText } from '@/components/atoms'
 
-/**
- * The words, after the figures. Read-only: on this screen editing is one tap
- * away, not under his thumb — the keywords keep their chips but lose their `×`.
- */
+/** The words, after the figures. Read-only — editing is one tap away. */
 const props = defineProps<{
   keywords: string[]
   notes: string
@@ -15,10 +12,8 @@ const props = defineProps<{
 }>()
 
 /**
- * The note's first sentence. The frame shows one line of it, and a phone in a
- * customer's house is not where a paragraph gets read — the whole note is a tap
- * away in Edit. Cut at the sentence rather than clamped, so it never ends
- * mid-word.
+ * The note's first sentence — the whole thing is a tap away in Edit. Cut at the
+ * sentence rather than clamped, so it never ends mid-word.
  */
 const shortNote = computed(() => {
   const trimmed = props.notes.trim()
@@ -51,7 +46,6 @@ const supplierLine = computed(() =>
   border-bottom: 1px solid var(--color-line);
 }
 
-/* Prose that wraps takes leading. */
 .note {
   line-height: 1.6;
 }
