@@ -28,8 +28,13 @@ const props = defineProps<{
    * figure beside it); `split` is the 92px override input. `cell` is a table
    * cell's own words made editable — the metrics of `SText type="cell"`, so a
    * row holding one keeps the height it had as text.
+   *
+   * `phone` is the customers module's phone field: 16px, which is the size below
+   * which iOS zooms the page on focus, in a box that is 48px including its
+   * border. `note` is the field that opens inside a table row once a contact has
+   * been logged — a cell's width, a cell's text size, and no door of its own.
    */
-  size?: 'md' | 'lg' | 'field' | 'row' | 'row-figure' | 'split' | 'cell'
+  size?: 'md' | 'lg' | 'field' | 'row' | 'row-figure' | 'split' | 'cell' | 'phone' | 'note'
   /** Every figure is mono and tabular — these tables are read by column. */
   mono?: boolean
   align?: 'left' | 'right'
@@ -38,6 +43,14 @@ const props = defineProps<{
    * value, then becomes solid: dashed means not-yet, solid means real.
    */
   dashed?: boolean
+  /**
+   * Whether the label names the field or prompts for it. `sm` (12px) is the
+   * default. `md` (13px) is a phone form's principal field — a single word
+   * naming something the record needs. An optional field's label is a sentence
+   * asking for something, stays at `sm`, and under `size="phone"` takes the
+   * quieter ink to say so.
+   */
+  labelSize?: 'sm' | 'md'
   /** Use when the field has no visible label. */
   ariaLabel?: string
 }>()
@@ -57,12 +70,12 @@ defineExpose({ focus: () => inputEl.value?.focus() })
 </script>
 
 <template>
-  <div class="s-input-group">
+  <div class="s-input-group" :class="`s-input-group--size-${size ?? 'md'}`">
     <label
       v-if="label"
       :for="fieldId"
       class="s-input-label"
-      :class="{ 's-input-label--error': error }"
+      :class="[`s-input-label--${labelSize ?? 'sm'}`, { 's-input-label--error': error }]"
     >
       {{ label }}<span v-if="required" class="s-input-required"> *</span>
     </label>
@@ -121,6 +134,22 @@ defineExpose({ focus: () => inputEl.value?.focus() })
   font-weight: 500;
   color: var(--color-fg-2);
   letter-spacing: 0.01em;
+}
+
+/* The phone form's principal fields. */
+.s-input-label--md {
+  font-size: 13px;
+}
+
+/* Above a 16px field, the tracking a 12px laptop label needs only makes it
+   looser than the value under it. */
+.s-input-group--size-phone .s-input-label {
+  letter-spacing: normal;
+}
+
+/* An optional field's label asks a question rather than naming a value. */
+.s-input-group--size-phone .s-input-label--sm:not(.s-input-label--error) {
+  color: var(--color-fg-2-soft);
 }
 
 .s-input-label--error {
@@ -194,6 +223,13 @@ defineExpose({ focus: () => inputEl.value?.focus() })
   color: var(--color-muted-dark);
 }
 
+/* The drawn action disappears into a `--fg` header, so the ring is the lifted
+   one — the same treatment, at the lightness it takes to still be a ring. */
+.s-input-wrap--on-dark:focus-within {
+  border-color: var(--color-action-on-dark);
+  outline-color: var(--color-action-on-dark);
+}
+
 .s-input-wrap--derived {
   border-style: dashed;
   border-color: var(--color-fg-3);
@@ -214,6 +250,19 @@ defineExpose({ focus: () => inputEl.value?.focus() })
 .s-input-wrap--dashed {
   border-style: dashed;
   border-color: var(--color-fg-3);
+}
+
+/* A field that has just opened and is waiting for something optional. The dashes
+   say nothing is typed yet, the action says this is where he is, and it goes
+   solid once he is in it. Scoped to `accent` so the shipment builder's dashed
+   rows keep their dashes through focus — a blank cost row is still blank while
+   being typed into. */
+.s-input-wrap--accent.s-input-wrap--dashed {
+  border-color: var(--color-action);
+}
+
+.s-input-wrap--accent.s-input-wrap--dashed:focus-within {
+  border-style: solid;
 }
 
 /* In a table row: no box at rest, the box on hover, the focus ring on focus.
@@ -310,6 +359,24 @@ defineExpose({ focus: () => inputEl.value?.focus() })
   font-size: 12px;
   padding: 0 8px;
   color: var(--color-micro);
+}
+
+/* The 48px sits on the wrap so the border counts inside it, and the drawn box is
+   the 48px the handoff draws rather than 48 plus two. */
+.s-input-wrap--size-phone {
+  min-height: var(--hit-min);
+}
+
+.s-input--phone {
+  padding: 0 12px;
+  font-size: 16px;
+}
+
+/* The note field in a logged row. No min-height, so opening it does not make the
+   row jump. */
+.s-input--note {
+  padding: 8px 10px;
+  font-size: 14px;
 }
 
 /* A figure sitting in a table row, borderless until reached for. */

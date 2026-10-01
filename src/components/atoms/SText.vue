@@ -14,6 +14,7 @@ const props = defineProps<{
     | 'app-title'
     | 'body'
     | 'list-title'
+    | 'row-name'
     | 'ui'
     | 'cell'
     | 'meta'
@@ -34,7 +35,18 @@ const props = defineProps<{
     | 'money'
     | 'list-meta'
     | 'cell-meta'
-  color?: 'fg' | 'fg-2' | 'fg-2-soft' | 'micro' | 'fg-3' | 'action' | 'risk' | 'inverse' | 'muted-dark'
+  /** `action-ink` is the action hue at text weight; `action` is the drawn colour. */
+  color?:
+    | 'fg'
+    | 'fg-2'
+    | 'fg-2-soft'
+    | 'micro'
+    | 'fg-3'
+    | 'action'
+    | 'action-ink'
+    | 'risk'
+    | 'inverse'
+    | 'muted-dark'
   as?: string
 }>()
 
@@ -49,6 +61,7 @@ const BLOCK_TYPES = new Set([
   'pane-title',
   'body',
   'list-title',
+  'row-name',
   'meta',
   'label',
   'caption',
@@ -164,6 +177,15 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
 .s-text--list-title {
   font-family: var(--font-sans);
   font-size: 15px;
+  font-weight: 500;
+  color: var(--color-fg);
+}
+
+/* The name a phone row exists to find. One step up from `list-title`, which
+   shares its row with a figure; here the name is the whole row. */
+.s-text--row-name {
+  font-family: var(--font-sans);
+  font-size: 16px;
   font-weight: 500;
   color: var(--color-fg);
 }
@@ -351,6 +373,7 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
 .s-text--color-micro       { color: var(--color-micro); }
 .s-text--color-fg-3        { color: var(--color-fg-3); }
 .s-text--color-action      { color: var(--color-action); }
+.s-text--color-action-ink  { color: var(--color-action-ink); }
 .s-text--color-risk        { color: var(--color-risk); }
 .s-text--color-inverse     { color: var(--color-inverse); }
 .s-text--color-muted-dark  { color: var(--color-muted-dark); }

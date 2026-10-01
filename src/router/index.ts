@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AllocationPreviewView from '@/views/AllocationPreviewView.vue'
 import CatalogueListView from '@/views/CatalogueListView.vue'
+import CustomerListView from '@/views/CustomerListView.vue'
+import CustomerNewView from '@/views/CustomerNewView.vue'
+import CustomerPlaceholderView from '@/views/CustomerPlaceholderView.vue'
 import DesignSystemView from '@/views/DesignSystemView.vue'
 import GroupsMarkupView from '@/views/GroupsMarkupView.vue'
 import ItemDetailView from '@/views/ItemDetailView.vue'
@@ -72,6 +75,38 @@ export const router = createRouter({
       name: 'shipment-preview',
       component: AllocationPreviewView,
       props: (route) => ({ shipmentId: Number(route.params.id) }),
+    },
+    {
+      path: '/customers',
+      name: 'customers',
+      component: CustomerListView,
+    },
+    {
+      // A customer he has just started has no id: `POST /customers` gives her a
+      // number when he saves, not the click that opened a blank form. Declared
+      // above `:id` so it wins.
+      path: '/customers/new',
+      name: 'customer-new',
+      component: CustomerNewView,
+      // The name he could not find is the name he is about to enter.
+      props: (route) => ({
+        initialName: typeof route.query.name === 'string' ? route.query.name : '',
+      }),
+    },
+    {
+      // Her customer page — designed elsewhere in module 5, out of scope here.
+      // The route exists so no row on the list is a dead click.
+      path: '/customers/:id(\\d+)',
+      name: 'customer-detail',
+      component: CustomerPlaceholderView,
+      props: (route) => ({ customerId: Number(route.params.id), destination: 'detail' }),
+    },
+    {
+      // Her house, which is where a phone row lands. Also out of scope here.
+      path: '/customers/:id(\\d+)/house',
+      name: 'customer-house',
+      component: CustomerPlaceholderView,
+      props: (route) => ({ customerId: Number(route.params.id), destination: 'house' }),
     },
     {
       path: '/groups',

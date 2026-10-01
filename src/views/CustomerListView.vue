@@ -1,0 +1,207 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { logContact } from '@/api/customers'
+import { useCustomerFilters, useCustomers } from '@/api/hooks/customers'
+import { SBanner, SText } from '@/components/atoms'
+import AppLayout from '@/components/app/AppLayout.vue'
+import CustomerFooter from '@/components/customers/CustomerFooter.vue'
+import CustomerNewDialog from '@/components/customers/CustomerNewDialog.vue'
+import CustomerPhoneEmpty from '@/components/customers/CustomerPhoneEmpty.vue'
+import CustomerPhoneFilters from '@/components/customers/CustomerPhoneFilters.vue'
+import CustomerPhoneFooter from '@/components/customers/CustomerPhoneFooter.vue'
+import CustomerPhoneHeader from '@/components/customers/CustomerPhoneHeader.vue'
+import CustomerPhoneRow from '@/components/customers/CustomerPhoneRow.vue'
+import CustomerPhoneSkeleton from '@/components/customers/CustomerPhoneSkeleton.vue'
+import CustomerTable from '@/components/customers/CustomerTable.vue'
+import CustomerToolbar from '@/components/customers/CustomerToolbar.vue'
+import { useCustomerDraft } from '@/composables/useCustomerDraft'
+import { useCustomerList } from '@/composables/useCustomerList'
+import { useMediaQuery } from '@/composables/useMediaQuery'
+import { CUSTOMER_FILTER_COPY } from '@/data/customersMock'
+import { DEFAULT_FILTER, DEFAULT_PHONE_FILTER, type CustomerRow } from '@/types/customers'
+
+/**
+ * Module 5, block D — the customer list.
+ *
+ * Below ~900px this is D2, whose job is to find a person and open her house;
+ * above, D1, whose job is to decide who to call next and record that he did.
+ * They are two designs, not one at two widths: the phone has no chasing
+ * columns, no quiet-for figures and no per-row action.
+ */
+const isPhone = useMediaQuery('(max-width: 899px)')
+
+const router = useRouter()
+
+// Two calls, two fates: a counts failure costs the chips their numbers, not the
+// screen its rows.
+const customersQuery = useCustomers()
+const filtersQuery = useCustomerFilters()
+
+const rows = computed(() => customersQuery.data.value ?? [])
+
+// Labels are copy and go up with the frame; counts are data and arrive after it.
+const filters = computed(() => filtersQuery.data.value ?? [...CUSTOMER_FILTER_COPY])
+
+/** `isPending` is "nothing cached yet", so a revalidation never re-skeletons. */
+const loading = computed(() => customersQuery.isPending.value)
+
+const {
+  query,
+  debouncedQuery,
+  searching,
+  filter,
+  selectFilter,
+  sort,
+  toggleSort,
+  visibleRows,
+  phoneRows,
+  logged,
+  logSpoke,
+  setNote,
+  closeNote,
+  undoLog,
+  footerSummary,
+  phoneFooter,
+  phoneSectionLabel,
+} = useCustomerList(rows, filters, {
+  initialFilter: isPhone.value ? DEFAULT_PHONE_FILTER : DEFAULT_FILTER,
+})
+
+/**
+ * The laptop adds an enquiry in a dialog over the list, so the list he was
+ * working stays behind it and the filter and scroll position survive. The phone
+ * goes to D3's own screen instead — a modal is not a phone's way in.
+ */
+const dialogOpen = ref(false)
+const { draft, duplicate, saving, save, reset } = useCustomerDraft()
+
+function openDialog() {
+  reset()
+  dialogOpen.value = true
+}
+
+async function submit(thenOpenHouse: boolean) {
+  if (saving.value) return
+  const id = await save()
+  dialogOpen.value = false
+  if (thenOpenHouse) {
+    await router.push({ name: 'customer-house', params: { id } })
+    return
+  }
+  // Saved and staying: the new row arrives on the next fetch of the list.
+  customersQuery.refetch()
+  filtersQuery.refetch()
+}
+
+function openCustomer(id: number) {
+  dialogOpen.value = false
+  router.push({ name: 'customer-detail', params: { id } })
+}
+
+// Where the rows lead — all out of scope for this handoff.
+const openHouse = (row: CustomerRow) =>
+  router.push({ name: 'customer-house', params: { id: row.id } })
+
+const newOnPhone = () => router.push({ name: 'customer-new' })
+
+/** The name he could not find is the name he is about to type. */
+const addFromQuery = () =>
+  router.push({ name: 'customer-new', query: { name: debouncedQuery.value.trim() } })
+
+/** The contact is recorded here; the request follows it. */
+const spoke = (row: CustomerRow) => logSpoke(row, logContact)
+</script>
+
+<template>
+  <!-- The phone frame carries its own header, so the app bar and tabs stay off it. -->
+  <AppLayout :chrome="!isPhone">
+    <!-- D2 — phone 390 -->
+    <template v-if="isPhone">
+      <CustomerPhoneHeader v-model:query="query" @new-customer="newOnPhone" />
+      <CustomerPhoneFilters
+        :filters="filters"
+        :active="filter"
+        :searching="searching"
+        @select="selectFilter"
+      />
+
+      <SBanner v-if="customersQuery.isError.value" variant="error">
+        Could not load the customer list.
+      </SBanner>
+
+      <template v-else>
+        <SText type="micro" color="micro" class="section-label">{{ phoneSectionLabel }}</SText>
+
+        <CustomerPhoneSkeleton v-if="loading" />
+        <CustomerPhoneEmpty
+          v-else-if="phoneRows.length === 0 && debouncedQuery.trim()"
+          :query="debouncedQuery.trim()"
+          @add-query="addFromQuery"
+        />
+        <div v-else>
+          <CustomerPhoneRow
+            v-for="row in phoneRows"
+            :key="row.id"
+            :row="row"
+            :query="debouncedQuery"
+            @open="openHouse(row)"
+          />
+        </div>
+
+        <CustomerPhoneFooter :summary="phoneFooter" />
+      </template>
+    </template>
+
+    <!-- D1 — laptop 1440 -->
+    <template v-else>
+      <CustomerToolbar
+        v-model:query="query"
+        :filters="filters"
+        :active="filter"
+        :searching="searching"
+        @select="selectFilter"
+        @new-enquiry="openDialog"
+      />
+
+      <SBanner v-if="customersQuery.isError.value" variant="error">
+        Could not load the customer list.
+      </SBanner>
+
+      <template v-else>
+        <CustomerTable
+          :rows="visibleRows"
+          :query="debouncedQuery"
+          :loading="loading"
+          :sort="sort"
+          :logged="logged"
+          @sort="toggleSort"
+          @open="openCustomer($event.id)"
+          @spoke="spoke"
+          @undo="undoLog($event.id)"
+          @note="(row, value) => setNote(row.id, value)"
+          @close-note="closeNote($event.id)"
+        />
+
+        <CustomerFooter :summary="footerSummary" />
+      </template>
+    </template>
+  </AppLayout>
+
+  <CustomerNewDialog
+    v-if="dialogOpen && !isPhone"
+    :draft="draft"
+    :duplicate="duplicate"
+    :saving="saving"
+    @save-and-open-house="submit(true)"
+    @save="submit(false)"
+    @dismiss="dialogOpen = false"
+    @open-duplicate="openCustomer"
+  />
+</template>
+
+<style scoped>
+.section-label {
+  padding: 10px 16px 6px;
+}
+</style>

@@ -17,6 +17,16 @@
   --color-fg: oklch(0.21 0.01 260);
   --color-action: oklch(0.55 0.13 255);
   --color-action-hover: oklch(0.48 0.13 255);
+
+  /* The action hue at text weight. `--color-action` is drawn — a border, a fill,
+     a focus ring; this is the same hue as ink, where 0.55 sits a shade light at
+     14px and below. Not a second action colour: one hue at two weights, the way
+     `fg-2` / `fg-2-soft` / `micro` are one quiet ink at three. */
+  --color-action-ink: oklch(0.50 0.13 255);
+
+  /* The action hue lifted far enough to read as a focus ring on the dark phone
+     header, where a 0.55 outline disappears into a 0.21 ground. */
+  --color-action-on-dark: oklch(0.68 0.13 255);
   --color-risk: oklch(0.55 0.13 45);
   --color-risk-hover: oklch(0.48 0.13 45);
   --color-inverse: oklch(0.98 0.002 250);
