@@ -202,6 +202,74 @@ export interface ApiItemCreate {
   image_url?: string
 }
 
+// --- customers --------------------------------------------------------------
+
+/** The four words, in these spellings. */
+export type ApiCustomerStatus = 'enquiry' | 'quoted' | 'customer' | 'dormant'
+
+/** `GET /customers`, `GET /customers/{id}`, and what a create or a contact answers with. */
+export interface ApiCustomer {
+  id: number
+  /** A placeholder once anonymised. */
+  name: string
+  phone: string | null
+  alt_phone: string | null
+  email: string | null
+  /**
+   * The *effective* status. `dormant` is derived on read from
+   * `stored_status = quoted` plus a stale `last_contact_at`, which is why
+   * logging any contact clears it with no write to this field.
+   */
+  status: ApiCustomerStatus
+  /** The status actually on the row. Never `dormant`. */
+  stored_status: ApiCustomerStatus
+  /** The latest contact-log entry's `occurred_at`. Derived, never writable. */
+  last_contact_at: string | null
+  /** Whole days since `last_contact_at`; null when never contacted. */
+  days_since_last_contact: number | null
+  source: string | null
+  notes: string | null
+  anonymised_at: string | null
+  archived_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** `POST /customers`. Only `name` is required; `dormant` is rejected. */
+export interface ApiCustomerCreate {
+  name: string
+  phone?: string | null
+  alt_phone?: string | null
+  email?: string | null
+  status?: Exclude<ApiCustomerStatus, 'dormant'>
+  source?: string | null
+  notes?: string | null
+}
+
+export type ApiContactKind = 'call' | 'whatsapp' | 'visit' | 'quote_sent' | 'other'
+
+/** An entry of `GET /customers/{id}/contact-logs`. */
+export interface ApiContactLogEntry {
+  id: number
+  customer_id: number
+  kind: ApiContactKind
+  note: string | null
+  occurred_at: string
+}
+
+/** `POST /customers/{id}/contact` — the customer comes back already moved. */
+export interface ApiContactResult {
+  entry: ApiContactLogEntry
+  customer: ApiCustomer
+}
+
+/** `GET /settings/dormancy`. */
+export interface ApiDormancySettings {
+  dormant_after_days: number
+  /** The shipped default, for a "reset" affordance. */
+  default_dormant_after_days: number
+}
+
 /** The error envelope every route shares. */
 export interface ApiError {
   statusCode: number

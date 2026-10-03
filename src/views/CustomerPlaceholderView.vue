@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useCustomer } from '@/api/hooks/customers'
 import { SButton, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
-import { CUSTOMER_ROWS } from '@/data/customersMock'
 
 /**
  * A navigation stub. Her customer page and her house are designed elsewhere in
@@ -19,9 +19,10 @@ const props = defineProps<{
 const isPhone = useMediaQuery('(max-width: 899px)')
 const router = useRouter()
 
-const customer = computed(
-  () => CUSTOMER_ROWS.find((row) => row.id === props.customerId) ?? null,
-)
+// Her name, so a stub still says whose page this is. A failure costs the
+// heading its name and nothing else.
+const customerQuery = useCustomer(() => props.customerId)
+const customer = computed(() => customerQuery.data.value ?? null)
 
 const title = computed(() =>
   props.destination === 'house'

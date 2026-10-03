@@ -72,6 +72,12 @@ export const formatShortDate = (iso: string) => {
   return `${SHORT_DAY.format(date)} ${SHORT_MONTH.format(date)}`
 }
 
+/** An ISO date-time as `Aug 2026` — a month is as precise as "since" gets. */
+export const formatMonthYear = (iso: string) => {
+  const date = new Date(iso)
+  return `${SHORT_MONTH.format(date)} ${date.getFullYear()}`
+}
+
 /** Splits `text` into matched / unmatched runs for the search highlight. */
 export function splitOnMatch(text: string, query: string): { text: string; match: boolean }[] {
   const needle = query.trim().toLowerCase()

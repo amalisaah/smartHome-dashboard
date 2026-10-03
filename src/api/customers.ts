@@ -1,60 +1,122 @@
-import {
-  CUSTOMER_FILTER_DEFS,
-  CUSTOMER_ROWS,
-  MOCK_LOAD_MS,
-  findDuplicateByPhone,
-} from '@/data/customersMock'
 import type {
-  CustomerDraft,
-  CustomerFilterDef,
-  CustomerLogResult,
-  CustomerRow,
-  DuplicateMatch,
+  ApiContactResult,
+  ApiCustomer,
+  ApiCustomerCreate,
+  ApiDormancySettings,
+} from '@/types/api'
+import {
+  phoneDigits,
+  type CustomerDraft,
+  type CustomerLogResult,
+  type CustomerRecord,
+  type CustomerStatus,
+  type DormancyRule,
+  type DuplicateMatch,
 } from '@/types/customers'
+import {
+  toCustomerRecord,
+  toDormancyRule,
+  toDuplicateMatch,
+  toLogResult,
+} from '@/utils/mapper/customerMapper'
+import { apiGet, apiSend } from './http'
 
 /**
  * The seam between the wire and the customer list.
  *
- * These answer from the mock rather than the API. `GET /customers` exists and
- * returns `status`, `stored_status`, `days_since_last_contact` and
- * `last_contact_at`, but not the stage phrase, the countdown, the warn/soon
- * flags, the latest note, the room count or the filter counts — and the handoff
- * is explicit that the screen renders those rather than works them out. Reading
- * the endpoint today would mean inventing five of the six columns here.
- *
- * Everything above this file is written against the real shape, so wiring it is
- * this file changing and nothing else.
+ * What comes back is a `CustomerRecord`. The screen's row is that record read
+ * against the dormancy rule, which is a separate request with a separate fate,
+ * so the two are combined at the view rather than welded together here.
  */
 
-const settle = <T>(value: T, ms = MOCK_LOAD_MS): Promise<T> =>
-  new Promise((resolve) => setTimeout(() => resolve(value), ms))
-
-/** `GET /customers?sort=last_contact_desc`. */
-export const fetchCustomers = (): Promise<CustomerRow[]> => settle([...CUSTOMER_ROWS])
+/** A shorter prefix would accuse half the list. */
+const MIN_DUPLICATE_DIGITS = 6
 
 /**
- * The six labels and counts. No endpoint yet: `?status=` takes one status at a
- * time, so `ever quoted · 13` would be three round trips or a client-side rule.
- * Separate because it should be — a counts failure costs the chips their
- * numbers, not the list its rows.
+ * `GET /customers`. Unpaginated, so the list is fetched once and worked over in
+ * memory — that is what lets a keystroke re-filter without a round trip.
+ * `include_dormant` because four of the six chips need those rows.
  */
-export const fetchCustomerFilters = (): Promise<CustomerFilterDef[]> =>
-  settle([...CUSTOMER_FILTER_DEFS])
-
-/**
- * `POST /customers/{id}/contact` — the one-tap log. The endpoint answers with
- * `{ entry, customer }`, the customer already carrying its recalculated status,
- * which is what state 4 renders. Nothing on screen waits for it.
- */
-export const logContact = (customerId: number): Promise<CustomerLogResult | null> => {
-  const row = CUSTOMER_ROWS.find((candidate) => candidate.id === customerId)
-  return settle(row?.afterLog ?? null, 260)
+export async function fetchCustomers(signal?: AbortSignal): Promise<CustomerRecord[]> {
+  const rows = await apiGet<ApiCustomer[]>(
+    '/customers',
+    { include_dormant: 'true', sort: 'last_contact_desc' },
+    signal,
+  )
+  return rows.map(toCustomerRecord)
 }
 
-/** `POST /customers`. The id is minted by the save, not by the click. */
-export const createCustomer = (_draft: CustomerDraft): Promise<{ id: number }> =>
-  settle({ id: Math.max(...CUSTOMER_ROWS.map((row) => row.id)) + 1 }, 200)
+/** `GET /customers/{id}`. */
+export async function fetchCustomer(id: number, signal?: AbortSignal): Promise<CustomerRecord> {
+  return toCustomerRecord(await apiGet<ApiCustomer>(`/customers/${id}`, undefined, signal))
+}
 
-/** `GET /customers?q=<phone>` — the check behind the duplicate notice. */
-export const findDuplicate = (phone: string): Promise<DuplicateMatch | null> =>
-  settle(findDuplicateByPhone(phone), 120)
+/**
+ * `GET /settings/dormancy`. Its own request, so a screen that cannot read the
+ * rule still lists every customer; it just stops judging them.
+ */
+export async function fetchDormancyRule(signal?: AbortSignal): Promise<DormancyRule> {
+  return toDormancyRule(
+    await apiGet<ApiDormancySettings>('/settings/dormancy', undefined, signal),
+  )
+}
+
+/**
+ * `POST /customers/{id}/contact` — the one-tap log. `before` is the status the
+ * row was showing: the answer says what she is now, and only the caller knows
+ * what she was.
+ */
+export async function logContact(
+  customerId: number,
+  before: CustomerStatus,
+  rule: DormancyRule | null,
+): Promise<CustomerLogResult | null> {
+  const { customer } = await apiSend<ApiContactResult>(
+    'POST',
+    `/customers/${customerId}/contact`,
+    { kind: 'call' },
+  )
+  return toLogResult(before, toCustomerRecord(customer), rule)
+}
+
+/**
+ * `POST /customers`. The id is minted by the save. What she asked about goes to
+ * `notes` — `source` is how she was found, a different question the form does
+ * not put.
+ */
+export async function createCustomer(draft: CustomerDraft): Promise<{ id: number }> {
+  const body: ApiCustomerCreate = {
+    name: draft.name.trim(),
+    phone: draft.phone.trim() || null,
+    status: 'enquiry',
+    notes: draft.asked.trim() || null,
+  }
+  const created = await apiSend<ApiCustomer>('POST', '/customers', body)
+  return { id: created.id }
+}
+
+/**
+ * `GET /customers?q=` — the check behind the duplicate notice. The server's `q`
+ * is a substring over stored text, so it gets the number as typed and the
+ * digits-only comparison happens here; a number written differently from the
+ * way it was stored still slips past, as the mapper's gap note records.
+ */
+export async function findDuplicate(
+  phone: string,
+  signal?: AbortSignal,
+): Promise<DuplicateMatch | null> {
+  const typed = phone.trim()
+  const digits = phoneDigits(typed)
+  if (digits.length < MIN_DUPLICATE_DIGITS) return null
+
+  const rows = await apiGet<ApiCustomer[]>(
+    '/customers',
+    { q: typed, include_dormant: 'true' },
+    signal,
+  )
+  const hit = rows
+    .map(toCustomerRecord)
+    .find((record) => record.phone !== null && phoneDigits(record.phone).startsWith(digits))
+
+  return hit ? toDuplicateMatch(hit) : null
+}

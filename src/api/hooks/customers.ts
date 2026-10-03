@@ -1,28 +1,45 @@
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { fetchCustomerFilters, fetchCustomers } from '@/api/customers'
+import { fetchCustomer, fetchCustomers, fetchDormancyRule } from '@/api/customers'
 
 export const customerKeys = {
   all: ['customers'] as const,
   list: () => [...customerKeys.all, 'list'] as const,
-  filters: () => [...customerKeys.all, 'filters'] as const,
+  detail: (id: number) => [...customerKeys.all, 'detail', id] as const,
+}
+
+/** A setting rather than a customer, so it is keyed as one. */
+export const settingsKeys = {
+  dormancy: () => ['settings', 'dormancy'] as const,
 }
 
 /**
- * The rows, in the data layer's order. Unpaginated, so the list is worked over
- * in memory — that is what lets a keystroke re-filter without a round trip, and
- * lets search cover everyone while a filter is active.
+ * The rows, most recently contacted first. Records rather than rows: the view
+ * reads them against the dormancy rule.
  */
 export function useCustomers() {
   return useQuery({
     queryKey: customerKeys.list(),
-    queryFn: () => fetchCustomers(),
+    queryFn: ({ signal }) => fetchCustomers(signal),
   })
 }
 
-/** Its own query, so a counts failure costs the chips their numbers, not the rows. */
-export function useCustomerFilters() {
+export function useCustomer(id: MaybeRefOrGetter<number>) {
+  const customerId = computed(() => toValue(id))
+
   return useQuery({
-    queryKey: customerKeys.filters(),
-    queryFn: () => fetchCustomerFilters(),
+    queryKey: computed(() => customerKeys.detail(customerId.value)),
+    queryFn: ({ signal }) => fetchCustomer(customerId.value, signal),
+  })
+}
+
+/**
+ * Its own query, so a screen that cannot read it still lists every customer —
+ * it loses the countdown and the amber, not the rows.
+ */
+export function useDormancyRule() {
+  return useQuery({
+    queryKey: settingsKeys.dormancy(),
+    queryFn: ({ signal }) => fetchDormancyRule(signal),
   })
 }

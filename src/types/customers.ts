@@ -1,11 +1,10 @@
 /**
  * Module 5, block D — the customer list.
  *
- * Every judgement is made upstream: status, stage phrase, quiet-for days, the
- * dormancy countdown, the warn/soon flags, filter membership and counts all
- * arrive on the row and are rendered as given. There is no threshold in this
- * module — the reference's 30-day amber and 10-day countdown are mock values,
- * and the UI reads the flags instead of comparing against either.
+ * Two shapes, deliberately apart. `CustomerRecord` is a customer as the API
+ * records one; `CustomerRow` is what the list renders. The second is worked out
+ * from the first plus the dormancy rule in `@/utils/mapper/customerMapper`, so
+ * every component renders its row as given and holds no threshold of its own.
  */
 
 /** Fixed vocabulary. These four words, in these spellings. */
@@ -50,12 +49,44 @@ export interface CustomerLogResult {
   statusCaption: string
 }
 
+/** A customer as the API records one — camelCase, and no judgement applied. */
+export interface CustomerRecord {
+  id: number
+  name: string
+  /** Null for a record taken down without one. */
+  phone: string | null
+  /** Effective status — `dormant` is evaluated live against the threshold. */
+  status: CustomerStatus
+  storedStatus: CustomerStatus
+  /** ISO date-time of the latest contact-log entry; null when never contacted. */
+  lastContactAt: string | null
+  /** Null when never contacted — the row counts from `createdAt` instead. */
+  daysSinceLastContact: number | null
+  createdAt: string
+}
+
+/**
+ * `GET /settings/dormancy`. A quoted customer quiet for longer than this reads
+ * as dormant. A setting, not a constant — the owner will change it.
+ */
+export interface DormancyRule {
+  dormantAfterDays: number
+  defaultDormantAfterDays: number
+}
+
+/**
+ * How close to dormant the countdown gets before it reads as risk. The one
+ * figure here from the drawing rather than the server.
+ */
+export const SOON_WITHIN_DAYS = 10
+
 export interface CustomerRow {
   id: number
   name: string
+  /** Empty for a record with no number; the row renders what it has. */
   phone: string
   status: CustomerStatus
-  /** `quoted 58 d ago`, `since Aug 2026`, `dormant since 3 Sep`. */
+  /** `quoted`, `first contact 5 d ago`, `since Aug 2026`, `dormant since 3 Sep`. */
   stage: string
   statusCaption: string | null
   /** Whole days of silence, rendered as `52 d`. */
@@ -66,14 +97,15 @@ export interface CustomerRow {
   warn: boolean
   /** The countdown chip reads as risk. */
   soon: boolean
-  /** `null` renders as `—`. */
+  /** `null` renders as `—`, and is all the API can answer today. */
   lastSaid: string | null
-  /** Phone only. `null` is "no house yet" — never an address, at any viewport. */
-  roomCount: number | null
+  /**
+   * Phone only. `null` is "no house yet"; `undefined` is "we did not ask",
+   * which is the case today — never an address, at any viewport.
+   */
+  roomCount?: number | null
   /** Which filters hold this row. Not a rule the UI knows. */
   filters: CustomerFilterKey[]
-  /** What logging would return here. `null` = status unchanged. */
-  afterLog: CustomerLogResult | null
 }
 
 export interface CustomerFilterDef {
@@ -141,3 +173,67 @@ export const isCustomerFilterKey = (raw: unknown): CustomerFilterKey | null =>
   typeof raw === 'string' && (CUSTOMER_FILTERS as readonly string[]).includes(raw)
     ? (raw as CustomerFilterKey)
     : null
+
+// --- filter copy ------------------------------------------------------------
+
+const FILTER_COPY: Record<
+  CustomerFilterKey,
+  Pick<CustomerFilterDef, 'label' | 'phoneLabel' | 'defaultSort'>
+> = {
+  // The working views open on the longest silence; the rest are lists to look
+  // someone up in, so they open by name.
+  quoted: {
+    label: 'to chase — quoted',
+    phoneLabel: 'quoted',
+    defaultSort: { column: 'quiet', direction: 'desc' },
+  },
+  enquiries: {
+    label: 'enquiries',
+    phoneLabel: 'enquiries',
+    defaultSort: { column: 'quiet', direction: 'desc' },
+  },
+  customers: {
+    label: 'customers',
+    phoneLabel: 'customers',
+    defaultSort: { column: 'name', direction: 'asc' },
+  },
+  dormant: {
+    label: 'dormant',
+    phoneLabel: 'dormant',
+    defaultSort: { column: 'name', direction: 'asc' },
+  },
+  'ever-quoted': {
+    label: 'ever quoted',
+    phoneLabel: 'ever quoted',
+    defaultSort: { column: 'name', direction: 'asc' },
+  },
+  everyone: {
+    label: 'everyone',
+    phoneLabel: 'everyone',
+    defaultSort: { column: 'name', direction: 'asc' },
+  },
+}
+
+/** Labels with nothing counted: the chips go up on first paint, before the rows. */
+export const CUSTOMER_FILTER_COPY: readonly CustomerFilterDef[] = CUSTOMER_FILTERS.map((key) => ({
+  key,
+  ...FILTER_COPY[key],
+  count: null,
+}))
+
+/** The same six, carrying counts. `rows` is the whole list, not the filtered one. */
+export const customerFilterDefs = (rows: readonly CustomerRow[]): CustomerFilterDef[] =>
+  CUSTOMER_FILTERS.map((key) => ({
+    key,
+    ...FILTER_COPY[key],
+    count: rows.filter((row) => row.filters.includes(key)).length,
+  }))
+
+/**
+ * The footer's explainer. Until the rule lands the sentence names no figure
+ * rather than a stale one.
+ */
+export const dormancyExplainer = (rule: DormancyRule | null) =>
+  rule === null
+    ? 'Dormant is set by the calendar, never by hand'
+    : `Dormant is set by the calendar, never by hand — ${rule.dormantAfterDays} quiet days after a quote`

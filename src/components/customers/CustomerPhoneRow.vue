@@ -14,14 +14,16 @@ defineEmits<{ open: [] }>()
 const nameParts = computed(() => splitOnMatch(props.row.name, props.query))
 
 /**
- * The second line answers one question — is her house started? Never an address:
- * he is at her gate and already knows where he is.
+ * Is her house started? Never an address: he is at her gate already. With
+ * `undefined` the line is just her number — `no house yet` would be a claim
+ * about every customer rather than a fact about this one.
  */
-const metaLine = computed(() =>
-  props.row.roomCount === null
-    ? `${props.row.phone} · no house yet`
-    : `${props.row.phone} · house · ${props.row.roomCount} rooms`,
-)
+const metaLine = computed(() => {
+  const { phone, roomCount } = props.row
+  if (roomCount === undefined) return phone
+  const house = roomCount === null ? 'no house yet' : `house · ${roomCount} rooms`
+  return phone ? `${phone} · ${house}` : house
+})
 
 const metaParts = computed(() => splitOnMatch(metaLine.value, props.query))
 </script>

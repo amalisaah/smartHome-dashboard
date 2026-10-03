@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { SText } from '@/components/atoms'
-import { DORMANCY_EXPLAINER } from '@/data/customersMock'
 
-defineProps<{ summary: string }>()
+defineProps<{ summary: string; explainer: string }>()
 </script>
 
 <template>
@@ -10,8 +9,8 @@ defineProps<{ summary: string }>()
     <SText type="cell-meta" color="fg-2-soft" role="status" aria-live="polite">
       {{ summary }}
     </SText>
-    <!-- 60 days as a sentence; nothing computes with it. -->
-    <SText type="cell-meta" color="fg-2-soft">{{ DORMANCY_EXPLAINER }}</SText>
+    <!-- The owner's own threshold as a sentence; nothing computes with it. -->
+    <SText type="cell-meta" color="fg-2-soft">{{ explainer }}</SText>
   </div>
 </template>
 

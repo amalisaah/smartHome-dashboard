@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { logContact } from '@/api/customers'
-import { useCustomerFilters, useCustomers } from '@/api/hooks/customers'
+import { useCustomers, useDormancyRule } from '@/api/hooks/customers'
 import { SBanner, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import CustomerFooter from '@/components/customers/CustomerFooter.vue'
@@ -18,8 +18,15 @@ import CustomerToolbar from '@/components/customers/CustomerToolbar.vue'
 import { useCustomerDraft } from '@/composables/useCustomerDraft'
 import { useCustomerList } from '@/composables/useCustomerList'
 import { useMediaQuery } from '@/composables/useMediaQuery'
-import { CUSTOMER_FILTER_COPY } from '@/data/customersMock'
-import { DEFAULT_FILTER, DEFAULT_PHONE_FILTER, type CustomerRow } from '@/types/customers'
+import {
+  CUSTOMER_FILTER_COPY,
+  customerFilterDefs,
+  DEFAULT_FILTER,
+  DEFAULT_PHONE_FILTER,
+  dormancyExplainer,
+  type CustomerRow,
+} from '@/types/customers'
+import { toCustomerRows } from '@/utils/mapper/customerMapper'
 
 /**
  * Module 5, block D — the customer list.
@@ -33,15 +40,25 @@ const isPhone = useMediaQuery('(max-width: 899px)')
 
 const router = useRouter()
 
-// Two calls, two fates: a counts failure costs the chips their numbers, not the
-// screen its rows.
+// Two calls, two fates: losing the rule costs the countdown and the amber, so
+// the list is never held up waiting for a setting.
 const customersQuery = useCustomers()
-const filtersQuery = useCustomerFilters()
+const dormancyQuery = useDormancyRule()
 
-const rows = computed(() => customersQuery.data.value ?? [])
+const rule = computed(() => dormancyQuery.data.value ?? null)
 
-// Labels are copy and go up with the frame; counts are data and arrive after it.
-const filters = computed(() => filtersQuery.data.value ?? [...CUSTOMER_FILTER_COPY])
+/** The one place a judgement is applied. */
+const rows = computed(() => toCustomerRows(customersQuery.data.value ?? [], rule.value))
+
+// Labels go up with the frame; counts are counted off the rows, so a chip
+// cannot say 7 and render six.
+const filters = computed(() =>
+  customersQuery.data.value === undefined
+    ? [...CUSTOMER_FILTER_COPY]
+    : customerFilterDefs(rows.value),
+)
+
+const explainer = computed(() => dormancyExplainer(rule.value))
 
 /** `isPending` is "nothing cached yet", so a revalidation never re-skeletons. */
 const loading = computed(() => customersQuery.isPending.value)
@@ -89,9 +106,8 @@ async function submit(thenOpenHouse: boolean) {
     await router.push({ name: 'customer-house', params: { id } })
     return
   }
-  // Saved and staying: the new row arrives on the next fetch of the list.
+  // Saved and staying: the new row arrives on the next fetch, counts with it.
   customersQuery.refetch()
-  filtersQuery.refetch()
 }
 
 function openCustomer(id: number) {
@@ -109,8 +125,12 @@ const newOnPhone = () => router.push({ name: 'customer-new' })
 const addFromQuery = () =>
   router.push({ name: 'customer-new', query: { name: debouncedQuery.value.trim() } })
 
-/** The contact is recorded here; the request follows it. */
-const spoke = (row: CustomerRow) => logSpoke(row, logContact)
+/**
+ * The contact is recorded here; the request follows it. The row's status goes
+ * with it because only this side knows what she was before the log.
+ */
+const spoke = (row: CustomerRow) =>
+  logSpoke(row, (id) => logContact(id, row.status, rule.value))
 </script>
 
 <template>
@@ -183,7 +203,7 @@ const spoke = (row: CustomerRow) => logSpoke(row, logContact)
           @close-note="closeNote($event.id)"
         />
 
-        <CustomerFooter :summary="footerSummary" />
+        <CustomerFooter :summary="footerSummary" :explainer="explainer" />
       </template>
     </template>
   </AppLayout>
