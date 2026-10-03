@@ -55,6 +55,7 @@ export interface CustomerRecord {
   name: string
   /** Null for a record taken down without one. */
   phone: string | null
+  altPhone: string | null
   /** Effective status — `dormant` is evaluated live against the threshold. */
   status: CustomerStatus
   storedStatus: CustomerStatus

@@ -1,6 +1,7 @@
 import type { ApiContactKind, ApiCustomer, ApiDormancySettings } from '@/types/api'
 import {
   CUSTOMER_FILTERS,
+  phoneDigits,
   SOON_WITHIN_DAYS,
   type ContactKind,
   type CustomerFilterKey,
@@ -39,6 +40,7 @@ export function toCustomerRecord(api: ApiCustomer): CustomerRecord {
     id: api.id,
     name: api.name,
     phone: api.phone,
+    altPhone: api.alt_phone,
     status: api.status,
     storedStatus: api.stored_status,
     lastContactAt: api.last_contact_at,
@@ -174,6 +176,32 @@ export const toDuplicateMatch = (record: CustomerRecord): DuplicateMatch => ({
   phone: record.phone ?? '',
 })
 
+/** A shorter prefix would accuse half the list. */
+const MIN_DUPLICATE_DIGITS = 6
+
+/**
+ * The check behind the duplicate notice, run over the list already in hand.
+ *
+ * Digits against digits, so the spacing he types is never the reason a
+ * duplicate gets through — which the server's `q` could not manage, being a
+ * substring over however the number happens to be stored. Both numbers count:
+ * a second line is still the same person.
+ */
+export function findDuplicateIn(
+  records: readonly CustomerRecord[],
+  phone: string,
+): DuplicateMatch | null {
+  const digits = phoneDigits(phone)
+  if (digits.length < MIN_DUPLICATE_DIGITS) return null
+
+  const hit = records.find((record) =>
+    [record.phone, record.altPhone].some(
+      (candidate) => candidate !== null && phoneDigits(candidate).startsWith(digits),
+    ),
+  )
+  return hit ? toDuplicateMatch(hit) : null
+}
+
 /**
  * What the API still cannot answer, kept beside the derivations so the two stay
  * in step. The first three are each one request per row:
@@ -191,6 +219,7 @@ export const toDuplicateMatch = (record: CustomerRecord): DuplicateMatch => ({
  *   - a submitted entry cannot be taken back — there is no delete for one, so
  *     the dialog's Cancel is the only way out and it has to come before the
  *     write. Wants `DELETE /customers/{id}/contact-logs/{entryId}`.
- *   - the duplicate check — `?q=` is a substring over stored text, so a number
- *     typed with different spacing is never returned to compare against.
+ *   - the duplicate check runs over the loaded working list, so it cannot see an
+ *     archived or anonymised customer. Asking the server instead would cost a
+ *     request per keystroke and still miss a number stored with other spacing.
  */

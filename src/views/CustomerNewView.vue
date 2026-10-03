@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useCustomers } from '@/api/hooks/customers'
 import AppLayout from '@/components/app/AppLayout.vue'
 import CustomerNewScreen from '@/components/customers/CustomerNewScreen.vue'
 import { useCustomerDraft } from '@/composables/useCustomerDraft'
@@ -19,7 +20,17 @@ const props = defineProps<{ initialName?: string }>()
 const isPhone = useMediaQuery('(max-width: 899px)')
 const router = useRouter()
 
-const { draft, duplicate, saving, save } = useCustomerDraft(props.initialName ?? '')
+/**
+ * Reached by a direct link as well as from the list, so it asks for the list
+ * itself — one request, shared with the list's own cache, and the duplicate
+ * check then costs nothing per keystroke.
+ */
+const customersQuery = useCustomers()
+
+const { draft, duplicate, saving, save } = useCustomerDraft(
+  () => customersQuery.data.value ?? [],
+  props.initialName ?? '',
+)
 
 const cancel = () => router.push({ name: 'customers' })
 

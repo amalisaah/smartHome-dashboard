@@ -5,20 +5,17 @@ import type {
   ApiDormancySettings,
 } from '@/types/api'
 import {
-  phoneDigits,
   type ContactLogDraft,
   type CustomerDraft,
   type CustomerLogResult,
   type CustomerRecord,
   type CustomerStatus,
   type DormancyRule,
-  type DuplicateMatch,
 } from '@/types/customers'
 import {
   toApiContactKind,
   toCustomerRecord,
   toDormancyRule,
-  toDuplicateMatch,
   toLogResult,
 } from '@/utils/mapper/customerMapper'
 import { apiGet, apiSend } from './http'
@@ -30,9 +27,6 @@ import { apiGet, apiSend } from './http'
  * against the dormancy rule, which is a separate request with a separate fate,
  * so the two are combined at the view rather than welded together here.
  */
-
-/** A shorter prefix would accuse half the list. */
-const MIN_DUPLICATE_DIGITS = 6
 
 /**
  * `GET /customers`. Unpaginated, so the list is fetched once and worked over in
@@ -99,30 +93,4 @@ export async function createCustomer(draft: CustomerDraft): Promise<{ id: number
   }
   const created = await apiSend<ApiCustomer>('POST', '/customers', body)
   return { id: created.id }
-}
-
-/**
- * `GET /customers?q=` — the check behind the duplicate notice. The server's `q`
- * is a substring over stored text, so it gets the number as typed and the
- * digits-only comparison happens here; a number written differently from the
- * way it was stored still slips past, as the mapper's gap note records.
- */
-export async function findDuplicate(
-  phone: string,
-  signal?: AbortSignal,
-): Promise<DuplicateMatch | null> {
-  const typed = phone.trim()
-  const digits = phoneDigits(typed)
-  if (digits.length < MIN_DUPLICATE_DIGITS) return null
-
-  const rows = await apiGet<ApiCustomer[]>(
-    '/customers',
-    { q: typed, include_dormant: 'true' },
-    signal,
-  )
-  const hit = rows
-    .map(toCustomerRecord)
-    .find((record) => record.phone !== null && phoneDigits(record.phone).startsWith(digits))
-
-  return hit ? toDuplicateMatch(hit) : null
 }

@@ -1,8 +1,7 @@
-import { onBeforeUnmount, reactive, ref, watch } from 'vue'
-import { createCustomer, findDuplicate } from '@/api/customers'
-import { blankCustomerDraft, type DuplicateMatch } from '@/types/customers'
-
-const DUPLICATE_DEBOUNCE_MS = 200
+import { computed, reactive, ref, toValue, type MaybeRefOrGetter } from 'vue'
+import { createCustomer } from '@/api/customers'
+import { blankCustomerDraft, type CustomerRecord } from '@/types/customers'
+import { findDuplicateIn } from '@/utils/mapper/customerMapper'
 
 /**
  * The new-customer draft, shared by D3's phone screen and the laptop's dialog.
@@ -10,30 +9,19 @@ const DUPLICATE_DEBOUNCE_MS = 200
  * The draft is a reactive object the fields write into rather than one replaced
  * per keystroke: a whole-object read-modify-write drops one of two fields set in
  * the same tick, which is what a browser autofilling a name and a phone does.
+ *
+ * `existing` is the list the caller already has. The duplicate check reads it
+ * rather than the network — the list is unpaginated and in hand, so a keystroke
+ * costs a comparison instead of a request, and the notice keeps up with typing.
  */
-export function useCustomerDraft(initialName = '') {
+export function useCustomerDraft(
+  existing: MaybeRefOrGetter<readonly CustomerRecord[]>,
+  initialName = '',
+) {
   const draft = reactive(blankCustomerDraft(initialName))
-  const duplicate = ref<DuplicateMatch | null>(null)
   const saving = ref(false)
 
-  let timer: ReturnType<typeof setTimeout> | undefined
-  onBeforeUnmount(() => clearTimeout(timer))
-
-  watch(
-    () => draft.phone,
-    (phone) => {
-      clearTimeout(timer)
-      duplicate.value = null
-      timer = setTimeout(() => {
-        findDuplicate(phone)
-          .then((match) => {
-            if (draft.phone === phone) duplicate.value = match
-          })
-          // A check that could not run is not a duplicate, and never blocks the save.
-          .catch(() => {})
-      }, DUPLICATE_DEBOUNCE_MS)
-    },
-  )
+  const duplicate = computed(() => findDuplicateIn(toValue(existing), draft.phone))
 
   /** Resolves to the id the save minted. */
   async function save(): Promise<number> {
@@ -50,7 +38,6 @@ export function useCustomerDraft(initialName = '') {
     draft.name = name
     draft.phone = ''
     draft.asked = ''
-    duplicate.value = null
   }
 
   return { draft, duplicate, saving, save, reset }

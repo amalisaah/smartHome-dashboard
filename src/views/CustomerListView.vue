@@ -90,7 +90,10 @@ const {
  * goes to D3's own screen instead — a modal is not a phone's way in.
  */
 const dialogOpen = ref(false)
-const { draft, duplicate, saving, save, reset } = useCustomerDraft()
+// The check reads the list already on screen; no request per keystroke.
+const { draft, duplicate, saving, save, reset } = useCustomerDraft(
+  () => customersQuery.data.value ?? [],
+)
 
 function openDialog() {
   reset()
