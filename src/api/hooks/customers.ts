@@ -1,11 +1,17 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { fetchCustomer, fetchCustomers, fetchDormancyRule } from '@/api/customers'
+import {
+  fetchContactLogs,
+  fetchCustomer,
+  fetchCustomers,
+  fetchDormancyRule,
+} from '@/api/customers'
 
 export const customerKeys = {
   all: ['customers'] as const,
   list: () => [...customerKeys.all, 'list'] as const,
   detail: (id: number) => [...customerKeys.all, 'detail', id] as const,
+  contactLogs: (id: number) => [...customerKeys.all, 'contact-logs', id] as const,
 }
 
 /** A setting rather than a customer, so it is keyed as one. */
@@ -30,6 +36,20 @@ export function useCustomer(id: MaybeRefOrGetter<number>) {
   return useQuery({
     queryKey: computed(() => customerKeys.detail(customerId.value)),
     queryFn: ({ signal }) => fetchCustomer(customerId.value, signal),
+  })
+}
+
+/**
+ * Her contact history, most recent first as the endpoint answers. Its own query
+ * beside `useCustomer`: a history that fails to load costs the history, and the
+ * screen still says who she is and still offers both ways to remove her.
+ */
+export function useContactLogs(id: MaybeRefOrGetter<number>) {
+  const customerId = computed(() => toValue(id))
+
+  return useQuery({
+    queryKey: computed(() => customerKeys.contactLogs(customerId.value)),
+    queryFn: ({ signal }) => fetchContactLogs(customerId.value, signal),
   })
 }
 

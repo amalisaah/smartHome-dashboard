@@ -1,9 +1,11 @@
 import type {
+  ApiContactLogEntry,
   ApiContactResult,
   ApiCustomer,
   ApiCustomerCreate,
   ApiDormancySettings,
 } from '@/types/api'
+import type { ContactHistoryEntry } from '@/types/customerDetail'
 import {
   type ContactLogDraft,
   type CustomerDraft,
@@ -14,6 +16,7 @@ import {
 } from '@/types/customers'
 import {
   toApiContactKind,
+  toContactHistoryEntry,
   toCustomerRecord,
   toDormancyRule,
   toLogResult,
@@ -45,6 +48,26 @@ export async function fetchCustomers(signal?: AbortSignal): Promise<CustomerReco
 /** `GET /customers/{id}`. */
 export async function fetchCustomer(id: number, signal?: AbortSignal): Promise<CustomerRecord> {
   return toCustomerRecord(await apiGet<ApiCustomer>(`/customers/${id}`, undefined, signal))
+}
+
+/**
+ * `GET /customers/{id}/contact-logs` — her contact history, as block F's detail
+ * screen reads it.
+ *
+ * Most recent first, in the order the endpoint gives: the screen renders the
+ * sequence it is handed and never re-sorts it. Its own request, so a history
+ * that cannot be read costs the history and not her record.
+ */
+export async function fetchContactLogs(
+  id: number,
+  signal?: AbortSignal,
+): Promise<ContactHistoryEntry[]> {
+  const entries = await apiGet<ApiContactLogEntry[]>(
+    `/customers/${id}/contact-logs`,
+    undefined,
+    signal,
+  )
+  return entries.map(toContactHistoryEntry)
 }
 
 /**

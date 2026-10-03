@@ -105,13 +105,10 @@ export interface AnonymiseCopy {
 }
 
 /**
- * Everything the screen is handed beside the customer record itself.
+ * What the screen is handed beside the customer record and her contact log —
+ * that is, the part of it that no endpoint answers yet.
  */
 export interface CustomerDetailDisplay {
-  /** `last contact 8 d ago` — a phrase, not a date to subtract from. */
-  lastContactPhrase: string
-  /** Newest first, in the order supplied. */
-  history: ContactHistoryEntry[]
   house: HouseState
   figures: RemovalFigures
   /** `30 Sep` — the date the chip carries once she has been anonymised. */

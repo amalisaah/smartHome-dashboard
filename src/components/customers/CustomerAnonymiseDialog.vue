@@ -10,6 +10,8 @@ import type { RemovalFigures } from '@/types/customerDetail'
  * under what name, and then says plainly that it cannot be reversed — the
  * details are gone, not hidden.
  *
+ * Focus opens on "Keep her": the act is the right one and still should not be
+ * one keystroke away.
  */
 const props = defineProps<{
   name: string

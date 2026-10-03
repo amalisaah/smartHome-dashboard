@@ -2,7 +2,7 @@
 import { computed, nextTick, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { addContactLog } from '@/api/customers'
-import { useCustomer, useDormancyRule } from '@/api/hooks/customers'
+import { useContactLogs, useCustomer, useDormancyRule } from '@/api/hooks/customers'
 import { SBanner, STextarea } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import CustomerAnonymiseDialog from '@/components/customers/CustomerAnonymiseDialog.vue'
@@ -17,7 +17,7 @@ import { customerDetailMock } from '@/data/customerDetailMock'
 import { HEADING_ID, type ContactHistoryEntry } from '@/types/customerDetail'
 import { blankContactLogDraft, type LoggedContact } from '@/types/customers'
 import { formatShortDate } from '@/utils/format'
-import { toCustomerRow } from '@/utils/mapper/customerMapper'
+import { lastContactPhrase, toCustomerRow } from '@/utils/mapper/customerMapper'
 
 /**
  * Module 5, block F — the customer detail screen.
@@ -27,10 +27,10 @@ import { toCustomerRow } from '@/utils/mapper/customerMapper'
  * each other. The only things he writes here are a contact and her notes.
  *
  * **What is real and what is not.** Her name, phone, status and notes come from
- * `GET /customers/{id}`. Everything else the screen renders — the history, the
- * last-contact phrase, the house counts, what a removal takes or leaves — is
- * supplied, and until something supplies it comes from `customerDetailMock`,
- * which says per field what it is waiting on.
+ * `GET /customers/{id}`, and her contact history from
+ * `GET /customers/{id}/contact-logs`. What is left — the house counts and what a
+ * removal takes or leaves — is supplied, and until something supplies it comes
+ * from `customerDetailMock`, which says per field what it is waiting on.
  *
  * **The two exits do not write.** They run the whole interaction — the gate, the
  * swap, the focus, the state the screen lands in — and stop at `runRemoval`.
@@ -39,9 +39,11 @@ const props = defineProps<{ customerId: number }>()
 
 const router = useRouter()
 
-// Two calls, two fates, as on the list: losing the rule costs the stage phrase
-// its date and nothing else.
+// Three calls, three fates. Losing the rule costs the stage phrase its date;
+// losing the history costs the history. Neither holds up the rest of the screen,
+// and in particular neither holds up the two exits.
 const customerQuery = useCustomer(() => props.customerId)
+const historyQuery = useContactLogs(() => props.customerId)
 const dormancyQuery = useDormancyRule()
 
 const record = computed(() => customerQuery.data.value ?? null)
@@ -112,14 +114,26 @@ const CLOCK = new Intl.DateTimeFormat('en-GB', {
   hour12: false,
 })
 
-/** The contact logged in this visit, and the entries it put at the top. */
+/** The contact logged in this visit. */
 const logged = ref<LoggedContact | null>(null)
-const loggedEntries = ref<ContactHistoryEntry[]>([])
+
+/**
+ * A status change the data layer reported when the contact was written.
+ *
+ * It lives here rather than in the history query because the contact log cannot
+ * answer it: nothing on the wire records that `quoted → customer` happened, so
+ * the only status change this screen can show is one it watched happen. Dashed,
+ * because the system decided it.
+ */
+const statusChange = ref<ContactHistoryEntry | null>(null)
 
 /** The record as the contact dialog and `addContactLog` read one. */
 const row = computed(() => (record.value ? toCustomerRow(record.value, rule.value) : null))
 
-const history = computed(() => [...loggedEntries.value, ...display.history])
+const history = computed(() => {
+  const entries = historyQuery.data.value ?? []
+  return statusChange.value ? [statusChange.value, ...entries] : entries
+})
 
 function openContact() {
   contactDraft.kind = 'call'
@@ -144,29 +158,28 @@ async function submitContact() {
     // and the answer says what she is now.
     const result = await addContactLog(current.id, contactDraft, current.status, rule.value)
 
-    const note = contactDraft.note.trim()
-    const entries: ContactHistoryEntry[] = [
-      note
-        ? { id: 'logged-note', date: 'today', kind: 'note', text: note }
-        : { id: 'logged-note', date: 'today', kind: 'no-note' },
-    ]
-
     // If the data layer moved her, that is an event in its own right and it is
-    // drawn dashed, because the system decided it. The UI does not.
-    if (result) {
-      entries.unshift({
-        id: 'logged-status',
-        date: 'today',
-        kind: 'status-change',
-        from: current.status,
-        to: result.status,
-        caption: result.statusCaption,
-      })
-    }
+    // drawn dashed, because the system decided it. The UI does not — and the
+    // contact log has nowhere to record it, so this is the only place it exists.
+    statusChange.value = result
+      ? {
+          id: 'logged-status',
+          date: 'today',
+          kind: 'status-change',
+          from: current.status,
+          to: result.status,
+          caption: result.statusCaption,
+        }
+      : null
 
-    loggedEntries.value = entries
     logged.value = { time: CLOCK.format(new Date()), kind: contactDraft.kind, result }
     contactOpen.value = false
+
+    // The entry is written; these read it back rather than echoing it. The
+    // history gains the new top row, and the record's `last_contact_at` — and so
+    // the phrase beside her number — catches up with it.
+    historyQuery.refetch()
+    customerQuery.refetch()
   } catch (error) {
     // Held open with what he typed: nothing was recorded, so he can try again.
     contactError.value =
@@ -263,7 +276,7 @@ const editIdentity = () =>
             :name="record.name"
             :phone="record.phone ?? ''"
             :status="record.status"
-            :last-contact-phrase="display.lastContactPhrase"
+            :last-contact-phrase="lastContactPhrase(record)"
             :logged="logged"
             :anonymised="anonymised"
             :anonymous-label="anonymousLabel"
@@ -272,7 +285,12 @@ const editIdentity = () =>
             @edit="editIdentity"
           />
 
-          <CustomerContactHistory class="slot-history" :entries="history" />
+          <CustomerContactHistory
+            class="slot-history"
+            :entries="history"
+            :loading="historyQuery.isPending.value"
+            :failed="historyQuery.isError.value"
+          />
 
           <!-- Gone with her name: anonymising clears the contact notes. -->
           <STextarea

@@ -4,7 +4,8 @@ import CustomerCopyLine from '@/components/customers/CustomerCopyLine.vue'
 import { useDialogKeys } from '@/composables/useDialogKeys'
 import { deleteCost, deleteSwapLead, deleteSwapLink } from '@/data/customerRemovalCopy'
 import { confirmsName, type RemovalFigures } from '@/types/customerDetail'
-import { computed, defineEmits, defineProps, ref } from 'vue'
+// `defineProps` / `defineEmits` are compiler macros, not imports.
+import { computed, ref } from 'vue'
 
 /**
  * The exit that cannot be undone, and the only amber on this screen.

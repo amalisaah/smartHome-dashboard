@@ -1,4 +1,10 @@
-import type { ApiContactKind, ApiCustomer, ApiDormancySettings } from '@/types/api'
+import type {
+  ApiContactKind,
+  ApiContactLogEntry,
+  ApiCustomer,
+  ApiDormancySettings,
+} from '@/types/api'
+import type { ContactHistoryEntry } from '@/types/customerDetail'
 import {
   CUSTOMER_FILTERS,
   phoneDigits,
@@ -57,6 +63,52 @@ export function toCustomerRecord(api: ApiCustomer): CustomerRecord {
  */
 export const toApiContactKind = (kind: ContactKind): ApiContactKind =>
   kind === 'email' ? 'other' : kind
+
+/** Whether an ISO date-time falls on the day being read. */
+function isToday(iso: string, now = new Date()): boolean {
+  const at = new Date(iso)
+  return (
+    at.getFullYear() === now.getFullYear() &&
+    at.getMonth() === now.getMonth() &&
+    at.getDate() === now.getDate()
+  )
+}
+
+/**
+ * One contact-log entry as block F's history renders it.
+ *
+ * The handoff draws three looks for an entry and the wire answers two of them:
+ * an entry with a note, and one without. The third — a **status change** — has
+ * no representation on this endpoint at all: nothing records that
+ * `quoted → customer` happened on 14 Aug, or why. So a status change appears in
+ * the history only when one is observed happening, which is what
+ * `POST /customers/{id}/contact-logs` answers with; see `toLogResult`.
+ *
+ * `kind` (call / whatsapp / visit / quote_sent / other) is read and deliberately
+ * not rendered: the handoff draws the note alone, and the channel is said on the
+ * row that logged it. An entry logged today reads `today` rather than its date,
+ * as the handoff's newest entry does.
+ */
+export function toContactHistoryEntry(api: ApiContactLogEntry): ContactHistoryEntry {
+  const id = String(api.id)
+  const date = isToday(api.occurred_at) ? 'today' : formatShortDate(api.occurred_at)
+  const note = api.note?.trim() ?? ''
+
+  return note ? { id, date, kind: 'note', text: note } : { id, date, kind: 'no-note' }
+}
+
+/**
+ * The phrase beside her number — `last contact 8 d ago`.
+ *
+ * Formatting, not judgement: the figure is `days_since_last_contact`, which the
+ * record carries, said the way `stagePhrase` says the same kind of thing. A
+ * record nobody has spoken to has no elapsed time to report, only the fact.
+ */
+export function lastContactPhrase(record: CustomerRecord): string {
+  if (record.lastContactAt === null) return 'no contact recorded'
+  const days = record.daysSinceLastContact ?? daysSince(record.lastContactAt)
+  return days === 0 ? 'last contact today' : `last contact ${days} d ago`
+}
 
 export function toDormancyRule(api: ApiDormancySettings): DormancyRule {
   return {
