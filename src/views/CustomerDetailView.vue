@@ -2,7 +2,12 @@
 import { computed, nextTick, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { addContactLog } from '@/api/customers'
-import { useContactLogs, useCustomer, useDormancyRule } from '@/api/hooks/customers'
+import {
+  useContactLogs,
+  useCustomer,
+  useCustomerHouses,
+  useDormancyRule,
+} from '@/api/hooks/customers'
 import { SBanner, STextarea } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import CustomerAnonymiseDialog from '@/components/customers/CustomerAnonymiseDialog.vue'
@@ -11,7 +16,7 @@ import CustomerContactHistory from '@/components/customers/CustomerContactHistor
 import CustomerDeleteDialog from '@/components/customers/CustomerDeleteDialog.vue'
 import CustomerDetailIdentity from '@/components/customers/CustomerDetailIdentity.vue'
 import CustomerDetailSkeleton from '@/components/customers/CustomerDetailSkeleton.vue'
-import CustomerHouseCard from '@/components/customers/CustomerHouseCard.vue'
+import CustomerHouseList from '@/components/customers/CustomerHouseList.vue'
 import CustomerRemovalBand from '@/components/customers/CustomerRemovalBand.vue'
 import { customerDetailMock } from '@/data/customerDetailMock'
 import { HEADING_ID, type ContactHistoryEntry } from '@/types/customerDetail'
@@ -39,11 +44,13 @@ const props = defineProps<{ customerId: number }>()
 
 const router = useRouter()
 
-// Three calls, three fates. Losing the rule costs the stage phrase its date;
-// losing the history costs the history. Neither holds up the rest of the screen,
-// and in particular neither holds up the two exits.
+// Four calls, four fates. Losing the rule costs the stage phrase its date;
+// losing the history costs the history; losing the houses costs the houses. None
+// of them holds up the rest of the screen, and in particular none of them holds
+// up the two exits.
 const customerQuery = useCustomer(() => props.customerId)
 const historyQuery = useContactLogs(() => props.customerId)
+const housesQuery = useCustomerHouses(() => props.customerId)
 const dormancyQuery = useDormancyRule()
 
 const record = computed(() => customerQuery.data.value ?? null)
@@ -251,8 +258,15 @@ function runRemoval(act: 'anonymise' | 'delete') {
 
 // --- where the screen leads -------------------------------------------------
 
-const openHouse = () =>
-  router.push({ name: 'customer-house', params: { id: props.customerId } })
+/** One named house of hers. Out of scope here; the route is a stub. */
+const openHouse = (houseId: number) =>
+  router.push({ name: 'house-detail', params: { id: props.customerId, houseId } })
+
+/**
+ * Her first house or her fourth — the same form either way, and it has no id to
+ * be addressed by until saving it mints one.
+ */
+const newHouse = () => router.push({ name: 'house-new', params: { id: props.customerId } })
 
 const editIdentity = () =>
   router.push({ name: 'customer-edit', params: { id: props.customerId } })
@@ -303,12 +317,14 @@ const editIdentity = () =>
           />
         </template>
 
-        <CustomerHouseCard
+        <CustomerHouseList
           v-if="!loading"
           class="slot-house"
-          :house="display.house"
+          :houses="housesQuery.data.value ?? []"
+          :loading="housesQuery.isPending.value"
+          :failed="housesQuery.isError.value"
           @open="openHouse"
-          @start="openHouse"
+          @add="newHouse"
         />
       </div>
 

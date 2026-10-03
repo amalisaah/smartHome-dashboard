@@ -10,14 +10,12 @@
  * What is NOT mocked, and comes from the API like every other screen:
  *   - her name, phone, status and notes — `GET /customers/{id}`
  *   - her contact history — `GET /customers/{id}/contact-logs`
+ *   - her houses — `GET /customers/{id}/houses`
  *   - the phrase beside her number — derived from `days_since_last_contact`
  *     by `lastContactPhrase`
  *
- * What each field below is still waiting on, so the seam is obvious:
+ * What is left is waiting on a module rather than on a request:
  *
- *   - `house` — `GET /customers/{id}/houses`, then a composition call per house
- *     for rooms and devices, summed; the fault count and the condition tags are
- *     further still. Three requests deep for a summary card.
  *   - `figures` — quotes, jobs and payments belong to a module that does not
  *     exist yet. The anonymous label is minted by `POST /customers/{id}/anonymise`
  *     and cannot be known before the act.
@@ -30,13 +28,6 @@ import type { CustomerDetailDisplay } from '@/types/customerDetail'
 
 /** The reference's own figures, so F1 can be compared against it pixel for pixel. */
 export const customerDetailMock: CustomerDetailDisplay = {
-  house: {
-    rooms: 6,
-    devices: 16,
-    faultCount: 1,
-    faultCaption: 'Master, one of two bulbs',
-    conditions: ['no neutral · hall, master', 'internet weak'],
-  },
   figures: {
     records: '2 quotes, 1 job',
     recordCounts: ['2 quotes', '1 job'],

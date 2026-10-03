@@ -46,22 +46,24 @@ export interface ContactHistoryEntry {
 }
 
 /**
- * Counts only. There is no address, area, landmark or price on this screen at
- * any viewport — those live inside the house, which is a different screen.
+ * One of her houses, as the detail screen lists it.
+ *
+ * This is everything `GET /customers/{id}/houses` can say in a single request,
+ * minus the half of it this screen may not show. There is deliberately **no**
+ * room count, device count or fault count here: the wire does not carry them on
+ * the houses payload, and reading them would be two further calls per house.
+ *
+ * There is no address, area, landmark, GPS or access note either — those come
+ * back on the same payload and are dropped at the mapper, because they belong
+ * inside the house and this screen says so underneath the list.
  */
-export interface HouseSummary {
-  rooms: number
-  devices: number
-  /** The one amber on this screen that is not delete. Null when nothing is faulty. */
-  faultCount: number | null
-  /** `Master, one of two bulbs`. Null drops the line entirely. */
-  faultCaption: string | null
-  /** `no neutral · hall, master` — supplied strings, rendered as given. */
-  conditions: string[]
+export interface HouseListItem {
+  id: number
+  /** `Spintex house`. The wire allows no name; the list says so rather than guessing. */
+  name: string
+  /** `internet weak` / `no internet`, or null when there is nothing to flag. */
+  condition: string | null
 }
-
-/** She has no house yet. The card keeps its metrics and offers to start one. */
-export type HouseState = HouseSummary | null
 
 /** One of the two exits, as display copy. */
 export interface RemovalExit {
@@ -109,7 +111,6 @@ export interface AnonymiseCopy {
  * that is, the part of it that no endpoint answers yet.
  */
 export interface CustomerDetailDisplay {
-  house: HouseState
   figures: RemovalFigures
   /** `30 Sep` — the date the chip carries once she has been anonymised. */
   anonymisedOn: string

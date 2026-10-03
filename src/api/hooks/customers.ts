@@ -5,6 +5,7 @@ import {
   fetchCustomer,
   fetchCustomers,
   fetchDormancyRule,
+  fetchHouses,
 } from '@/api/customers'
 
 export const customerKeys = {
@@ -12,6 +13,7 @@ export const customerKeys = {
   list: () => [...customerKeys.all, 'list'] as const,
   detail: (id: number) => [...customerKeys.all, 'detail', id] as const,
   contactLogs: (id: number) => [...customerKeys.all, 'contact-logs', id] as const,
+  houses: (id: number) => [...customerKeys.all, 'houses', id] as const,
 }
 
 /** A setting rather than a customer, so it is keyed as one. */
@@ -50,6 +52,19 @@ export function useContactLogs(id: MaybeRefOrGetter<number>) {
   return useQuery({
     queryKey: computed(() => customerKeys.contactLogs(customerId.value)),
     queryFn: ({ signal }) => fetchContactLogs(customerId.value, signal),
+  })
+}
+
+/**
+ * Her houses, one request. Its own query for the same reason as the history:
+ * losing it costs the list of houses and leaves the rest of her page standing.
+ */
+export function useCustomerHouses(id: MaybeRefOrGetter<number>) {
+  const customerId = computed(() => toValue(id))
+
+  return useQuery({
+    queryKey: computed(() => customerKeys.houses(customerId.value)),
+    queryFn: ({ signal }) => fetchHouses(customerId.value, signal),
   })
 }
 

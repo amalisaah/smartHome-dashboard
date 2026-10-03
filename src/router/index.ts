@@ -110,9 +110,28 @@ export const router = createRouter({
       props: (route) => ({ customerId: Number(route.params.id), destination: 'edit' }),
     },
     {
-      // Her house, which is where a phone row lands. Also out of scope here.
+      // Her house, which is where a phone row lands, and where "Start her house"
+      // goes when she has none to name yet. Out of scope here.
       path: '/customers/:id(\\d+)/house',
       name: 'customer-house',
+      component: CustomerPlaceholderView,
+      props: (route) => ({ customerId: Number(route.params.id), destination: 'house' }),
+    },
+    {
+      // A house she is about to have. It has no id yet — `POST
+      // /customers/{id}/houses` mints one when the form is saved, not when the
+      // button is pressed. Declared above `:houseId` for the same reason
+      // `/items/new` is, though the `\d+` there would not match it anyway.
+      path: '/customers/:id(\\d+)/houses/new',
+      name: 'house-new',
+      component: CustomerPlaceholderView,
+      props: (route) => ({ customerId: Number(route.params.id), destination: 'house-new' }),
+    },
+    {
+      // One named house of hers. A customer may have several, so a row in her
+      // house list has to address the one it names rather than "her house".
+      path: '/customers/:id(\\d+)/houses/:houseId(\\d+)',
+      name: 'house-detail',
       component: CustomerPlaceholderView,
       props: (route) => ({ customerId: Number(route.params.id), destination: 'house' }),
     },

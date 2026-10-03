@@ -4,8 +4,9 @@ import type {
   ApiCustomer,
   ApiCustomerCreate,
   ApiDormancySettings,
+  ApiHouse,
 } from '@/types/api'
-import type { ContactHistoryEntry } from '@/types/customerDetail'
+import type { ContactHistoryEntry, HouseListItem } from '@/types/customerDetail'
 import {
   type ContactLogDraft,
   type CustomerDraft,
@@ -19,6 +20,7 @@ import {
   toContactHistoryEntry,
   toCustomerRecord,
   toDormancyRule,
+  toHouseListItem,
   toLogResult,
 } from '@/utils/mapper/customerMapper'
 import { apiGet, apiSend } from './http'
@@ -68,6 +70,23 @@ export async function fetchContactLogs(
     signal,
   )
   return entries.map(toContactHistoryEntry)
+}
+
+/**
+ * `GET /customers/{id}/houses` — her houses, in one request.
+ *
+ * One request is the whole constraint, and it decides what the list can say. The
+ * houses payload carries no room, device or fault counts: those are
+ * `GET /houses/{id}/composition` and `GET /houses/{id}/installed-devices`, one
+ * call each **per house**, which is where the N+1 would start. So the list shows
+ * what a house is called and the one condition the payload states outright.
+ *
+ * Archived houses are left out: the `archived` flag is not sent, which is the
+ * endpoint's own default.
+ */
+export async function fetchHouses(id: number, signal?: AbortSignal): Promise<HouseListItem[]> {
+  const houses = await apiGet<ApiHouse[]>(`/customers/${id}/houses`, undefined, signal)
+  return houses.map(toHouseListItem)
 }
 
 /**

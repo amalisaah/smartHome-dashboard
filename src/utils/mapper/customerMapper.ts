@@ -3,8 +3,10 @@ import type {
   ApiContactLogEntry,
   ApiCustomer,
   ApiDormancySettings,
+  ApiHouse,
+  ApiInternetQuality,
 } from '@/types/api'
-import type { ContactHistoryEntry } from '@/types/customerDetail'
+import type { ContactHistoryEntry, HouseListItem } from '@/types/customerDetail'
 import {
   CUSTOMER_FILTERS,
   phoneDigits,
@@ -95,6 +97,40 @@ export function toContactHistoryEntry(api: ApiContactLogEntry): ContactHistoryEn
   const note = api.note?.trim() ?? ''
 
   return note ? { id, date, kind: 'note', text: note } : { id, date, kind: 'no-note' }
+}
+
+/**
+ * What a house's internet says on the customer screen, if it says anything.
+ *
+ * Only the two that cost money get a chip. `reliable` is the absence of a
+ * problem and `unknown` is a question for the house screen; neither earns a line
+ * on a screen he is reading to decide who to call — the same reason the fault
+ * line is omitted when nothing is faulty.
+ */
+const INTERNET_FLAG: Record<ApiInternetQuality, string | null> = {
+  weak: 'internet weak',
+  none: 'no internet',
+  reliable: null,
+  unknown: null,
+}
+
+/**
+ * A house as her customer page lists it — **a name and one flag, and nothing
+ * else**.
+ *
+ * This is where the screen's rule is enforced rather than merely observed: the
+ * payload arrives carrying `address_text`, `landmark_directions`, `gps_lat`,
+ * `gps_lng` and `access_notes`, and none of them are copied out. A component
+ * cannot render what it was never handed, so "no address on this screen" holds
+ * here once instead of in every template that touches a house.
+ */
+export function toHouseListItem(api: ApiHouse): HouseListItem {
+  return {
+    id: api.id,
+    // A house with no name is still a house he has to be able to open.
+    name: api.label?.trim() || 'Unnamed house',
+    condition: INTERNET_FLAG[api.internet_quality],
+  }
 }
 
 /**

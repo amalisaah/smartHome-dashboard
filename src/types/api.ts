@@ -263,6 +263,44 @@ export interface ApiContactResult {
   customer: ApiCustomer
 }
 
+/**
+ * Structured because it is quotable: no internet means a router, an extender and
+ * sometimes a subscription, and that is money on a quote.
+ */
+export type ApiInternetQuality = 'reliable' | 'weak' | 'none' | 'unknown'
+
+/**
+ * An item of `GET /customers/{id}/houses`.
+ *
+ * Note what is **not** here: no room count, no device count, no fault count.
+ * Those live behind `GET /houses/{id}/composition` and
+ * `GET /houses/{id}/installed-devices`, one call per house.
+ *
+ * Note also what is here and must never reach the customer screen —
+ * `address_text`, `landmark_directions`, `gps_lat`, `gps_lng`, `access_notes`.
+ * Those belong inside the house, and block F says so on the screen itself.
+ */
+export interface ApiHouse {
+  id: number
+  customer_id: number
+  /** Short name, e.g. "Spintex house". */
+  label: string | null
+  address_text: string | null
+  landmark_directions: string | null
+  gps_lat: number | null
+  gps_lng: number | null
+  access_notes: string | null
+  /** Whether the wall boxes have a neutral wire — the expensive thing to learn. */
+  wiring_notes: string | null
+  internet_quality: ApiInternetQuality
+  internet_notes: string | null
+  notes: string | null
+  /** Soft-delete timestamp. */
+  archived_at: string | null
+  created_at: string
+  updated_at: string
+}
+
 /** `GET /settings/dormancy`. */
 export interface ApiDormancySettings {
   dormant_after_days: number
