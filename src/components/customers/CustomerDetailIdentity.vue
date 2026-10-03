@@ -32,7 +32,8 @@ const props = defineProps<{
   anonymisedOn: string
 }>()
 
-defineEmits<{ spoke: []; edit: [] }>()
+/** The press goes with `edit`: the button is what focus comes back to. */
+defineEmits<{ spoke: []; edit: [event: MouseEvent] }>()
 
 const heading = computed(() => (props.anonymised ? props.anonymousLabel : props.name))
 
@@ -92,8 +93,16 @@ const whatsapp = computed(() => `https://wa.me/${phoneDigits(props.phone)}`)
       </SText>
       <SButton v-else size="toolbar" @click="$emit('spoke')">Spoke today</SButton>
 
-      <SButton variant="chrome" size="toolbar" @click="$emit('edit')">
-        Edit name or phone
+      <!-- `PATCH /customers/{id}` rejects an anonymised customer outright, and
+           there is no name or number left to correct. Spoke today stays: she can
+           still be contacted, and the entry carries no personal detail. -->
+      <SButton
+        v-if="!anonymised"
+        variant="chrome"
+        size="toolbar"
+        @click="$emit('edit', $event)"
+      >
+        Edit details
       </SButton>
     </div>
   </div>

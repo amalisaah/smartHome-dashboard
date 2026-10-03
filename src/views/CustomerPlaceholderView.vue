@@ -7,13 +7,13 @@ import AppLayout from '@/components/app/AppLayout.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 
 /**
- * A navigation stub. Her house and the form behind "Edit name or phone" are
- * designed elsewhere in module 5 and out of scope here; these routes exist so
- * nothing on the list or on her page is a dead click.
+ * A navigation stub. Her house is designed elsewhere in module 5 and out of
+ * scope here; these routes exist so nothing on the list or on her page is a dead
+ * click.
  */
 const props = defineProps<{
   customerId: number
-  destination: 'detail' | 'house' | 'edit' | 'house-new'
+  destination: 'detail' | 'house' | 'house-new'
 }>()
 
 const isPhone = useMediaQuery('(max-width: 899px)')
@@ -29,7 +29,6 @@ const who = computed(() => customer.value?.name ?? 'This customer')
 const TITLE: Record<typeof props.destination, (name: string) => string> = {
   house: (name) => `${name} · her house`,
   'house-new': (name) => `${name} · a new house`,
-  edit: (name) => `${name} · name and phone`,
   detail: (name) => name,
 }
 
@@ -38,7 +37,6 @@ const DETAIL: Record<typeof props.destination, string> = {
     'The house — rooms, installed devices and visit notes. It opens on Rooms when her visit notes are already filled in and on Visit notes when they are not, and its header carries ‹ her name as the way to this page.',
   'house-new':
     'The form that starts a house — a name for it, where it is and how to get in, whether the wall boxes have a neutral wire, and what the internet is like. Nothing is written until it is saved, which is what gives the house its number. Not drawn in this handoff.',
-  edit: 'The form behind "Edit name or phone" — D3\'s Name and Phone fields, over her page rather than beside it. Not drawn in this handoff.',
   detail: 'Her customer page — the contact log, her quotes and the way into her house.',
 }
 

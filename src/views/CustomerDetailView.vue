@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { addContactLog } from '@/api/customers'
+import { useQueryClient } from '@tanstack/vue-query'
+import { addContactLog, updateCustomer } from '@/api/customers'
 import {
+  customerKeys,
   useContactLogs,
   useCustomer,
   useCustomerHouses,
@@ -16,11 +18,17 @@ import CustomerContactHistory from '@/components/customers/CustomerContactHistor
 import CustomerDeleteDialog from '@/components/customers/CustomerDeleteDialog.vue'
 import CustomerDetailIdentity from '@/components/customers/CustomerDetailIdentity.vue'
 import CustomerDetailSkeleton from '@/components/customers/CustomerDetailSkeleton.vue'
+import CustomerEditDialog from '@/components/customers/CustomerEditDialog.vue'
 import CustomerHouseList from '@/components/customers/CustomerHouseList.vue'
 import CustomerRemovalBand from '@/components/customers/CustomerRemovalBand.vue'
 import { customerDetailMock } from '@/data/customerDetailMock'
 import { HEADING_ID, type ContactHistoryEntry } from '@/types/customerDetail'
-import { blankContactLogDraft, type LoggedContact } from '@/types/customers'
+import {
+  blankContactLogDraft,
+  editDraftFrom,
+  type CustomerEditDraft,
+  type LoggedContact,
+} from '@/types/customers'
 import { formatShortDate } from '@/utils/format'
 import { lastContactPhrase, toCustomerRow } from '@/utils/mapper/customerMapper'
 
@@ -43,6 +51,7 @@ import { lastContactPhrase, toCustomerRow } from '@/utils/mapper/customerMapper'
 const props = defineProps<{ customerId: number }>()
 
 const router = useRouter()
+const queryClient = useQueryClient()
 
 // Four calls, four fates. Losing the rule costs the stage phrase its date;
 // losing the history costs the history; losing the houses costs the houses. None
@@ -93,13 +102,48 @@ const anonymisedOn = computed(() =>
 // --- notes -----------------------------------------------------------------
 
 /**
- * Free text he edits directly. How and when it saves is not specified by the
- * handoff; the app bar is where save state is said, and it says it for the whole
- * screen rather than for this field.
+ * Free text he edits directly, as the handoff draws it — jotted while reading
+ * rather than opened as a form. `null` means "not being edited", so the field
+ * follows the record until he touches it and stops following it after.
+ *
+ * It saves when he leaves it. The handoff does not say when it saves, only that
+ * the app bar is where save state is said; leaving the field is the moment he is
+ * done with it, and it is the one moment that does not make him wait while he
+ * types. The same field in the edit dialog writes the same value the same way.
  */
 const notesEdit = ref<string | null>(null)
+const notesSaving = ref(false)
+const notesError = ref('')
 
 const notes = computed(() => notesEdit.value ?? record.value?.notes ?? '')
+
+async function saveNotes() {
+  const current = record.value
+  const typed = notesEdit.value
+  // Untouched, already in flight, or identical to what is stored — all no-ops.
+  if (!current || typed === null || notesSaving.value) return
+  if (typed.trim() === (current.notes ?? '')) {
+    notesEdit.value = null
+    return
+  }
+
+  notesSaving.value = true
+  notesError.value = ''
+  try {
+    // Only `notes`: a rename in flight from the dialog must not be written back
+    // over by a note saved a moment later.
+    await updateCustomer(current.id, { notes: typed })
+    notesEdit.value = null
+    await customerQuery.refetch()
+    queryClient.invalidateQueries({ queryKey: customerKeys.list() })
+  } catch (error) {
+    // His words stay on screen and stay his. Nothing is cleared on a failure.
+    notesError.value =
+      error instanceof Error ? error.message : 'Could not save her notes.'
+  } finally {
+    notesSaving.value = false
+  }
+}
 
 // --- "Spoke today" ---------------------------------------------------------
 
@@ -196,6 +240,66 @@ async function submitContact() {
   }
 }
 
+// --- her name and her number ------------------------------------------------
+
+/**
+ * The edit form. It holds a copy rather than the record, so Cancel really is one
+ * — nothing he types reaches the cache, and the page behind the dialog goes on
+ * showing what is actually stored until the save comes back.
+ */
+const editOpen = ref(false)
+const editDraft = reactive<CustomerEditDraft>({ name: '', phone: '', email: '', notes: '' })
+const editSaving = ref(false)
+const editError = ref('')
+
+/** The button it was opened from, so Escape and Cancel give focus back to it. */
+let editOpener: HTMLElement | null = null
+
+function openEdit(event: MouseEvent) {
+  const current = record.value
+  if (!current) return
+  // The notes he has typed on the page but not yet saved are the ones the form
+  // should open holding — the dialog is the same field, not a second one.
+  Object.assign(editDraft, editDraftFrom(current), { notes: notes.value })
+  editError.value = ''
+  editOpener = event.currentTarget as HTMLElement | null
+  editOpen.value = true
+}
+
+function dismissEdit() {
+  if (editSaving.value) return
+  editOpen.value = false
+  nextTick(() => editOpener?.focus())
+}
+
+async function submitEdit() {
+  const current = record.value
+  if (!current || editSaving.value) return
+
+  editSaving.value = true
+  editError.value = ''
+  try {
+    await updateCustomer(current.id, editDraft)
+    editOpen.value = false
+    // The page's own notes field is showing an edit that is now stored, so it
+    // goes back to reading the record rather than holding a stale copy of it.
+    notesEdit.value = null
+    notesError.value = ''
+    nextTick(() => editOpener?.focus())
+
+    // Her page reads the new name; the list she came from must not still be
+    // holding the old one behind the breadcrumb.
+    customerQuery.refetch()
+    queryClient.invalidateQueries({ queryKey: customerKeys.list() })
+  } catch (error) {
+    // Held open with what he typed: nothing was changed, so he can try again.
+    editError.value =
+      error instanceof Error ? error.message : 'Could not save the change.'
+  } finally {
+    editSaving.value = false
+  }
+}
+
 // --- the two exits ---------------------------------------------------------
 
 type RemovalDialog = 'anonymise' | 'delete' | null
@@ -267,9 +371,6 @@ const openHouse = (houseId: number) =>
  * be addressed by until saving it mints one.
  */
 const newHouse = () => router.push({ name: 'house-new', params: { id: props.customerId } })
-
-const editIdentity = () =>
-  router.push({ name: 'customer-edit', params: { id: props.customerId } })
 </script>
 
 <template>
@@ -296,7 +397,7 @@ const editIdentity = () =>
             :anonymous-label="anonymousLabel"
             :anonymised-on="anonymisedOn"
             @spoke="openContact"
-            @edit="editIdentity"
+            @edit="openEdit"
           />
 
           <CustomerContactHistory
@@ -306,15 +407,20 @@ const editIdentity = () =>
             :failed="historyQuery.isError.value"
           />
 
-          <!-- Gone with her name: anonymising clears the contact notes. -->
-          <STextarea
-            v-if="!anonymised"
-            class="slot-notes"
-            :model-value="notes"
-            label="Notes about her"
-            :rows="3"
-            @update:model-value="notesEdit = $event"
-          />
+          <!-- Gone with her name: anonymising clears the contact notes.
+               `focusout`, not `blur`: the listener sits on STextarea's wrapper
+               and blur does not bubble to it. -->
+          <div v-if="!anonymised" class="slot-notes" @focusout="saveNotes">
+            <STextarea
+              :model-value="notes"
+              label="Notes about her"
+              disabled
+              :rows="3"
+              :error="notesError !== ''"
+              :error-message="notesError"
+              @update:model-value="notesEdit = $event"
+            />
+          </div>
         </template>
 
         <CustomerHouseList
@@ -339,6 +445,16 @@ const editIdentity = () =>
       />
     </template>
   </AppLayout>
+
+  <CustomerEditDialog
+    v-if="editOpen && record"
+    :record="record"
+    :draft="editDraft"
+    :saving="editSaving"
+    :error="editError"
+    @save="submitEdit"
+    @dismiss="dismissEdit"
+  />
 
   <CustomerContactDialog
     v-if="contactOpen && row"

@@ -3,6 +3,7 @@ import type {
   ApiContactResult,
   ApiCustomer,
   ApiCustomerCreate,
+  ApiCustomerUpdate,
   ApiDormancySettings,
   ApiHouse,
 } from '@/types/api'
@@ -10,6 +11,7 @@ import type { ContactHistoryEntry, HouseListItem } from '@/types/customerDetail'
 import {
   type ContactLogDraft,
   type CustomerDraft,
+  type CustomerEditDraft,
   type CustomerLogResult,
   type CustomerRecord,
   type CustomerStatus,
@@ -119,6 +121,36 @@ export async function addContactLog(
     { kind: toApiContactKind(draft.kind), note: draft.note.trim() || null },
   )
   return toLogResult(before, toCustomerRecord(customer), rule)
+}
+
+/**
+ * `PATCH /customers/{id}` — what block F's screens may change about her.
+ *
+ * **Only the fields passed are sent.** The endpoint leaves an omitted field
+ * untouched, so the dialog sends all four and the notes field on the page sends
+ * only `notes` — which is what stops a note saved while a rename is in flight
+ * from writing the old name back over it.
+ *
+ * An emptied value goes as an explicit `null` rather than as `""`: the wire's
+ * own distinction between a blank string and nothing at all, and the way a
+ * number taken down wrongly is taken off.
+ *
+ * The endpoint rejects an anonymised customer. The screen offers neither door in
+ * that state, so a 400 here means the record was anonymised elsewhere while the
+ * form was open — which is why the dialog holds what he typed.
+ */
+export async function updateCustomer(
+  id: number,
+  fields: Partial<CustomerEditDraft>,
+): Promise<CustomerRecord> {
+  const body: ApiCustomerUpdate = {}
+  // A name is never cleared; the other three are, and `null` is how.
+  if (fields.name !== undefined) body.name = fields.name.trim()
+  if (fields.phone !== undefined) body.phone = fields.phone.trim() || null
+  if (fields.email !== undefined) body.email = fields.email.trim() || null
+  if (fields.notes !== undefined) body.notes = fields.notes.trim() || null
+
+  return toCustomerRecord(await apiSend<ApiCustomer>('PATCH', `/customers/${id}`, body))
 }
 
 /**

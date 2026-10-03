@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { SBadge, SInput, SText } from '@/components/atoms'
+import CustomerNameFields from './CustomerNameFields.vue'
 import type { CustomerDraft } from '@/types/customers'
 
 defineProps<{
@@ -11,32 +12,23 @@ defineProps<{
 
 const emit = defineEmits<{ phoneLeft: [] }>()
 
-const nameField = ref<InstanceType<typeof SInput> | null>(null)
-defineExpose({ focus: () => nameField.value?.focus() })
+/** The name is the first thing typed, wherever this form is opened. */
+const nameFields = ref<InstanceType<typeof CustomerNameFields> | null>(null)
+defineExpose({ focus: () => nameFields.value?.focus() })
 </script>
 
 <template>
   <div class="fields">
-    <SInput
-      ref="nameField"
-      v-model="draft.name"
-      label="Name"
-      :size="size ?? 'phone'"
-      label-size="md"
-      required
+    <!-- Name and Phone are shared with block F's edit form; what follows is
+         this form's own, because it is only asked when a record is started. -->
+    <CustomerNameFields
+      ref="nameFields"
+      :fields="draft"
+      :size="size"
+      phone-required
+      @phone-left="emit('phoneLeft')"
     />
-    <!-- `focusout`, not `blur`: the listener lands on SInput's wrapper and blur
-         does not bubble to it. Leaving the number is when it is worth checking. -->
-    <SInput
-      v-model="draft.phone"
-      label="Phone"
-      :size="size ?? 'phone'"
-      label-size="md"
-      type="tel"
-      mono
-      required
-      @focusout="emit('phoneLeft')"
-    />
+
     <SInput
       v-model="draft.asked"
       label="What she asked about · optional"

@@ -49,6 +49,7 @@ export function toCustomerRecord(api: ApiCustomer): CustomerRecord {
     name: api.name,
     phone: api.phone,
     altPhone: api.alt_phone,
+    email: api.email,
     status: api.status,
     storedStatus: api.stored_status,
     lastContactAt: api.last_contact_at,

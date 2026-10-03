@@ -246,6 +246,24 @@ export interface ApiCustomerCreate {
   notes?: string | null
 }
 
+/**
+ * `PATCH /customers/{id}`. Partial: an omitted field is left untouched and an
+ * explicit `null` clears a nullable one — which is the difference between "I am
+ * not editing her number" and "she has no number".
+ *
+ * `status` is accepted here but deliberately absent below: block F's edit form
+ * is name and phone, and `dormant` would be rejected anyway, being derived.
+ * **An anonymised customer cannot be edited at all.**
+ */
+export interface ApiCustomerUpdate {
+  name?: string
+  phone?: string | null
+  alt_phone?: string | null
+  email?: string | null
+  source?: string | null
+  notes?: string | null
+}
+
 export type ApiContactKind = 'call' | 'whatsapp' | 'visit' | 'quote_sent' | 'other'
 
 /** An entry of `GET /customers/{id}/contact-logs`. */

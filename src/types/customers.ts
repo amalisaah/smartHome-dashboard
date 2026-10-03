@@ -56,6 +56,8 @@ export interface CustomerRecord {
   /** Null for a record taken down without one. */
   phone: string | null
   altPhone: string | null
+  /** Null for a record taken down without one. Cleared on anonymise. */
+  email: string | null
   /** Effective status — `dormant` is evaluated live against the threshold. */
   status: CustomerStatus
   storedStatus: CustomerStatus
@@ -175,10 +177,60 @@ export interface LoggedContact {
   result: CustomerLogResult | null
 }
 
-export interface CustomerDraft {
+/**
+ * The two fields that carry a person: what she is called, and how to reach her.
+ *
+ * Shared by D3's new-customer form and block F's edit form so the two cannot
+ * drift apart — the handoff's instruction for the edit form is literally "reuse
+ * D3's Name and Phone fields", and this is that reuse made structural.
+ */
+export interface CustomerIdentityFields {
   name: string
   phone: string
+}
+
+export interface CustomerDraft extends CustomerIdentityFields {
   asked: string
+}
+
+/**
+ * What block F's edit form holds — everything about her that is hers rather than
+ * worked out from what she has done. Status is not here: it is moved by quoting
+ * and by the calendar, never by typing.
+ */
+export interface CustomerEditDraft extends CustomerIdentityFields {
+  email: string
+  notes: string
+}
+
+/** The fields of the record the edit form may change, as the form holds them. */
+export type EditableCustomer = Pick<CustomerRecord, 'name' | 'phone' | 'email' | 'notes'>
+
+/**
+ * Seeded from the record. `PATCH /customers/{id}` decides which field is
+ * required: `name` is not nullable on the wire, so it can be changed but never
+ * cleared; `phone`, `email` and `notes` are, so emptying one is a real edit and
+ * goes as an explicit `null`.
+ */
+export const editDraftFrom = (record: EditableCustomer): CustomerEditDraft => ({
+  name: record.name,
+  phone: record.phone ?? '',
+  email: record.email ?? '',
+  notes: record.notes ?? '',
+})
+
+/** Her name is the record. A blank one is not an edit, it is a deletion. */
+export const isEditSaveable = (draft: CustomerEditDraft) => draft.name.trim() !== ''
+
+/** Nothing typed differs from what is stored — the save would be a no-op. */
+export const isEditUnchanged = (draft: CustomerEditDraft, record: EditableCustomer) => {
+  const same = (typed: string, stored: string | null) => typed.trim() === (stored ?? '')
+  return (
+    same(draft.name, record.name) &&
+    same(draft.phone, record.phone) &&
+    same(draft.email, record.email) &&
+    same(draft.notes, record.notes)
+  )
 }
 
 /** Reported against the typed phone. A notice, never a block. */

@@ -102,14 +102,6 @@ export const router = createRouter({
       props: (route) => ({ customerId: Number(route.params.id) }),
     },
     {
-      // The edit form behind "Edit name or phone". Not designed in this handoff;
-      // the route exists so the button is not a dead press.
-      path: '/customers/:id(\\d+)/edit',
-      name: 'customer-edit',
-      component: CustomerPlaceholderView,
-      props: (route) => ({ customerId: Number(route.params.id), destination: 'edit' }),
-    },
-    {
       // Her house, which is where a phone row lands, and where "Start her house"
       // goes when she has none to name yet. Out of scope here.
       path: '/customers/:id(\\d+)/house',
