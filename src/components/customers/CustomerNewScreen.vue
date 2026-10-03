@@ -11,7 +11,13 @@ const props = defineProps<{
   saving?: boolean
 }>()
 
-defineEmits<{ cancel: []; saveAndOpenHouse: []; save: []; openDuplicate: [id: number] }>()
+defineEmits<{
+  cancel: []
+  saveAndOpenHouse: []
+  save: []
+  openDuplicate: [id: number]
+  phoneLeft: []
+}>()
 
 const saveable = computed(() => isDraftSaveable(props.draft) && !props.saving)
 </script>
@@ -28,7 +34,7 @@ const saveable = computed(() => isDraftSaveable(props.draft) && !props.saving)
     </div>
 
     <div class="body">
-      <CustomerNewFields :draft="draft" />
+      <CustomerNewFields :draft="draft" @phone-left="$emit('phoneLeft')" />
     </div>
 
     <div class="actions">

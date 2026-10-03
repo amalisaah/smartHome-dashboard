@@ -27,7 +27,7 @@ const router = useRouter()
  */
 const customersQuery = useCustomers()
 
-const { draft, duplicate, saving, save } = useCustomerDraft(
+const { draft, duplicate, saving, save, checkDuplicate } = useCustomerDraft(
   () => customersQuery.data.value ?? [],
   props.initialName ?? '',
 )
@@ -53,6 +53,7 @@ async function submit(thenOpenHouse: boolean) {
         @cancel="cancel"
         @save-and-open-house="submit(true)"
         @save="submit(false)"
+        @phone-left="checkDuplicate"
         @open-duplicate="router.push({ name: 'customer-detail', params: { id: $event } })"
       />
     </div>

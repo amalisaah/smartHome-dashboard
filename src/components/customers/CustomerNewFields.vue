@@ -9,6 +9,8 @@ defineProps<{
   size?: 'phone' | 'md'
 }>()
 
+const emit = defineEmits<{ phoneLeft: [] }>()
+
 const nameField = ref<InstanceType<typeof SInput> | null>(null)
 defineExpose({ focus: () => nameField.value?.focus() })
 </script>
@@ -23,6 +25,8 @@ defineExpose({ focus: () => nameField.value?.focus() })
       label-size="md"
       required
     />
+    <!-- `focusout`, not `blur`: the listener lands on SInput's wrapper and blur
+         does not bubble to it. Leaving the number is when it is worth checking. -->
     <SInput
       v-model="draft.phone"
       label="Phone"
@@ -31,6 +35,7 @@ defineExpose({ focus: () => nameField.value?.focus() })
       type="tel"
       mono
       required
+      @focusout="emit('phoneLeft')"
     />
     <SInput
       v-model="draft.asked"

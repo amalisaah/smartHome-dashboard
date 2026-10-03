@@ -90,8 +90,9 @@ const {
  * goes to D3's own screen instead — a modal is not a phone's way in.
  */
 const dialogOpen = ref(false)
-// The check reads the list already on screen; no request per keystroke.
-const { draft, duplicate, saving, save, reset } = useCustomerDraft(
+// The check reads the list already on screen, and only when he leaves the
+// number — see `useCustomerDraft`.
+const { draft, duplicate, saving, save, reset, checkDuplicate } = useCustomerDraft(
   () => customersQuery.data.value ?? [],
 )
 
@@ -262,6 +263,7 @@ async function submitContact() {
     @save="submit(false)"
     @dismiss="dialogOpen = false"
     @open-duplicate="openCustomer"
+    @phone-left="checkDuplicate"
   />
 </template>
 

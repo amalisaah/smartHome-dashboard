@@ -16,6 +16,7 @@ const emit = defineEmits<{
   save: []
   dismiss: []
   openDuplicate: [id: number]
+  phoneLeft: []
 }>()
 
 const saveable = computed(() => isDraftSaveable(props.draft) && !props.saving)
@@ -74,7 +75,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
     >
       <SText id="new-customer-title" type="dialog-title" as="h2">New customer</SText>
 
-      <CustomerNewFields ref="fields" :draft="draft" size="md" />
+      <CustomerNewFields
+        ref="fields"
+        :draft="draft"
+        size="md"
+        @phone-left="emit('phoneLeft')"
+      />
 
       <CustomerDuplicateNotice
         v-if="duplicate"
