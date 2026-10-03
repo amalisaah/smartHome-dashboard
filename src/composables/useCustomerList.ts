@@ -12,7 +12,6 @@ import {
   phoneDigits,
   type CustomerFilterDef,
   type CustomerFilterKey,
-  type CustomerLogResult,
   type CustomerRow,
   type CustomerSort,
   type CustomerSortColumn,
@@ -169,56 +168,19 @@ export function useCustomerList(
   const loggedFor = (id: number) => logged.value.get(id) ?? null
   const loggedTodayCount = computed(() => logged.value.size)
 
-  /** Closes the open note as state 3. */
-  function closeOpenNotes() {
-    for (const [id, entry] of logged.value) {
-      if (entry.noteOpen) logged.value.set(id, { ...entry, noteOpen: false })
-    }
-  }
-
   /**
-   * The contact is recorded on the click. Nothing waits on the network: the ✓
-   * and the note field are up first, and only a status change has anything left
-   * to render by the time the request answers.
+   * The entry is already written when this runs — the dialog makes the request
+   * and this is the row catching up with it.
+   *
+   * The order is pinned first: a log changes the sort key, `52 d` becoming
+   * `today`, and a row that moves takes the next click with it. It stays pinned
+   * until he changes filter, search or sort himself.
    */
-  function logSpoke(row: CustomerRow, send: (id: number) => Promise<CustomerLogResult | null>) {
-    closeOpenNotes()
-
+  function recordContact(row: CustomerRow, entry: Omit<LoggedContact, 'time'>) {
     if (frozenOrder.value === null) {
       frozenOrder.value = visibleRows.value.map((visible) => visible.id)
     }
-
-    logged.value.set(row.id, {
-      time: CLOCK.format(new Date()),
-      note: '',
-      noteOpen: true,
-      result: null,
-    })
-
-    send(row.id)
-      .then((result) => {
-        // Dropped if it was undone while in flight.
-        const entry = logged.value.get(row.id)
-        if (entry) logged.value.set(row.id, { ...entry, result })
-      })
-      // A failed round trip is no reason to take the ✓ back.
-      .catch(() => {})
-  }
-
-  function setNote(id: number, note: string) {
-    const entry = logged.value.get(id)
-    if (entry) logged.value.set(id, { ...entry, note })
-  }
-
-  /** Enter, Escape or blur: leaving is not discarding. */
-  function closeNote(id: number) {
-    const entry = logged.value.get(id)
-    if (entry) logged.value.set(id, { ...entry, noteOpen: false })
-  }
-
-  /** Back to state 1, and the note goes with it. */
-  function undoLog(id: number) {
-    logged.value.delete(id)
+    logged.value.set(row.id, { time: CLOCK.format(new Date()), ...entry })
   }
 
   // --- the strings the footer says -----------------------------------------
@@ -282,11 +244,7 @@ export function useCustomerList(
     logged,
     loggedFor,
     loggedTodayCount,
-    logSpoke,
-    setNote,
-    closeNote,
-    closeOpenNotes,
-    undoLog,
+    recordContact,
     footerSummary,
     phoneFooter,
     phoneSectionLabel,

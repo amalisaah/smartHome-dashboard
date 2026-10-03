@@ -1,7 +1,8 @@
-import type { ApiCustomer, ApiDormancySettings } from '@/types/api'
+import type { ApiContactKind, ApiCustomer, ApiDormancySettings } from '@/types/api'
 import {
   CUSTOMER_FILTERS,
   SOON_WITHIN_DAYS,
+  type ContactKind,
   type CustomerFilterKey,
   type CustomerLogResult,
   type CustomerRecord,
@@ -45,6 +46,13 @@ export function toCustomerRecord(api: ApiCustomer): CustomerRecord {
     createdAt: api.created_at,
   }
 }
+
+/**
+ * The wire has no `email`, so it goes as `other` — which means it comes back
+ * indistinguishable from a real `other`. Drop the branch when the enum grows one.
+ */
+export const toApiContactKind = (kind: ContactKind): ApiContactKind =>
+  kind === 'email' ? 'other' : kind
 
 export function toDormancyRule(api: ApiDormancySettings): DormancyRule {
   return {
@@ -169,17 +177,18 @@ export const toDuplicateMatch = (record: CustomerRecord): DuplicateMatch => ({
  * What the API still cannot answer, kept beside the derivations so the two stay
  * in step. The first three are each one request per row:
  *
- *   - `lastSaid` — on `GET /customers/{id}/contact-logs`. Rendered `—`.
+ *   - `lastSaid` — on `GET /customers/{id}/contact-logs`. Rendered `—`, except
+ *     on a row logged this session, which shows the note he just typed.
  *   - `roomCount` — `GET /customers/{id}/houses` then `/houses/{id}/composition`
  *     per house, summed. Left `undefined`; the phone row says nothing rather
  *     than claiming she has no house.
  *   - the quoted stage's elapsed figure — needs the latest `kind=quote_sent`
  *     entry, the only true quoted-at date.
- *   - the note typed after a one-tap log is not persisted: the field opens after
- *     the contact is recorded, and there is no PATCH for a log entry. Posting it
- *     would mean a second entry, double-counting the contact.
- *   - undo after a log leaves the entry, and with it the cleared dormancy.
- *     Wants a delete for a log entry.
+ *   - `email` is not a `kind`, so it is written as `other` and cannot be read
+ *     back as email. Wants `email` in the enum; see `toApiContactKind`.
+ *   - a submitted entry cannot be taken back — there is no delete for one, so
+ *     the dialog's Cancel is the only way out and it has to come before the
+ *     write. Wants `DELETE /customers/{id}/contact-logs/{entryId}`.
  *   - the duplicate check — `?q=` is a substring over stored text, so a number
  *     typed with different spacing is never returned to compare against.
  */

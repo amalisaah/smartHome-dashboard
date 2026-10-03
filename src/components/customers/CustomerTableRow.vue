@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
-import { SBadge, SButton, SInput, SText } from '@/components/atoms'
-import { STATUS_BADGE, type CustomerRow, type LoggedContact } from '@/types/customers'
+import { computed } from 'vue'
+import { SBadge, SButton, SText } from '@/components/atoms'
+import {
+  CONTACT_KIND_LABEL,
+  STATUS_BADGE,
+  type CustomerRow,
+  type LoggedContact,
+} from '@/types/customers'
 import { splitOnMatch } from '@/utils/format'
 
 const props = defineProps<{
@@ -11,17 +16,14 @@ const props = defineProps<{
   logged: LoggedContact | null
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   open: []
   spoke: []
-  undo: []
-  note: [value: string]
-  closeNote: []
 }>()
 
-// The four moments: state 1 is no `logged` entry; 2 and 3 are one with the note
-// open and closed; 4 is either once the data layer has answered with a different
-// status. Nothing here decides that it has.
+// Two moments: no `logged` entry, or one — the dialog collects the note before
+// the entry is written, so there is no half-logged row. A different status in
+// the answer is the third thing to render, and nothing here decides it.
 const status = computed(() => props.logged?.result?.status ?? props.row.status)
 const stage = computed(() => props.logged?.result?.stage ?? props.row.stage)
 const statusCaption = computed(
@@ -30,26 +32,6 @@ const statusCaption = computed(
 
 const nameParts = computed(() => splitOnMatch(props.row.name, props.query))
 const phoneParts = computed(() => splitOnMatch(props.row.phone, props.query))
-
-const noteOpen = computed(() => props.logged?.noteOpen === true)
-
-const noteField = ref<InstanceType<typeof SInput> | null>(null)
-
-// State 2 puts the caret in the note: the contact is already recorded, and this
-// is the only thing left he might want to say.
-watch(noteOpen, async (open) => {
-  if (!open) return
-  await nextTick()
-  noteField.value?.focus()
-})
-
-/** Enter, Escape and blur all mean the same: leaving is not discarding. */
-const keepNote = () => emit('closeNote')
-
-/** A click in the open note is aimed at the note, not at opening her. */
-const guardNote = (event: MouseEvent) => {
-  if (noteOpen.value) event.stopPropagation()
-}
 </script>
 
 <template>
@@ -108,37 +90,20 @@ const guardNote = (event: MouseEvent) => {
       </template>
     </span>
 
-    <!-- For one row at a time, this is the field that sets it. -->
-    <span class="cell cell--said" role="cell" @click="guardNote">
-      <!-- `focusout`, not `blur`: the listener lands on SInput's wrapper and
-           blur does not bubble to it. -->
-      <SInput
-        v-if="noteOpen"
-        ref="noteField"
-        :model-value="logged?.note ?? ''"
-        size="note"
-        variant="accent"
-        dashed
-        aria-label="What did she say?"
-        placeholder="What did she say? optional — Enter to keep"
-        @update:model-value="$emit('note', $event)"
-        @keydown.enter.prevent="keepNote"
-        @keydown.esc.prevent="keepNote"
-        @focusout="keepNote"
-      />
-      <SText v-else-if="logged && logged.note.trim()" type="cell" class="pretty">
+    <span class="cell cell--said" role="cell">
+      <SText v-if="logged && logged.note.trim()" type="cell" class="pretty">
         {{ logged.note.trim() }}
       </SText>
       <SText v-else-if="logged" type="cell" color="fg-2" class="pretty">Spoke — no note</SText>
       <SText v-else type="cell" color="fg-2" class="pretty">{{ row.lastSaid ?? '—' }}</SText>
     </span>
 
-    <!-- One click, nothing to confirm. Clicks here never open her. -->
+    <!-- The press opens the dialog; nothing is written here. Clicks in this
+         cell never open her. -->
     <span class="cell cell--contact" role="cell" @click.stop>
-      <template v-if="logged">
-        <SText type="list-meta" color="action-ink" class="stamp">✓ {{ logged.time }}</SText>
-        <SButton variant="link" @click="$emit('undo')">Undo</SButton>
-      </template>
+      <SText v-if="logged" type="list-meta" color="action-ink" class="stamp">
+        ✓ {{ CONTACT_KIND_LABEL[logged.kind] }} · {{ logged.time }}
+      </SText>
       <SButton v-else variant="chrome" size="row" @click="$emit('spoke')">Spoke today</SButton>
     </span>
   </div>

@@ -6,6 +6,7 @@ import type {
 } from '@/types/api'
 import {
   phoneDigits,
+  type ContactLogDraft,
   type CustomerDraft,
   type CustomerLogResult,
   type CustomerRecord,
@@ -14,6 +15,7 @@ import {
   type DuplicateMatch,
 } from '@/types/customers'
 import {
+  toApiContactKind,
   toCustomerRecord,
   toDormancyRule,
   toDuplicateMatch,
@@ -62,19 +64,23 @@ export async function fetchDormancyRule(signal?: AbortSignal): Promise<DormancyR
 }
 
 /**
- * `POST /customers/{id}/contact` — the one-tap log. `before` is the status the
- * row was showing: the answer says what she is now, and only the caller knows
- * what she was.
+ * `POST /customers/{id}/contact-logs` — the entry the dialog collects. Writing
+ * it recomputes `last_contact_at`, which is what clears a dormancy.
+ *
+ * `before` is the status the row was showing: the answer says what she is now,
+ * and only the caller knows what she was. Nothing is written until he submits,
+ * so cancelling the dialog leaves no trace — there is no delete for an entry.
  */
-export async function logContact(
+export async function addContactLog(
   customerId: number,
+  draft: ContactLogDraft,
   before: CustomerStatus,
   rule: DormancyRule | null,
 ): Promise<CustomerLogResult | null> {
   const { customer } = await apiSend<ApiContactResult>(
     'POST',
-    `/customers/${customerId}/contact`,
-    { kind: 'call' },
+    `/customers/${customerId}/contact-logs`,
+    { kind: toApiContactKind(draft.kind), note: draft.note.trim() || null },
   )
   return toLogResult(before, toCustomerRecord(customer), rule)
 }

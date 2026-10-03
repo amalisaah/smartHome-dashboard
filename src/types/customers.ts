@@ -120,16 +120,48 @@ export interface CustomerFilterDef {
 }
 
 /**
+ * How he reached her, in the order the dialog draws them — the three channels,
+ * then the one that is an errand rather than a channel.
+ *
+ * All but `email` are the wire's own words. The endpoint's `kind` enum has no
+ * email, so it is sent as `other` and cannot be told from a real `other` on the
+ * way back; delete that mapping when the enum carries `email`.
+ */
+export const CONTACT_KINDS = ['call', 'email', 'whatsapp', 'quote_sent'] as const
+
+export type ContactKind = (typeof CONTACT_KINDS)[number]
+
+/** What the select offers and what the logged row reads back. */
+export const CONTACT_KIND_LABEL: Record<ContactKind, string> = {
+  call: 'Call',
+  email: 'Email',
+  whatsapp: 'WhatsApp',
+  quote_sent: 'Quote sent',
+}
+
+export const CONTACT_KIND_OPTIONS: { label: string; value: ContactKind }[] = CONTACT_KINDS.map(
+  (value) => ({ label: CONTACT_KIND_LABEL[value], value }),
+)
+
+/** What the dialog collects. A call with nothing said is still a contact. */
+export interface ContactLogDraft {
+  kind: ContactKind
+  note: string
+}
+
+export const blankContactLogDraft = (): ContactLogDraft => ({ kind: 'call', note: '' })
+
+/**
  * A contact logged in this session. It lives in the screen, not on the row: the
- * record was written on the click, and this is what the row shows about it
- * until he leaves the view.
+ * entry was written when he submitted the dialog, and this is what the row
+ * shows about it until he leaves the view.
  */
 export interface LoggedContact {
-  /** `14:02` — stamped on the click, not on the note closing. */
+  /** `14:02` — stamped when the entry was written. */
   time: string
-  /** Empty means he never typed one, which renders as `Spoke — no note`. */
+  kind: ContactKind
+  /** Empty means he said nothing, which renders as `Spoke — no note`. */
   note: string
-  noteOpen: boolean
   result: CustomerLogResult | null
 }
 

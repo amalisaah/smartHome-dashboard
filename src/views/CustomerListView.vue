@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { logContact } from '@/api/customers'
+import { addContactLog } from '@/api/customers'
 import { useCustomers, useDormancyRule } from '@/api/hooks/customers'
 import { SBanner, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import CustomerFooter from '@/components/customers/CustomerFooter.vue'
+import CustomerContactDialog from '@/components/customers/CustomerContactDialog.vue'
 import CustomerNewDialog from '@/components/customers/CustomerNewDialog.vue'
 import CustomerPhoneEmpty from '@/components/customers/CustomerPhoneEmpty.vue'
 import CustomerPhoneFilters from '@/components/customers/CustomerPhoneFilters.vue'
@@ -19,6 +20,7 @@ import { useCustomerDraft } from '@/composables/useCustomerDraft'
 import { useCustomerList } from '@/composables/useCustomerList'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import {
+  blankContactLogDraft,
   CUSTOMER_FILTER_COPY,
   customerFilterDefs,
   DEFAULT_FILTER,
@@ -74,10 +76,7 @@ const {
   visibleRows,
   phoneRows,
   logged,
-  logSpoke,
-  setNote,
-  closeNote,
-  undoLog,
+  recordContact,
   footerSummary,
   phoneFooter,
   phoneSectionLabel,
@@ -126,11 +125,47 @@ const addFromQuery = () =>
   router.push({ name: 'customer-new', query: { name: debouncedQuery.value.trim() } })
 
 /**
- * The contact is recorded here; the request follows it. The row's status goes
- * with it because only this side knows what she was before the log.
+ * Logging a contact. The dialog holds what he is about to write, and nothing
+ * reaches the API until he submits — so closing it is a real way out, which it
+ * has to be: an entry cannot be deleted once written.
  */
-const spoke = (row: CustomerRow) =>
-  logSpoke(row, (id) => logContact(id, row.status, rule.value))
+const contactRow = ref<CustomerRow | null>(null)
+const contactDraft = reactive(blankContactLogDraft())
+const contactSaving = ref(false)
+const contactError = ref('')
+
+function openContact(row: CustomerRow) {
+  contactDraft.kind = 'call'
+  contactDraft.note = ''
+  contactError.value = ''
+  contactRow.value = row
+}
+
+function dismissContact() {
+  if (contactSaving.value) return
+  contactRow.value = null
+}
+
+async function submitContact() {
+  const row = contactRow.value
+  if (!row || contactSaving.value) return
+
+  contactSaving.value = true
+  contactError.value = ''
+  try {
+    // The row's current status goes with it: only this side knows what she was
+    // before the log, and the answer says what she is after it.
+    const result = await addContactLog(row.id, contactDraft, row.status, rule.value)
+    recordContact(row, { kind: contactDraft.kind, note: contactDraft.note, result })
+    contactRow.value = null
+  } catch (error) {
+    // Held open with what he typed: nothing was recorded, so he can try again.
+    contactError.value =
+      error instanceof Error ? error.message : 'Could not log the contact.'
+  } finally {
+    contactSaving.value = false
+  }
+}
 </script>
 
 <template>
@@ -197,16 +232,23 @@ const spoke = (row: CustomerRow) =>
           :logged="logged"
           @sort="toggleSort"
           @open="openCustomer($event.id)"
-          @spoke="spoke"
-          @undo="undoLog($event.id)"
-          @note="(row, value) => setNote(row.id, value)"
-          @close-note="closeNote($event.id)"
+          @spoke="openContact"
         />
 
         <CustomerFooter :summary="footerSummary" :explainer="explainer" />
       </template>
     </template>
   </AppLayout>
+
+  <CustomerContactDialog
+    v-if="contactRow"
+    :row="contactRow"
+    :draft="contactDraft"
+    :saving="contactSaving"
+    :error="contactError"
+    @submit="submitContact"
+    @dismiss="dismissContact"
+  />
 
   <CustomerNewDialog
     v-if="dialogOpen && !isPhone"

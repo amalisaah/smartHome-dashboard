@@ -21,9 +21,6 @@ defineEmits<{
   sort: [column: CustomerSortColumn]
   open: [row: CustomerRow]
   spoke: [row: CustomerRow]
-  undo: [row: CustomerRow]
-  note: [row: CustomerRow, value: string]
-  closeNote: [row: CustomerRow]
 }>()
 
 /**
@@ -110,9 +107,6 @@ const SKELETON_ROWS = 7
         :logged="logged.get(row.id) ?? null"
         @open="$emit('open', row)"
         @spoke="$emit('spoke', row)"
-        @undo="$emit('undo', row)"
-        @note="$emit('note', row, $event)"
-        @close-note="$emit('closeNote', row)"
       />
     </div>
   </div>
