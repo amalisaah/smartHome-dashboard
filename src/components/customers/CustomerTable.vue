@@ -32,7 +32,7 @@ const COLUMNS: { label: string; sortable: CustomerSortColumn | null; align?: 'ri
   { label: 'Status', sortable: null },
   { label: 'Stage', sortable: null },
   { label: 'Quiet for', sortable: 'quiet' },
-  { label: 'Last said', sortable: null },
+  { label: 'Notes', sortable: null },
   { label: 'Contact', sortable: null, align: 'right' },
 ]
 

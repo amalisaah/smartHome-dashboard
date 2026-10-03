@@ -43,6 +43,7 @@ export function toCustomerRecord(api: ApiCustomer): CustomerRecord {
     storedStatus: api.stored_status,
     lastContactAt: api.last_contact_at,
     daysSinceLastContact: api.days_since_last_contact,
+    notes: api.notes,
     createdAt: api.created_at,
   }
 }
@@ -138,7 +139,7 @@ export function toCustomerRow(record: CustomerRecord, rule: DormancyRule | null)
     // than it has left. Derived, so moving the threshold moves the amber.
     warn: rule !== null && quietForDays >= rule.dormantAfterDays / 2,
     soon: dormantInDays !== null && dormantInDays <= SOON_WITHIN_DAYS,
-    lastSaid: null,
+    notes: record.notes,
     roomCount: undefined,
     filters: filtersFor(record.status),
   }
@@ -177,8 +178,9 @@ export const toDuplicateMatch = (record: CustomerRecord): DuplicateMatch => ({
  * What the API still cannot answer, kept beside the derivations so the two stay
  * in step. The first three are each one request per row:
  *
- *   - `lastSaid` — on `GET /customers/{id}/contact-logs`. Rendered `—`, except
- *     on a row logged this session, which shows the note he just typed.
+ *   - the latest contact note — on `GET /customers/{id}/contact-logs`. The Notes
+ *     column shows her standing `notes` instead, which the list already carries;
+ *     what she last *said* would be one request per row.
  *   - `roomCount` — `GET /customers/{id}/houses` then `/houses/{id}/composition`
  *     per house, summed. Left `undefined`; the phone row says nothing rather
  *     than claiming she has no house.

@@ -156,7 +156,7 @@ async function submitContact() {
     // The row's current status goes with it: only this side knows what she was
     // before the log, and the answer says what she is after it.
     const result = await addContactLog(row.id, contactDraft, row.status, rule.value)
-    recordContact(row, { kind: contactDraft.kind, note: contactDraft.note, result })
+    recordContact(row, { kind: contactDraft.kind, result })
     contactRow.value = null
   } catch (error) {
     // Held open with what he typed: nothing was recorded, so he can try again.

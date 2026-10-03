@@ -90,12 +90,12 @@ const phoneParts = computed(() => splitOnMatch(props.row.phone, props.query))
       </template>
     </span>
 
-    <span class="cell cell--said" role="cell">
-      <SText v-if="logged && logged.note.trim()" type="cell" class="pretty">
-        {{ logged.note.trim() }}
+    <!-- Her standing notes, logged contact or not: what he typed into the
+         dialog went to her contact log, not to this. -->
+    <span class="cell cell--notes" role="cell">
+      <SText type="cell" :color="row.notes ? undefined : 'fg-2'" class="pretty">
+        {{ row.notes ?? '—' }}
       </SText>
-      <SText v-else-if="logged" type="cell" color="fg-2" class="pretty">Spoke — no note</SText>
-      <SText v-else type="cell" color="fg-2" class="pretty">{{ row.lastSaid ?? '—' }}</SText>
     </span>
 
     <!-- The press opens the dialog; nothing is written here. Clicks in this
@@ -148,8 +148,7 @@ const phoneParts = computed(() => splitOnMatch(props.row.phone, props.query))
   gap: 3px;
 }
 
-/* The cell must be able to be narrower than the field's intrinsic width. */
-.cell--said {
+.cell--notes {
   min-width: 0;
 }
 

@@ -62,6 +62,8 @@ export interface CustomerRecord {
   lastContactAt: string | null
   /** Null when never contacted — the row counts from `createdAt` instead. */
   daysSinceLastContact: number | null
+  /** Her standing notes — what to remember about her, not what she last said. */
+  notes: string | null
   createdAt: string
 }
 
@@ -97,8 +99,11 @@ export interface CustomerRow {
   warn: boolean
   /** The countdown chip reads as risk. */
   soon: boolean
-  /** `null` renders as `—`, and is all the API can answer today. */
-  lastSaid: string | null
+  /**
+   * Her standing notes, as the Notes column. Not the latest contact note —
+   * that is one request per row; see the gap note in the mapper.
+   */
+  notes: string | null
   /**
    * Phone only. `null` is "no house yet"; `undefined` is "we did not ask",
    * which is the case today — never an address, at any viewport.
@@ -160,8 +165,6 @@ export interface LoggedContact {
   /** `14:02` — stamped when the entry was written. */
   time: string
   kind: ContactKind
-  /** Empty means he said nothing, which renders as `Spoke — no note`. */
-  note: string
   result: CustomerLogResult | null
 }
 
