@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AllocationPreviewView from '@/views/AllocationPreviewView.vue'
 import CatalogueListView from '@/views/CatalogueListView.vue'
+import CustomerDetailView from '@/views/CustomerDetailView.vue'
 import CustomerListView from '@/views/CustomerListView.vue'
 import CustomerNewView from '@/views/CustomerNewView.vue'
 import CustomerPlaceholderView from '@/views/CustomerPlaceholderView.vue'
@@ -94,12 +95,19 @@ export const router = createRouter({
       }),
     },
     {
-      // Her customer page — designed elsewhere in module 5, out of scope here.
-      // The route exists so no row on the list is a dead click.
+      // Her customer page — module 5, block F.
       path: '/customers/:id(\\d+)',
       name: 'customer-detail',
+      component: CustomerDetailView,
+      props: (route) => ({ customerId: Number(route.params.id) }),
+    },
+    {
+      // The edit form behind "Edit name or phone". Not designed in this handoff;
+      // the route exists so the button is not a dead press.
+      path: '/customers/:id(\\d+)/edit',
+      name: 'customer-edit',
       component: CustomerPlaceholderView,
-      props: (route) => ({ customerId: Number(route.params.id), destination: 'detail' }),
+      props: (route) => ({ customerId: Number(route.params.id), destination: 'edit' }),
     },
     {
       // Her house, which is where a phone row lands. Also out of scope here.

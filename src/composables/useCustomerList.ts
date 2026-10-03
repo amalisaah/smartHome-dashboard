@@ -17,12 +17,20 @@ import {
   type CustomerSortColumn,
   type LoggedContact,
 } from '@/types/customers'
-import { sessionValue } from '@/utils/storage'
+import { isString, sessionValue } from '@/utils/storage'
 
 const SEARCH_DEBOUNCE_MS = 150
 
 /** The filter he last worked in, for the tab's lifetime. */
 const storedFilter = sessionValue<CustomerFilterKey>('customers:filter', isCustomerFilterKey)
+
+/**
+ * And what he was searching for. Opening a customer and coming back by the
+ * breadcrumb has to land him on the list he left, which is the filter *and* the
+ * query — a half-typed name he has to type again is the same list as far as he
+ * is concerned, but not as far as the screen is.
+ */
+const storedQuery = sessionValue<string>('customers:query', isString)
 
 /** `14:02` — the stamp beside the ✓. */
 const CLOCK = new Intl.DateTimeFormat('en-GB', {
@@ -57,8 +65,11 @@ export function useCustomerList(
   const rows = computed(() => toValue(rowsSource))
   const filters = computed(() => toValue(filtersSource))
 
-  const query = ref('')
-  const debouncedQuery = ref('')
+  // Restored together, and already debounced: the list he left is on screen on
+  // the first paint, not 150ms into it.
+  const restoredQuery = storedQuery.readOr('')
+  const query = ref(restoredQuery)
+  const debouncedQuery = ref(restoredQuery)
   const filter = ref<CustomerFilterKey>(
     storedFilter.readOr(options.initialFilter ?? DEFAULT_FILTER),
   )
@@ -70,6 +81,10 @@ export function useCustomerList(
     clearTimeout(debounceTimer)
     debounceTimer = setTimeout(() => (debouncedQuery.value = value), SEARCH_DEBOUNCE_MS)
   })
+
+  // The settled query, not every keystroke: the half-word in flight is not yet
+  // the list he is working.
+  watch(debouncedQuery, (value) => storedQuery.write(value))
 
   watch(filter, (value) => storedFilter.write(value))
 

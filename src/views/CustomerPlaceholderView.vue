@@ -7,13 +7,13 @@ import AppLayout from '@/components/app/AppLayout.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 
 /**
- * A navigation stub. Her customer page and her house are designed elsewhere in
- * module 5 and out of scope here; these routes exist so nothing on the list is
- * a dead click.
+ * A navigation stub. Her house and the form behind "Edit name or phone" are
+ * designed elsewhere in module 5 and out of scope here; these routes exist so
+ * nothing on the list or on her page is a dead click.
  */
 const props = defineProps<{
   customerId: number
-  destination: 'detail' | 'house'
+  destination: 'detail' | 'house' | 'edit'
 }>()
 
 const isPhone = useMediaQuery('(max-width: 899px)')
@@ -24,17 +24,24 @@ const router = useRouter()
 const customerQuery = useCustomer(() => props.customerId)
 const customer = computed(() => customerQuery.data.value ?? null)
 
-const title = computed(() =>
-  props.destination === 'house'
-    ? `${customer.value?.name ?? 'This customer'} · her house`
-    : (customer.value?.name ?? 'Customer'),
-)
+const who = computed(() => customer.value?.name ?? 'This customer')
 
-const detail = computed(() =>
-  props.destination === 'house'
-    ? 'The house — rooms, installed devices and visit notes. It opens on Rooms when her visit notes are already filled in and on Visit notes when they are not, and its header carries ‹ her name as the way to this page.'
-    : 'Her customer page — the contact log, her quotes and the way into her house.',
-)
+const TITLE: Record<typeof props.destination, (name: string) => string> = {
+  house: (name) => `${name} · her house`,
+  edit: (name) => `${name} · name and phone`,
+  detail: (name) => name,
+}
+
+const DETAIL: Record<typeof props.destination, string> = {
+  house:
+    'The house — rooms, installed devices and visit notes. It opens on Rooms when her visit notes are already filled in and on Visit notes when they are not, and its header carries ‹ her name as the way to this page.',
+  edit: 'The form behind "Edit name or phone" — D3\'s Name and Phone fields, over her page rather than beside it. Not drawn in this handoff.',
+  detail: 'Her customer page — the contact log, her quotes and the way into her house.',
+}
+
+const title = computed(() => TITLE[props.destination](who.value))
+
+const detail = computed(() => DETAIL[props.destination])
 </script>
 
 <template>

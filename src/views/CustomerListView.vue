@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { addContactLog } from '@/api/customers'
 import { useCustomers, useDormancyRule } from '@/api/hooks/customers'
 import { SBanner, SText } from '@/components/atoms'
@@ -14,6 +14,7 @@ import CustomerPhoneFooter from '@/components/customers/CustomerPhoneFooter.vue'
 import CustomerPhoneHeader from '@/components/customers/CustomerPhoneHeader.vue'
 import CustomerPhoneRow from '@/components/customers/CustomerPhoneRow.vue'
 import CustomerPhoneSkeleton from '@/components/customers/CustomerPhoneSkeleton.vue'
+import CustomerRemovedNotice from '@/components/customers/CustomerRemovedNotice.vue'
 import CustomerTable from '@/components/customers/CustomerTable.vue'
 import CustomerToolbar from '@/components/customers/CustomerToolbar.vue'
 import { useCustomerDraft } from '@/composables/useCustomerDraft'
@@ -41,6 +42,21 @@ import { toCustomerRows } from '@/utils/mapper/customerMapper'
 const isPhone = useMediaQuery('(max-width: 899px)')
 
 const router = useRouter()
+const route = useRoute()
+
+/**
+ * Block F's delete sends him back here, and the list is where the confirmation
+ * is said — it is the only screen left that could say it. The name rides on the
+ * query because the record it belonged to no longer exists to be asked.
+ */
+const deletedName = ref(typeof route.query.deleted === 'string' ? route.query.deleted : '')
+
+/** Said once. Dropping the query means a reload does not say it again. */
+function dismissDeleted() {
+  deletedName.value = ''
+  const { deleted: _deleted, ...rest } = route.query
+  router.replace({ query: rest })
+}
 
 // Two calls, two fates: losing the rule costs the countdown and the amber, so
 // the list is never held up waiting for a setting.
@@ -208,6 +224,11 @@ async function submitContact() {
           />
         </div>
 
+        <CustomerRemovedNotice
+          v-if="deletedName"
+          :name="deletedName"
+          @done="dismissDeleted"
+        />
         <CustomerPhoneFooter :summary="phoneFooter" />
       </template>
     </template>
@@ -239,6 +260,11 @@ async function submitContact() {
           @spoke="openContact"
         />
 
+        <CustomerRemovedNotice
+          v-if="deletedName"
+          :name="deletedName"
+          @done="dismissDeleted"
+        />
         <CustomerFooter :summary="footerSummary" :explainer="explainer" />
       </template>
     </template>

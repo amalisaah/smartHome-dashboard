@@ -46,6 +46,7 @@ export function toCustomerRecord(api: ApiCustomer): CustomerRecord {
     lastContactAt: api.last_contact_at,
     daysSinceLastContact: api.days_since_last_contact,
     notes: api.notes,
+    anonymisedAt: api.anonymised_at,
     createdAt: api.created_at,
   }
 }

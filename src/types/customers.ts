@@ -65,6 +65,12 @@ export interface CustomerRecord {
   daysSinceLastContact: number | null
   /** Her standing notes — what to remember about her, not what she last said. */
   notes: string | null
+  /**
+   * When her personal details were erased, or null while she still has them.
+   * Set, `name` is a placeholder and there is no phone, no directions and no
+   * notes left to show — block F's detail screen reads it to know that.
+   */
+  anonymisedAt: string | null
   createdAt: string
 }
 
