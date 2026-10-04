@@ -109,6 +109,13 @@ export async function apiSend<T>(
   path: string,
   body?: unknown,
   signal?: AbortSignal,
+  /**
+   * Let the request outlive the page. For the one send made while the tab is
+   * closing, where an ordinary `fetch` is cancelled with the document — see the
+   * Visit notes screen, which flushes what he typed on `pagehide`. The platform
+   * caps a keepalive body at 64KB, which no write here comes near.
+   */
+  keepalive?: boolean,
 ): Promise<T> {
   let response: Response
   try {
@@ -120,6 +127,7 @@ export async function apiSend<T>(
       },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal,
+      keepalive,
     })
   } catch (cause) {
     if (cause instanceof DOMException && cause.name === 'AbortError') throw cause

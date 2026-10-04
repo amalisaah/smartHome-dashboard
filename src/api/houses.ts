@@ -32,10 +32,17 @@ export const fetchHouse = (id: number, signal?: AbortSignal) =>
  * Blanks go as `null` rather than `""`, as everywhere else on this module — an
  * address nobody wrote down is not an empty address.
  */
-export const updateHouse = (id: number, patch: ApiHouseUpdate) =>
-  apiSend<ApiHouse>('PATCH', `/houses/${id}`, patch)
+export const updateHouse = (id: number, patch: ApiHouseUpdate, keepalive?: boolean) =>
+  apiSend<ApiHouse>('PATCH', `/houses/${id}`, patch, undefined, keepalive)
 
-/** A field's value on the way out: empty becomes absent. */
+/**
+ * A field's value on the way out: empty becomes absent.
+ *
+ * Exported because it is also what decides whether a field is worth sending at
+ * all. The screen compares **this** against what the server last confirmed, not
+ * the raw text — otherwise a trailing space, or a character typed and deleted,
+ * would each cost a round trip carrying a body identical to the stored row.
+ */
 export const textOrNull = (value: string) => value.trim() || null
 
 /** The six note fields as the wire names them. */

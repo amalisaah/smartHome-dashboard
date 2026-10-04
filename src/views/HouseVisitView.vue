@@ -101,6 +101,17 @@ watch(online, (up, wasUp) => {
   if (up && wasUp === false) visit.retry()
 })
 
+/**
+ * He has finished with a field. That is a better moment to send than any timer
+ * can guess, so it goes now — and a chip beside the field is not leaving it,
+ * since the chip's whole job is to type into the field he is still in.
+ */
+function onFieldExit(event: FocusEvent) {
+  const next = event.relatedTarget as HTMLElement | null
+  if (next?.closest('[data-phrases]')) return
+  visit.flushNow()
+}
+
 // --- the pin ----------------------------------------------------------------
 
 const pinFinding = ref(false)
@@ -233,18 +244,28 @@ const walkTheRooms = () =>
         :sent-at="reconnectedAt ?? undefined"
       />
 
-      <SBanner v-if="houseQuery.isError.value" variant="error" class="failure">
+      <!-- A read that failed only takes the screen when there is nothing else
+           to put there. With unsent work his own words are on it, and they are
+           the ones he came back for. -->
+      <SBanner
+        v-if="houseQuery.isError.value && !visit.unsentWork.value"
+        variant="error"
+        class="failure"
+      >
         Could not read this house.
       </SBanner>
 
-      <HouseVisitSkeleton v-else-if="loading" size="phone" />
+      <HouseVisitSkeleton v-else-if="loading && !visit.unsentWork.value" size="phone" />
 
       <template v-else>
+        <!-- Leaving a field is the natural moment to send it, and it is what
+             lets the debounce behind this be generous. -->
         <HouseVisitPhone
           :draft="visit.draft"
           :pin="visit.pin.value"
           :pin-finding="pinFinding"
           :pin-failed="pinFailed"
+          @focusout="onFieldExit"
           @drop-pin="dropPin"
           @clear-pin="clearPin"
         />
@@ -275,11 +296,15 @@ const walkTheRooms = () =>
         />
       </div>
 
-      <SBanner v-if="houseQuery.isError.value" variant="error" class="failure">
+      <SBanner
+        v-if="houseQuery.isError.value && !visit.unsentWork.value"
+        variant="error"
+        class="failure"
+      >
         Could not read this house.
       </SBanner>
 
-      <HouseVisitSkeleton v-else-if="loading" size="desk" />
+      <HouseVisitSkeleton v-else-if="loading && !visit.unsentWork.value" size="desk" />
 
       <HouseVisitDesk
         v-else
@@ -291,6 +316,7 @@ const walkTheRooms = () =>
         :rooms-loading="roomsQuery.isPending.value"
         :rooms-failed="roomsQuery.isError.value"
         :installed-count="installedCount"
+        @focusout="onFieldExit"
         @clear-pin="clearPin"
         @cycle-room="visit.cycleRoom"
       />

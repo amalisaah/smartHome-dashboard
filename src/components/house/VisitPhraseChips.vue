@@ -24,7 +24,9 @@ defineEmits<{ insert: [text: string] }>()
 </script>
 
 <template>
-  <div class="chips" :class="`chips--${size ?? 'phone'}`">
+  <!-- `data-phrases` marks these as belonging to the field above: tabbing or
+       tapping onto one is not leaving that field, so it does not commit it. -->
+  <div class="chips" :class="`chips--${size ?? 'phone'}`" data-phrases>
     <SButton
       v-for="phrase in phrases"
       :key="phrase.text"
