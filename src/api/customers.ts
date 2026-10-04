@@ -94,6 +94,26 @@ export async function fetchHouses(id: number, signal?: AbortSignal): Promise<Hou
 }
 
 /**
+ * One house of hers, with everything the list drops.
+ *
+ * There is no `GET /houses/{id}`: the only endpoint that answers with an
+ * `ApiHouse` is the plural one, so the house is picked out of her list. That is
+ * one request either way, and it shares its cache with her customer page.
+ *
+ * `null` for a house id that is not hers (or is archived, which the endpoint
+ * leaves out) — the screen says so rather than rendering an empty form that
+ * would look like a house nobody has visited yet.
+ */
+export async function fetchHouse(
+  customerId: number,
+  houseId: number,
+  signal?: AbortSignal,
+): Promise<ApiHouse | null> {
+  const houses = await apiGet<ApiHouse[]>(`/customers/${customerId}/houses`, undefined, signal)
+  return houses.find((house) => house.id === houseId) ?? null
+}
+
+/**
  * `POST /customers/{id}/houses` — the house the form just started.
  *
  * Blanks go as `null` rather than as `""`, as everywhere else on this module:

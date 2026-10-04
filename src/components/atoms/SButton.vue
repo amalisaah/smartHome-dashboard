@@ -9,6 +9,9 @@ defineProps<{
    * `--surface` instead of `--bg` and answers a reach with the action border.
    * `inverse` is the light button on a dark phone header.
    * `link` is a word in a row that undoes something — underlined, no box.
+   * `phrase` is a word that types itself into the field beside it — mono,
+   * because what it inserts is the literal text, and quiet, because it is a
+   * shortcut for typing rather than a thing to do.
    */
   variant?:
     | 'primary'
@@ -20,6 +23,7 @@ defineProps<{
     | 'chrome'
     | 'inverse'
     | 'link'
+    | 'phrase'
   /**
    * `sm` / `md` / `lg` are the sans-faced set: an inline action, the laptop door
    * and the phone door.
@@ -286,6 +290,35 @@ defineProps<{
 
 .s-btn--link:hover:not([disabled]) {
   color: var(--color-fg);
+}
+
+/* A word that types itself into the field beside it. Mono and at the field's
+   own quiet ink, because the chip is a shortcut for typing rather than a second
+   thing to do — it must not compete with the one real button on the screen.
+   Declared after the sizes so it keeps its box whatever door it is given; only
+   the height comes from `size`. */
+.s-btn--phrase {
+  background: transparent;
+  color: var(--color-fg-2);
+  border-color: var(--color-line);
+  border-radius: var(--radius-chip);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  padding: 0 12px;
+}
+
+/* Reaching for it firms the border, exactly as reaching for a field does — it
+   belongs to the textarea above it. */
+.s-btn--phrase:hover:not([disabled]) {
+  border-color: var(--color-fg-3);
+}
+
+/* The press has to read without a cursor: on a phone the finger is on top of
+   the chip, so the answer is the whole box filling. */
+.s-btn--phrase:active:not([disabled]) {
+  background: var(--color-surface);
 }
 
 .s-btn--destructive {

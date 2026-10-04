@@ -29,6 +29,12 @@
   --color-action-on-dark: oklch(0.68 0.13 255);
   --color-risk: oklch(0.55 0.13 45);
   --color-risk-hover: oklch(0.48 0.13 45);
+
+  /* The risk hue lifted to read on the dark phone header, where a 0.55 ink
+     disappears into a 0.21 ground. The counterpart of `--color-action-on-dark`,
+     at the same lightness and for the same reason: one risk colour, two
+     grounds. */
+  --color-risk-on-dark: oklch(0.70 0.13 45);
   --color-inverse: oklch(0.98 0.002 250);
   --color-muted-dark: oklch(0.80 0.006 250);
   --color-very-muted-dark: oklch(0.75 0.006 250);

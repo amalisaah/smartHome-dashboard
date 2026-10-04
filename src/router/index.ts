@@ -8,6 +8,8 @@ import CustomerPlaceholderView from '@/views/CustomerPlaceholderView.vue'
 import DesignSystemView from '@/views/DesignSystemView.vue'
 import GroupsMarkupView from '@/views/GroupsMarkupView.vue'
 import HouseNewView from '@/views/HouseNewView.vue'
+import HouseTabStubView from '@/views/HouseTabStubView.vue'
+import HouseVisitView from '@/views/HouseVisitView.vue'
 import ItemDetailView from '@/views/ItemDetailView.vue'
 import ItemEditView from '@/views/ItemEditView.vue'
 import ItemNewView from '@/views/ItemNewView.vue'
@@ -121,12 +123,40 @@ export const router = createRouter({
       props: (route) => ({ customerId: Number(route.params.id) }),
     },
     {
-      // One named house of hers. A customer may have several, so a row in her
-      // house list has to address the one it names rather than "her house".
+      // One named house of hers, on its Visit notes tab — module 5, block A. A
+      // customer may have several, so a row in her house list has to address
+      // the one it names rather than "her house", even though that is what the
+      // screen is called once he is on it.
       path: '/customers/:id(\\d+)/houses/:houseId(\\d+)',
       name: 'house-detail',
-      component: CustomerPlaceholderView,
-      props: (route) => ({ customerId: Number(route.params.id), destination: 'house' }),
+      component: HouseVisitView,
+      props: (route) => ({
+        customerId: Number(route.params.id),
+        houseId: Number(route.params.houseId),
+      }),
+    },
+    {
+      // The house's other two tabs. Blocks B and C, designed elsewhere; these
+      // exist so the tab bar, `Walk the rooms →` and `Edit rooms` all lead
+      // somewhere that says what it will be.
+      path: '/customers/:id(\\d+)/houses/:houseId(\\d+)/rooms',
+      name: 'house-rooms',
+      component: HouseTabStubView,
+      props: (route) => ({
+        customerId: Number(route.params.id),
+        houseId: Number(route.params.houseId),
+        tab: 'rooms',
+      }),
+    },
+    {
+      path: '/customers/:id(\\d+)/houses/:houseId(\\d+)/installed',
+      name: 'house-installed',
+      component: HouseTabStubView,
+      props: (route) => ({
+        customerId: Number(route.params.id),
+        houseId: Number(route.params.houseId),
+        tab: 'installed',
+      }),
     },
     {
       path: '/groups',

@@ -45,6 +45,8 @@ const props = defineProps<{
     | 'action'
     | 'action-ink'
     | 'risk'
+    /** `risk` on a dark ground — the phone header's no-signal line. */
+    | 'risk-on-dark'
     | 'inverse'
     | 'muted-dark'
   as?: string
@@ -173,7 +175,8 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
   color: var(--color-fg);
 }
 
-/* Name line of a phone list row. */
+/* Sans at 15px carrying weight: the name line of a phone list row, and the one
+   line a block on a phone is about — a banner's own sentence. */
 .s-text--list-title {
   font-family: var(--font-sans);
   font-size: 15px;
@@ -224,7 +227,9 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
   color: var(--color-fg-2);
 }
 
-/* Tab-bar label. Active tabs carry weight 600 from the tab bar itself. */
+/* Sans at 13px carrying weight — the label scale under `ui`. A tab-bar label
+   (active tabs take weight 600 from the tab bar itself), and the name or link
+   inside a small box on the laptop, where 14px would be the box's loudest thing. */
 .s-text--tab {
   font-family: var(--font-sans);
   font-size: 13px;
@@ -375,6 +380,7 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
 .s-text--color-action      { color: var(--color-action); }
 .s-text--color-action-ink  { color: var(--color-action-ink); }
 .s-text--color-risk        { color: var(--color-risk); }
+.s-text--color-risk-on-dark { color: var(--color-risk-on-dark); }
 .s-text--color-inverse     { color: var(--color-inverse); }
 .s-text--color-muted-dark  { color: var(--color-muted-dark); }
 </style>
