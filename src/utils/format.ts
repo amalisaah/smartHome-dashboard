@@ -25,6 +25,7 @@ const ONE_DP = new Intl.NumberFormat('en-US', {
  */
 const SHORT_DAY = new Intl.DateTimeFormat('en-GB', { day: 'numeric' })
 const SHORT_MONTH = new Intl.DateTimeFormat('en-US', { month: 'short' })
+const WEEKDAY = new Intl.DateTimeFormat('en-GB', { weekday: 'short' })
 
 /** Money inside a table cell or a phone row — two decimals, no currency mark. */
 export const formatMoney = (pesewas: number) => TWO_DP.format(pesewas / 100)
@@ -71,6 +72,10 @@ export const formatShortDate = (iso: string) => {
   const date = new Date(iso)
   return `${SHORT_DAY.format(date)} ${SHORT_MONTH.format(date)}`
 }
+
+/** `Wed 30 Sep` — the app bar's date line, which is today's and nothing else. */
+export const formatWeekdayDate = (date = new Date()) =>
+  `${WEEKDAY.format(date)} ${SHORT_DAY.format(date)} ${SHORT_MONTH.format(date)}`
 
 /** An ISO date-time as `Aug 2026` — a month is as precise as "since" gets. */
 export const formatMonthYear = (iso: string) => {

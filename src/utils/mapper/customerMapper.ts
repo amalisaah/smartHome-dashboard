@@ -232,6 +232,11 @@ export function toCustomerRow(record: CustomerRecord, rule: DormancyRule | null)
     warn: rule !== null && quietForDays >= rule.dormantAfterDays / 2,
     soon: dormantInDays !== null && dormantInDays <= SOON_WITHIN_DAYS,
     notes: record.notes,
+    // TODO(api): D2's phone row is drawn as `024 551 8830 · house · 6 rooms`
+    // and has never shown the second half. Rooms are `GET /houses/{id}/
+    // composition` per house, so a list of 200 rows cannot ask. Wants room and
+    // device counts on the houses payload; until then the row says nothing
+    // rather than claiming she has no house.
     roomCount: undefined,
     filters: filtersFor(record.status),
   }
@@ -293,23 +298,27 @@ export function findDuplicateIn(
 }
 
 /**
- * What the API still cannot answer, kept beside the derivations so the two stay
- * in step. The first three are each one request per row:
+ * TODO(api): what the customer screens still cannot say, and what each wants.
+ * Kept beside the derivations so the two stay in step.
  *
- *   - the latest contact note — on `GET /customers/{id}/contact-logs`. The Notes
- *     column shows her standing `notes` instead, which the list already carries;
- *     what she last *said* would be one request per row.
- *   - `roomCount` — `GET /customers/{id}/houses` then `/houses/{id}/composition`
- *     per house, summed. Left `undefined`; the phone row says nothing rather
- *     than claiming she has no house.
- *   - the quoted stage's elapsed figure — needs the latest `kind=quote_sent`
- *     entry, the only true quoted-at date.
- *   - `email` is not a `kind`, so it is written as `other` and cannot be read
- *     back as email. Wants `email` in the enum; see `toApiContactKind`.
- *   - a submitted entry cannot be taken back — there is no delete for one, so
- *     the dialog's Cancel is the only way out and it has to come before the
- *     write. Wants `DELETE /customers/{id}/contact-logs/{entryId}`.
- *   - the duplicate check runs over the loaded working list, so it cannot see an
+ *   - **the latest contact note.** The list's Notes column shows her standing
+ *     `notes`, which it already carries; what she last *said* is on
+ *     `GET /customers/{id}/contact-logs` — one request per row. Wants it on the
+ *     list payload.
+ *   - **the quoted stage's elapsed figure.** `quoted` carries no "58 d ago"
+ *     because the only true quoted-at date is the latest `kind=quote_sent`
+ *     entry. Wants a `quoted_at` on the record.
+ *   - **`ever-quoted` is approximated** as anyone past enquiry, there being no
+ *     "has ever been quoted" fact on the wire. It over-counts a customer who
+ *     bought without a quote.
+ *   - **an `email` contact is written as `other`** and cannot be told from a
+ *     real `other` coming back. Wants `email` in the `kind` enum; see
+ *     `toApiContactKind`.
+ *   - **a submitted contact cannot be taken back.** There is no delete for an
+ *     entry, which is why the dialog's Cancel has to come before the write and
+ *     why block F offers no Undo. Wants
+ *     `DELETE /customers/{id}/contact-logs/{entryId}`.
+ *   - **the duplicate check runs over the loaded list**, so it cannot see an
  *     archived or anonymised customer. Asking the server instead would cost a
  *     request per keystroke and still miss a number stored with other spacing.
  */

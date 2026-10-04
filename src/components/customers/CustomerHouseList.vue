@@ -5,17 +5,12 @@ import { houseAside } from '@/data/customerRemovalCopy'
 import type { HouseListItem } from '@/types/customerDetail'
 
 /**
- * Her houses — one row each, in the order the endpoint answered.
+ * Her houses — one row each, in the order the endpoint answered. A list rather
+ * than the handoff's single card because the endpoint is plural, and the count
+ * is the first thing to read.
  *
- * A customer usually has one house, which is what the handoff drew as a single
- * card; the endpoint is plural and so is this. A list rather than a card per
- * house because the count is the first thing to read — one row or three, visible
- * without touching anything — and rather than a horizontal scroller because a
- * laptop has no good way to scroll sideways and content past the edge is missed.
- *
- * **No address, area, landmark or GPS, at any width.** Those come back on the
- * same request and are dropped before they reach this component; what is left is
- * a name and one flag. The line underneath says where they went.
+ * **No address, area, landmark or GPS, at any width.** Those arrive on the same
+ * request and are dropped at the mapper, so this component is never handed them.
  */
 const props = defineProps<{
   houses: HouseListItem[]
@@ -32,19 +27,12 @@ const label = computed(() =>
   props.houses.length > 1 ? `Her houses · ${props.houses.length}` : 'Her house',
 )
 
-/**
- * Starting her first house and adding a fourth are the same act, so they are the
- * same button in the same place — only the word changes, because "another" is a
- * lie when there is nothing to be another of.
- */
+/** The same act either way; only the word changes. */
 const addLabel = computed(() =>
   props.houses.length === 0 ? 'Start her house' : 'Add another house',
 )
 
-/**
- * The footer waits until the list is known. While it is loading or failed there
- * is no count, so the button cannot say which of the two things it does.
- */
+/** Without a count the button cannot say which of the two things it does. */
 const canAdd = computed(() => !props.loading && !props.failed)
 
 const SKELETON_ROWS = 2
@@ -69,8 +57,6 @@ const SKELETON_ROWS = 2
         </div>
       </template>
 
-      <!-- Not drawn in the handoff beyond the copy, so it keeps the list's box
-           and says so where the first row would be. -->
       <div v-else-if="houses.length === 0" class="row row--inert">
         <SText type="ui" color="fg-2">No house yet</SText>
       </div>
@@ -90,9 +76,6 @@ const SKELETON_ROWS = 2
         </button>
       </template>
 
-      <!-- The one way to add a house, in the one place, whether she has none or
-           four. It sits inside the card's border because it belongs to the list,
-           not beside it. -->
       <div v-if="canAdd" class="foot">
         <SButton variant="secondary" size="sm" @click="$emit('add')">{{ addLabel }}</SButton>
       </div>

@@ -107,16 +107,6 @@ export interface AnonymiseCopy {
 }
 
 /**
- * What the screen is handed beside the customer record and her contact log —
- * that is, the part of it that no endpoint answers yet.
- */
-export interface CustomerDetailDisplay {
-  figures: RemovalFigures
-  /** `30 Sep` — the date the chip carries once she has been anonymised. */
-  anonymisedOn: string
-}
-
-/**
  * The screen's heading. It is addressed by id because anonymising replaces the
  * name under him while the button he pressed is being taken off the screen, and
  * focus has to land on the thing that changed rather than nowhere.

@@ -86,16 +86,13 @@ const whatsapp = computed(() => `https://wa.me/${phoneDigits(props.phone)}`)
     </div>
 
     <div class="actions">
-      <!-- The same dialog the list uses: what he reached her by, and what she
-           said, collected before anything is written. -->
-      <SText v-if="logged" type="list-meta" color="action-ink" class="stamp">
+            <SText v-if="logged" type="list-meta" color="action-ink" class="stamp">
         ✓ {{ CONTACT_KIND_LABEL[logged.kind] }} · {{ logged.time }}
       </SText>
       <SButton v-else size="toolbar" @click="$emit('spoke')">Spoke today</SButton>
 
-      <!-- `PATCH /customers/{id}` rejects an anonymised customer outright, and
-           there is no name or number left to correct. Spoke today stays: she can
-           still be contacted, and the entry carries no personal detail. -->
+      <!-- `PATCH /customers/{id}` rejects an anonymised customer, and there is
+           nothing left to correct. Spoke today stays: she can still be rung. -->
       <SButton
         v-if="!anonymised"
         variant="chrome"

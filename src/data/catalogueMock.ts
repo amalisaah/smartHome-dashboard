@@ -417,8 +417,5 @@ function buildSummary(items: ApiItem[]): ApiSummary {
 
 export const MOCK_SUMMARY: ApiSummary = buildSummary(MOCK_ITEMS)
 
-/** Displayed in the app bar. Not derived — the screen is UI-only. */
-export const SAVE_STATUS_DATE = 'Sat 6 Sep'
-
 /** Simulated first load, so the skeleton state the handoff specifies is real. */
 export const MOCK_LOAD_MS = 320

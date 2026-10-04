@@ -22,10 +22,8 @@ import {
  * Only the name is required, because `PATCH /customers/{id}` says so: `name` is
  * not nullable on the wire and the other three are.
  *
- * Her notes are also editable in place on the page behind this. Both write the
- * same field through the same endpoint and both read it back, so the two cannot
- * disagree — this one is where he corrects them deliberately, that one is where
- * he jots while reading.
+ * Her notes are shown on the page behind this but not editable there: this is
+ * the one place they are written, so there is no second field to disagree with.
  */
 const props = defineProps<{
   record: EditableCustomer
@@ -85,9 +83,8 @@ function onEnter(event: KeyboardEvent) {
       <div class="fields">
         <CustomerNameFields ref="fields" :fields="draft" size="md" />
 
-        <!-- `type="email"` for the keyboard it asks for and the browser's own
-             check. What counts as a valid address is the API's call, not this
-             form's, so nothing here blocks the save on it. -->
+        <!-- What counts as a valid address is the API's call; nothing here
+             blocks the save on it. -->
         <SInput
           v-model="draft.email"
           label="Email · optional"
@@ -95,8 +92,7 @@ function onEnter(event: KeyboardEvent) {
           size="md"
         />
 
-        <!-- The same field as the one on the page behind, through the same
-             endpoint: what to remember about her, not what she last said. -->
+        <!-- The same field as the one on the page behind, same endpoint. -->
         <STextarea
           v-model="draft.notes"
           label="Notes about her"

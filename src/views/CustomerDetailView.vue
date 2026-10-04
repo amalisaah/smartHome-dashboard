@@ -21,7 +21,7 @@ import CustomerDetailSkeleton from '@/components/customers/CustomerDetailSkeleto
 import CustomerEditDialog from '@/components/customers/CustomerEditDialog.vue'
 import CustomerHouseList from '@/components/customers/CustomerHouseList.vue'
 import CustomerRemovalBand from '@/components/customers/CustomerRemovalBand.vue'
-import { customerDetailMock } from '@/data/customerDetailMock'
+import { removalFiguresMock } from '@/data/customerRemovalMock'
 import { HEADING_ID, type ContactHistoryEntry } from '@/types/customerDetail'
 import {
   blankContactLogDraft,
@@ -29,6 +29,7 @@ import {
   type CustomerEditDraft,
   type LoggedContact,
 } from '@/types/customers'
+import { useSaveReporter } from '@/composables/useSaveState'
 import { formatShortDate } from '@/utils/format'
 import { lastContactPhrase, toCustomerRow } from '@/utils/mapper/customerMapper'
 
@@ -37,16 +38,11 @@ import { lastContactPhrase, toCustomerRow } from '@/utils/mapper/customerMapper'
  *
  * Mostly a reading screen: who she is, what was said and when, what is in her
  * house as counts, and at the bottom two exits that must never be confused with
- * each other. The only things he writes here are a contact and her notes.
+ * each other. The only thing he writes on the page itself is a contact; her
+ * details, her notes among them, are corrected in the edit dialog.
  *
- * **What is real and what is not.** Her name, phone, status and notes come from
- * `GET /customers/{id}`, and her contact history from
- * `GET /customers/{id}/contact-logs`. What is left — the house counts and what a
- * removal takes or leaves — is supplied, and until something supplies it comes
- * from `customerDetailMock`, which says per field what it is waiting on.
- *
- * **The two exits do not write.** They run the whole interaction — the gate, the
- * swap, the focus, the state the screen lands in — and stop at `runRemoval`.
+ * Everything on it is read from the API except what the two exits say they
+ * would cost, which no endpoint can answer yet — see `removalFiguresMock`.
  */
 const props = defineProps<{ customerId: number }>()
 
@@ -68,8 +64,8 @@ const rule = computed(() => dormancyQuery.data.value ?? null)
 /** `isPending` is "nothing cached yet", so a revalidation never re-skeletons. */
 const loading = computed(() => customerQuery.isPending.value || record.value === null)
 
-/** ⚠️ Mock. See `customerDetailMock` for what each field is waiting on. */
-const display = customerDetailMock
+/** The app bar is where save state is said; these two writes are what says it. */
+const save = useSaveReporter()
 
 // --- what she has been put through ----------------------------------------
 
@@ -90,60 +86,24 @@ const anonymised = computed(
  * supplied label, which only the act can mint.
  */
 const anonymousLabel = computed(() =>
-  record.value?.anonymisedAt != null ? record.value.name : display.figures.anonymousLabel,
+  record.value?.anonymisedAt != null
+    ? record.value.name
+    : removalFiguresMock.anonymousLabel,
 )
 
+/** Hers if she arrived anonymised; otherwise today, because it just happened. */
 const anonymisedOn = computed(() =>
-  record.value?.anonymisedAt != null
-    ? formatShortDate(record.value.anonymisedAt)
-    : display.anonymisedOn,
+  formatShortDate(record.value?.anonymisedAt ?? new Date().toISOString()),
 )
 
 // --- notes -----------------------------------------------------------------
 
 /**
- * Free text he edits directly, as the handoff draws it — jotted while reading
- * rather than opened as a form. `null` means "not being edited", so the field
- * follows the record until he touches it and stops following it after.
- *
- * It saves when he leaves it. The handoff does not say when it saves, only that
- * the app bar is where save state is said; leaving the field is the moment he is
- * done with it, and it is the one moment that does not make him wait while he
- * types. The same field in the edit dialog writes the same value the same way.
+ * What is remembered about her, shown as it is stored. The page is for reading;
+ * her notes are corrected in the edit dialog with the rest of her details, so
+ * this field is read-only and the Edit button is the one door to it.
  */
-const notesEdit = ref<string | null>(null)
-const notesSaving = ref(false)
-const notesError = ref('')
-
-const notes = computed(() => notesEdit.value ?? record.value?.notes ?? '')
-
-async function saveNotes() {
-  const current = record.value
-  const typed = notesEdit.value
-  // Untouched, already in flight, or identical to what is stored — all no-ops.
-  if (!current || typed === null || notesSaving.value) return
-  if (typed.trim() === (current.notes ?? '')) {
-    notesEdit.value = null
-    return
-  }
-
-  notesSaving.value = true
-  notesError.value = ''
-  try {
-    // Only `notes`: a rename in flight from the dialog must not be written back
-    // over by a note saved a moment later.
-    await updateCustomer(current.id, { notes: typed })
-    notesEdit.value = null
-    await customerQuery.refetch()
-    queryClient.invalidateQueries({ queryKey: customerKeys.list() })
-  } catch (error) {
-    // His words stay on screen and stay his. Nothing is cleared on a failure.
-    notesError.value =
-      error instanceof Error ? error.message : 'Could not save her notes.'
-  } finally {
-    notesSaving.value = false
-  }
-}
+const notes = computed(() => record.value?.notes ?? '')
 
 // --- "Spoke today" ---------------------------------------------------------
 
@@ -258,9 +218,7 @@ let editOpener: HTMLElement | null = null
 function openEdit(event: MouseEvent) {
   const current = record.value
   if (!current) return
-  // The notes he has typed on the page but not yet saved are the ones the form
-  // should open holding — the dialog is the same field, not a second one.
-  Object.assign(editDraft, editDraftFrom(current), { notes: notes.value })
+  Object.assign(editDraft, editDraftFrom(current))
   editError.value = ''
   editOpener = event.currentTarget as HTMLElement | null
   editOpen.value = true
@@ -278,13 +236,11 @@ async function submitEdit() {
 
   editSaving.value = true
   editError.value = ''
+  save.saving()
   try {
     await updateCustomer(current.id, editDraft)
     editOpen.value = false
-    // The page's own notes field is showing an edit that is now stored, so it
-    // goes back to reading the record rather than holding a stale copy of it.
-    notesEdit.value = null
-    notesError.value = ''
+    save.saved()
     nextTick(() => editOpener?.focus())
 
     // Her page reads the new name; the list she came from must not still be
@@ -295,6 +251,7 @@ async function submitEdit() {
     // Held open with what he typed: nothing was changed, so he can try again.
     editError.value =
       error instanceof Error ? error.message : 'Could not save the change.'
+    save.failed()
   } finally {
     editSaving.value = false
   }
@@ -333,17 +290,15 @@ function swapToAnonymise() {
 }
 
 /**
- * ⚠️ Neither exit writes. The handoff is UI and UX only — what anonymise and
- * delete do to the data, and which records survive each, are supplied facts it
- * does not state — and both acts are irreversible, so neither is wired on a
- * guess. This is the one seam:
+ * TODO(api): neither exit writes. Both endpoints exist and both are
+ * irreversible, so neither was wired on a handoff that is UI and UX only:
  *
  *   anonymise → `POST /customers/{id}/anonymise`, which answers with the
  *               placeholder name and the `anonymised_at` the chip carries.
  *   delete    → `DELETE /customers/{id}/hard?confirm=true`.
  *
- * The screen does everything either act is supposed to look like: anonymise
- * takes her name, phone, WhatsApp, notes and both exits off the screen in place;
+ * Everything either act looks like is already here: anonymise takes her name,
+ * phone, WhatsApp, notes, the edit door and both exits off the screen in place;
  * delete returns to the list with the one transient line it is allowed.
  */
 function runRemoval(act: 'anonymise' | 'delete') {
@@ -407,18 +362,14 @@ const newHouse = () => router.push({ name: 'house-new', params: { id: props.cust
             :failed="historyQuery.isError.value"
           />
 
-          <!-- Gone with her name: anonymising clears the contact notes.
-               `focusout`, not `blur`: the listener sits on STextarea's wrapper
-               and blur does not bubble to it. -->
-          <div v-if="!anonymised" class="slot-notes" @focusout="saveNotes">
+          <!-- Gone with her name: anonymising clears the contact notes. Shown,
+               not edited — the Edit button is where they are corrected. -->
+          <div v-if="!anonymised" class="slot-notes">
             <STextarea
               :model-value="notes"
               label="Notes about her"
-              disabled
               :rows="3"
-              :error="notesError !== ''"
-              :error-message="notesError"
-              @update:model-value="notesEdit = $event"
+              disabled
             />
           </div>
         </template>
@@ -439,7 +390,7 @@ const newHouse = () => router.push({ name: 'house-new', params: { id: props.cust
       <CustomerRemovalBand
         v-if="!anonymised"
         :name="record?.name ?? ''"
-        :figures="display.figures"
+        :figures="removalFiguresMock"
         @anonymise="openRemoval('anonymise', $event)"
         @delete="openRemoval('delete', $event)"
       />
@@ -469,7 +420,7 @@ const newHouse = () => router.push({ name: 'house-new', params: { id: props.cust
   <CustomerAnonymiseDialog
     v-if="removalDialog === 'anonymise' && record"
     :name="record.name"
-    :figures="display.figures"
+    :figures="removalFiguresMock"
     @confirm="runRemoval('anonymise')"
     @dismiss="closeRemoval"
   />
@@ -477,7 +428,7 @@ const newHouse = () => router.push({ name: 'house-new', params: { id: props.cust
   <CustomerDeleteDialog
     v-if="removalDialog === 'delete' && record"
     :name="record.name"
-    :figures="display.figures"
+    :figures="removalFiguresMock"
     @confirm="runRemoval('delete')"
     @swap="swapToAnonymise"
     @dismiss="closeRemoval"

@@ -86,8 +86,12 @@ export interface DormancyRule {
 }
 
 /**
- * How close to dormant the countdown gets before it reads as risk. The one
- * figure here from the drawing rather than the server.
+ * How close to dormant the countdown gets before it reads as risk.
+ *
+ * TODO(api): this is the one threshold on these screens the owner cannot move.
+ * `GET /settings/dormancy` answers `dormant_after_days` and its default and
+ * nothing else, so the figure beside it is baked in here. Wants a
+ * `soon_within_days` on that payload, after which this constant goes.
  */
 export const SOON_WITHIN_DAYS = 10
 
