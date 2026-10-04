@@ -13,7 +13,7 @@ import { useMediaQuery } from '@/composables/useMediaQuery'
  */
 const props = defineProps<{
   customerId: number
-  destination: 'detail' | 'house' | 'house-new'
+  destination: 'detail' | 'house'
 }>()
 
 const isPhone = useMediaQuery('(max-width: 899px)')
@@ -28,15 +28,12 @@ const who = computed(() => customer.value?.name ?? 'This customer')
 
 const TITLE: Record<typeof props.destination, (name: string) => string> = {
   house: (name) => `${name} · her house`,
-  'house-new': (name) => `${name} · a new house`,
   detail: (name) => name,
 }
 
 const DETAIL: Record<typeof props.destination, string> = {
   house:
     'The house — rooms, installed devices and visit notes. It opens on Rooms when her visit notes are already filled in and on Visit notes when they are not, and its header carries ‹ her name as the way to this page.',
-  'house-new':
-    'The form that starts a house — a name for it, where it is and how to get in, whether the wall boxes have a neutral wire, and what the internet is like. Nothing is written until it is saved, which is what gives the house its number. Not drawn in this handoff.',
   detail: 'Her customer page — the contact log, her quotes and the way into her house.',
 }
 

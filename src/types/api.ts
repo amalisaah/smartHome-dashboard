@@ -319,6 +319,24 @@ export interface ApiHouse {
   updated_at: string
 }
 
+/**
+ * `POST /customers/{id}/houses`. Nothing is required — "a house is its own
+ * record pointing at a customer", and what is known about it on the day it is
+ * created is whatever the visit turned up.
+ */
+export interface ApiHouseCreate {
+  label?: string | null
+  address_text?: string | null
+  landmark_directions?: string | null
+  gps_lat?: number | null
+  gps_lng?: number | null
+  access_notes?: string | null
+  wiring_notes?: string | null
+  internet_quality?: ApiInternetQuality
+  internet_notes?: string | null
+  notes?: string | null
+}
+
 /** `GET /settings/dormancy`. */
 export interface ApiDormancySettings {
   dormant_after_days: number

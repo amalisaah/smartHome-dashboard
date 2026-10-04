@@ -7,6 +7,7 @@ import CustomerNewView from '@/views/CustomerNewView.vue'
 import CustomerPlaceholderView from '@/views/CustomerPlaceholderView.vue'
 import DesignSystemView from '@/views/DesignSystemView.vue'
 import GroupsMarkupView from '@/views/GroupsMarkupView.vue'
+import HouseNewView from '@/views/HouseNewView.vue'
 import ItemDetailView from '@/views/ItemDetailView.vue'
 import ItemEditView from '@/views/ItemEditView.vue'
 import ItemNewView from '@/views/ItemNewView.vue'
@@ -116,8 +117,8 @@ export const router = createRouter({
       // `/items/new` is, though the `\d+` there would not match it anyway.
       path: '/customers/:id(\\d+)/houses/new',
       name: 'house-new',
-      component: CustomerPlaceholderView,
-      props: (route) => ({ customerId: Number(route.params.id), destination: 'house-new' }),
+      component: HouseNewView,
+      props: (route) => ({ customerId: Number(route.params.id) }),
     },
     {
       // One named house of hers. A customer may have several, so a row in her

@@ -6,7 +6,9 @@ import type {
   ApiCustomerUpdate,
   ApiDormancySettings,
   ApiHouse,
+  ApiHouseCreate,
 } from '@/types/api'
+import { parseGps, type HouseDraft } from '@/types/house'
 import type { ContactHistoryEntry, HouseListItem } from '@/types/customerDetail'
 import {
   type ContactLogDraft,
@@ -89,6 +91,37 @@ export async function fetchContactLogs(
 export async function fetchHouses(id: number, signal?: AbortSignal): Promise<HouseListItem[]> {
   const houses = await apiGet<ApiHouse[]>(`/customers/${id}/houses`, undefined, signal)
   return houses.map(toHouseListItem)
+}
+
+/**
+ * `POST /customers/{id}/houses` — the house the form just started.
+ *
+ * Blanks go as `null` rather than as `""`, as everywhere else on this module:
+ * an address nobody wrote down is not an empty address. The GPS pair is sent
+ * only when both halves parsed, because half a coordinate is not a position.
+ */
+export async function createHouse(
+  customerId: number,
+  draft: HouseDraft,
+): Promise<{ id: number }> {
+  const text = (value: string) => value.trim() || null
+  const gps = parseGps(draft.gps)
+
+  const body: ApiHouseCreate = {
+    label: text(draft.label),
+    address_text: text(draft.addressText),
+    landmark_directions: text(draft.landmarkDirections),
+    gps_lat: gps === null || gps === 'invalid' ? null : gps.lat,
+    gps_lng: gps === null || gps === 'invalid' ? null : gps.lng,
+    access_notes: text(draft.accessNotes),
+    wiring_notes: text(draft.wiringNotes),
+    internet_quality: draft.internetQuality,
+    internet_notes: text(draft.internetNotes),
+    notes: text(draft.notes),
+  }
+
+  const created = await apiSend<ApiHouse>('POST', `/customers/${customerId}/houses`, body)
+  return { id: created.id }
 }
 
 /**
