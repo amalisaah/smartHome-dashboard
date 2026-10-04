@@ -9,25 +9,31 @@ import { SText } from '@/components/atoms'
  * three equal thumbs, a laptop lets them sit at their own widths under the
  * title.
  *
- * The counts are **supplied**. `Installed · 0` goes quiet rather than hiding:
- * the tab is the answer to "what has been put in", and nothing is an answer.
+ * `Installed · 0` goes quiet rather than hiding: the tab is the answer to "what
+ * has been put in", and nothing is an answer.
+ *
+ * A count that has not arrived yet is `null`, and the tab drops the number
+ * rather than showing a zero — `Rooms · 0` is a claim about the house, and the
+ * screen is not in a position to make it until the read lands.
  */
 const props = defineProps<{
   customerId: number
   houseId: number
-  roomCount: number
-  installedCount: number
+  roomCount: number | null
+  installedCount: number | null
   /** `phone` is the three-up band under the dark header; `desk` the row under the title. */
   size?: 'phone' | 'desk'
 }>()
 
+const withCount = (word: string, count: number | null) =>
+  count === null ? word : `${word} · ${count}`
+
 const tabs = computed(() => [
   { label: 'Visit notes', to: { name: 'house-detail' }, quiet: false },
-  { label: `Rooms · ${props.roomCount}`, to: { name: 'house-rooms' }, quiet: false },
+  { label: withCount('Rooms', props.roomCount), to: { name: 'house-rooms' }, quiet: false },
   {
-    label: `Installed · ${props.installedCount}`,
+    label: withCount('Installed', props.installedCount),
     to: { name: 'house-installed' },
-    // Nothing to open yet, said in the ink rather than by taking the tab away.
     quiet: props.installedCount === 0,
   },
 ])
@@ -62,7 +68,6 @@ const params = computed(() => ({ id: props.customerId, houseId: props.houseId })
 .tabs--phone .tab {
   position: relative;
   padding: 13px 0;
-  text-align: center;
 }
 
 /* The drawn band is 44px and the thumb needs 48. The box keeps its height and
@@ -87,7 +92,14 @@ const params = computed(() => ({ id: props.customerId, houseId: props.houseId })
 }
 
 /* === both === */
+
+/* Flex, so the box is exactly its 14px label plus its own padding. As a block
+   the anchor contributes the document's 15px strut instead, and the band comes
+   out 3px taller than it is drawn on both devices. */
 .tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-bottom: 2px solid transparent;
   text-decoration: none;
   cursor: pointer;

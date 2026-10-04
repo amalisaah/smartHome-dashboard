@@ -27,6 +27,19 @@ defineEmits<{ clear: [] }>()
 const mapHref = computed(() =>
   props.pin ? `https://www.google.com/maps/search/?api=1&query=${props.pin.lat},${props.pin.lng}` : '',
 )
+
+/**
+ * Where, and how sure — the time is left to the page's own summary line.
+ *
+ * ⚠️ The accuracy is null for a pin read back from the API, which has no column
+ * for it, so most of the time this is the coordinates alone.
+ */
+const reading = computed(() => {
+  const pin = props.pin
+  if (!pin) return ''
+  const accuracy = pin.accuracyM === null ? null : formatAccuracy(pin.accuracyM)
+  return [formatCoords(pin.lat, pin.lng), accuracy].filter(Boolean).join(' · ')
+})
 </script>
 
 <template>
@@ -34,11 +47,7 @@ const mapHref = computed(() =>
     <span class="dot" aria-hidden="true" />
     <span class="what">
       <SText type="tab" color="fg">{{ PIN_SET_TITLE }}</SText>
-      <!-- No time here: the summary line at the top of the page already dates
-           the visit, and the row has a map link to hold instead. -->
-      <SText type="cell-meta" class="reading">
-        {{ formatCoords(pin.lat, pin.lng) }} · {{ formatAccuracy(pin.accuracyM) }}
-      </SText>
+      <SText type="cell-meta" class="reading">{{ reading }}</SText>
     </span>
     <a :href="mapHref" target="_blank" rel="noopener noreferrer" class="link">
       <SText type="tab" color="action-ink">{{ OPEN_MAP }}</SText>

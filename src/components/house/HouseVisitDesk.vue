@@ -41,7 +41,9 @@ defineProps<{
   draft: VisitNotesDraft
   pin: VisitPin | null
   rooms: VisitRoom[]
-  installedCount: number
+  roomsLoading?: boolean
+  roomsFailed?: boolean
+  installedCount: number | null
 }>()
 
 defineEmits<{ clearPin: []; cycleRoom: [roomId: number] }>()
@@ -122,6 +124,8 @@ const wiringField = ref<InstanceType<typeof STextarea> | null>(null)
         :customer-id="customerId"
         :house-id="houseId"
         :rooms="rooms"
+        :loading="roomsLoading"
+        :failed="roomsFailed"
         @cycle="$emit('cycleRoom', $event)"
       />
       <HouseInstalledCard

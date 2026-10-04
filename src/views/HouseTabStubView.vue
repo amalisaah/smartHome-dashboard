@@ -7,7 +7,7 @@ import HouseVisitPhoneHeader from '@/components/house/HouseVisitPhoneHeader.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
 import { useCustomer } from '@/api/hooks/customers'
-import { visitContextMock } from '@/data/houseVisitMock'
+import { useHouseRooms, useInstalledCount } from '@/api/hooks/houses'
 
 /**
  * The house's other two tabs — Rooms (block B) and Installed (block C) — which
@@ -29,6 +29,19 @@ const online = useOnline()
 
 const customerQuery = useCustomer(() => props.customerId)
 const customerName = computed(() => customerQuery.data.value?.name ?? 'This customer')
+
+// The tab bar is the way out of here, so its counts are read rather than left
+// blank — the same two queries the Visit notes screen uses, off the same cache.
+const roomsQuery = useHouseRooms(() => props.houseId)
+const installedQuery = useInstalledCount(() => props.houseId)
+
+const roomCount = computed(() =>
+  roomsQuery.isSuccess.value ? (roomsQuery.data.value?.length ?? 0) : null,
+)
+
+const installedCount = computed(() =>
+  installedQuery.isSuccess.value ? (installedQuery.data.value ?? 0) : null,
+)
 
 const COPY = {
   rooms: {
@@ -70,8 +83,8 @@ const backToVisit = computed(() => ({
     <HouseTabBar
       :customer-id="customerId"
       :house-id="houseId"
-      :room-count="visitContextMock.roomCount"
-      :installed-count="visitContextMock.installedCount"
+      :room-count="roomCount"
+      :installed-count="installedCount"
       :size="isPhone ? 'phone' : 'desk'"
       :class="isPhone ? undefined : 'desk-tabs'"
     />

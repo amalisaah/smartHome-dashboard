@@ -337,6 +337,94 @@ export interface ApiHouseCreate {
   notes?: string | null
 }
 
+/**
+ * `PATCH /houses/{id}`. Every field optional; omitted fields are left untouched,
+ * which is what lets a screen with no save button send only what changed.
+ */
+export interface ApiHouseUpdate {
+  label?: string | null
+  address_text?: string | null
+  landmark_directions?: string | null
+  gps_lat?: number | null
+  gps_lng?: number | null
+  access_notes?: string | null
+  wiring_notes?: string | null
+  internet_quality?: ApiInternetQuality
+  internet_notes?: string | null
+  notes?: string | null
+}
+
+/**
+ * The space a room counts as, for package expansion.
+ *
+ * Closed, and **not nullable**: every room has one. `whole_house` exists in the
+ * packages module and is deliberately absent here — the API rejects it on a
+ * room with a 400, because it is a pseudo-space every house has exactly one of
+ * and never a room.
+ */
+export type ApiSpaceSlug =
+  | 'bedroom'
+  | 'living_room'
+  | 'kitchen'
+  | 'bathroom'
+  | 'outdoor'
+  | 'corridor'
+
+/** An item of `GET /houses/{id}/rooms`, in `sort_order`. */
+export interface ApiRoom {
+  id: number
+  house_id: number
+  /** Rooms are named, not counted — `Master`, `Kids room`, `Back bedroom`. */
+  name: string
+  space_slug: ApiSpaceSlug
+  /** Ascending display order, 0 first. */
+  sort_order: number
+  archived_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** `PATCH /rooms/{id}`. */
+export interface ApiRoomUpdate {
+  name?: string
+  space_slug?: ApiSpaceSlug
+  sort_order?: number
+}
+
+/** One device record from `GET /houses/{id}/installed-devices`. */
+export interface ApiInstalledDevice {
+  id: number
+  house_id: number
+  /** Null for whole-house equipment — the hub, the router, the door lock. */
+  room_id: number | null
+  item_id: number
+  item_name: string | null
+  /** Per item per room; individual units are not tracked. */
+  quantity: number
+  status: 'active' | 'removed' | 'faulty'
+  installed_at: string | null
+  removed_at: string | null
+  job_id: number | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * `GET /houses/{id}/installed-devices` — grouped by room, rooms in `sort_order`,
+ * with the whole-house group (`room: null`) last. There is no scalar count on
+ * the wire; a count is the length of what comes back.
+ */
+export interface ApiInstalledGroup {
+  room: {
+    id: number
+    name: string
+    space_slug: ApiSpaceSlug
+    archived_at: string | null
+  } | null
+  devices: ApiInstalledDevice[]
+}
+
 /** `GET /settings/dormancy`. */
 export interface ApiDormancySettings {
   dormant_after_days: number

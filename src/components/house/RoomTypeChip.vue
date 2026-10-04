@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { SBadge } from '@/components/atoms'
 import { UNTYPED_ROOM } from '@/data/houseVisitCopy'
-import { roomTypeState, type VisitRoom } from '@/types/houseVisit'
+import { roomTypeState, spaceLabel, type VisitRoom } from '@/types/houseVisit'
 
 /**
  * A room's type, and the one click that settles it.
@@ -32,19 +32,22 @@ const VARIANT = {
   missing: 'incomplete',
 } as const
 
+/** `living_room` is two words to everyone but the database. */
+const word = computed(() => (props.room.type === null ? null : spaceLabel(props.room.type)))
+
 /** The `?` is part of what a guess says, so it is drawn with the word. */
 const label = computed(() => {
-  if (props.room.type === null) return UNTYPED_ROOM
-  return props.room.guessed ? `${props.room.type} ?` : props.room.type
+  if (word.value === null) return UNTYPED_ROOM
+  return props.room.guessed ? `${word.value} ?` : word.value
 })
 
 /** Said to a screen reader, where a dashed border says nothing at all. */
 const described = computed(() =>
   state.value === 'guessed'
-    ? `Type guessed as ${props.room.type}. Click to confirm.`
+    ? `Type guessed as ${word.value}. Click to confirm.`
     : state.value === 'missing'
       ? `${props.room.name} has no type. Click to set one.`
-      : `${props.room.name} is a ${props.room.type}. Click to change.`,
+      : `${props.room.name} is a ${word.value}. Click to change.`,
 )
 </script>
 

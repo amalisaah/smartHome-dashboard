@@ -17,10 +17,14 @@ import type { VisitRoom } from '@/types/houseVisit'
  *
  * The index is the room's position in the list the house was given, not an id.
  */
-defineProps<{
+const props = defineProps<{
   customerId: number
   houseId: number
   rooms: VisitRoom[]
+  /** Nothing read yet. A revalidation never empties the list already up. */
+  loading?: boolean
+  /** The read came back other than 2xx. Said in the card, not as a page banner. */
+  failed?: boolean
 }>()
 
 defineEmits<{ cycle: [roomId: number] }>()
@@ -32,7 +36,11 @@ const index = (at: number) => String(at + 1).padStart(2, '0')
 <template>
   <section class="card">
     <div class="head">
-      <SText type="micro" color="micro" as="h2">Rooms · {{ rooms.length }}</SText>
+      <!-- No count until there is one: `Rooms · 0` while it loads would be a
+           statement about the house rather than about the request. -->
+      <SText type="micro" color="micro" as="h2">
+        Rooms{{ loading || failed ? '' : ` · ${rooms.length}` }}
+      </SText>
       <RouterLink
         :to="{ name: 'house-rooms', params: { id: customerId, houseId } }"
         class="link"
@@ -41,13 +49,34 @@ const index = (at: number) => String(at + 1).padStart(2, '0')
       </RouterLink>
     </div>
 
-    <div v-for="(room, at) in rooms" :key="room.id" class="row">
-      <SText type="cell-meta" color="micro">{{ index(at) }}</SText>
-      <SText type="ui" class="name">{{ room.name }}</SText>
-      <RoomTypeChip :room="room" @cycle="$emit('cycle', room.id)" />
+    <!-- Blocks at the row height, so nothing jumps when they land. -->
+    <template v-if="loading">
+      <div v-for="n in 3" :key="n" class="row row--inert" aria-hidden="true">
+        <span class="bar bar--index" />
+        <span class="bar" />
+      </div>
+    </template>
+
+    <div v-else-if="failed" class="row row--inert">
+      <SText type="cell" color="fg-2">Could not read the rooms.</SText>
     </div>
 
-    <SText type="caption" class="caption">{{ ROOMS_CAPTION }}</SText>
+    <div v-else-if="rooms.length === 0" class="row row--inert">
+      <SText type="cell" color="fg-2">No rooms yet.</SText>
+    </div>
+
+    <template v-else>
+      <div v-for="(room, at) in rooms" :key="room.id" class="row">
+        <SText type="cell-meta" color="micro">{{ index(at) }}</SText>
+        <SText type="ui" class="name">{{ room.name }}</SText>
+        <RoomTypeChip :room="room" @cycle="$emit('cycle', room.id)" />
+      </div>
+    </template>
+
+    <!-- The caption explains the chips, so it goes only where there are some. -->
+    <SText v-if="rooms.length > 0 && !loading && !failed" type="caption" class="caption">
+      {{ ROOMS_CAPTION }}
+    </SText>
   </section>
 </template>
 
@@ -84,6 +113,27 @@ const index = (at: number) => String(at + 1).padStart(2, '0')
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* A row that states something rather than listing a room. */
+.row--inert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+}
+
+.bar {
+  display: block;
+  width: 56%;
+  height: 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-flag);
+}
+
+.bar--index {
+  width: 20px;
+  flex: none;
 }
 
 /* The caption explains the dashes, so it belongs under the rows rather than in

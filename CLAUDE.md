@@ -111,6 +111,7 @@ Only pass `color` when deviating from the type role's default.
 <SButton size="lg">On-site action</SButton>             <!-- 48px — phone door, 14px label -->
 <SButton size="sm">Inline action</SButton>              <!-- 32px -->
 <SButton variant="create" size="md">+ create "smoke" inline</SButton> <!-- mono 12px, action on surface -->
+<SButton variant="phrase" size="md">+ dog</SButton>      <!-- types its words into the field above -->
 ```
 
 Sizes carry their door: `md` is 44px / 15px (laptop primary), `lg` is 48px / 14px and
@@ -129,6 +130,18 @@ act that cannot be undone; hiding a record whose movements are all kept is not t
 `variant="create"` is the inline-create chip beside a combobox — mono, because what it
 creates is the query quoted back, and action-blue because creating is the affordance. At
 `size="md"` it stands 44px, flush with the combobox it sits beside.
+
+`variant="phrase"` is a word that **types itself into the field above it** — mono because
+what it inserts is the literal text, and at the field's own quiet ink because it is a
+shortcut for typing rather than a second thing to do. It carries its own box whatever door
+it is given (`rounded-chip`, `0 12px`), so `size` sets only the height: `md` for the phone's
+44px thumb, `sm` for the laptop's inline chip. Reaching for it firms the border to
+`--color-fg-3` as reaching for a field does, and pressing fills it to `--color-surface`,
+because on a phone the finger covers the chip. Pair it with `STextarea`'s `insert()`.
+
+**A phrase chip sets no flag and fills no structured field.** If a chip would mean something
+on the record, it is not a phrase chip — it is a `SFilterChip`, a `SSelect`, or a segmented
+control. A chip that looked selectable would promise a column that does not exist.
 
 ### SBadge variants
 
@@ -181,11 +194,30 @@ Emphasis is fixed per chip and marks severity, not selection; selection is the r
 
 ### SSegmented
 
-`size="lg"` is the allocation-basis door: an 8px track with no gap, 9px/14px segments, and a
-selection that weighs 600 and lifts by `shadow-elev-0`. The selection settles in 150ms on
-background and shadow — it is not a pill that slides. Hovering an unselected segment brings
-its label to full ink and moves nothing. `disabled` makes the whole control inert for a
-read-only view.
+Two variants, and the difference is what the choice *means*.
+
+`variant="track"` (the default) is a padded rail with a lifted tile riding in it — two or
+three options, where the choice is a **view** of the same thing. `size="lg"` is the
+allocation-basis door: an 8px track with no gap, 9px/14px segments, and a selection that
+weighs 600 and lifts by `shadow-elev-0`. The selection settles in 150ms on background and
+shadow — it is not a pill that slides. Hovering an unselected segment brings its label to
+full ink and moves nothing.
+
+`variant="joined"` is one box ruled into equal columns with the selection filled in `--fg` —
+a fixed set of values where the choice is a **fact about the record**. It stretches to its
+container, so four segments share a 390px screen. Segments carry a 1px `--divider` left
+border; the selection carries none, so its fill runs to the edge of its own column. Hovering
+an unselected one lights the whole column (`--surface`), because on a joined control a label
+alone is too quiet an answer to a reach.
+
+```vue
+<SSegmented v-model="draft.internet" :options="INTERNET_SEGMENTS" variant="joined" size="lg" />
+```
+
+Under `joined` the two sizes are the two devices, as everywhere else in this system: `md` is
+the laptop's 40px row at 13px, `lg` the 48px phone door at 14px. **Do not use the track's
+lifted tile for a stored value, or the joined fill for a view** — the track says "showing
+this one", the fill says "it is this one". `disabled` makes either inert for a read-only view.
 
 ### SInput / SSelect / SCombobox
 
@@ -222,18 +254,31 @@ a screen reader as well as to the eye.
 The one field that holds prose rather than a value. It labels, focuses, errors and
 captions exactly as `SInput` does — same label metrics, same 1px action border plus 2px
 outline, same hover firming to `--color-fg-3` — so there is nothing new to learn at it.
-It takes `label` / `placeholder` / `rows` / `error` / `errorMessage` / `caption` /
-`required` / `disabled` / `ariaLabel`, and exposes `focus()`.
+It takes `label` / `placeholder` / `rows` / `size` / `labelSize` / `error` / `errorMessage` /
+`caption` / `required` / `disabled` / `ariaLabel`, and exposes `focus()` and `insert()`.
 
 ```vue
 <STextarea v-model="meta.notes" :rows="3" placeholder="Shorted 3 units — credit promised." />
+<STextarea v-model="draft.directions" size="phone" label-size="md" :rows="4" />  <!-- phone door -->
 ```
 
-**One size, and no variants.** A paragraph is a paragraph; a second set of metrics for it
+**One look, and no variants.** A paragraph is a paragraph; a second set of metrics for it
 would be a distinction with nothing behind it. It has no `mono`, no `prefix`, no `flat` —
 a figure is never prose, and prose never sits in a table row. Text is 14px at 1.6 leading
 (the fields that hold values declare no leading; prose that wraps takes it). It resizes
 vertically only — widening it would break the frame it sits in.
+
+The one distinction with something behind it is the device. `size="phone"` is 16px at 1.5
+leading with 12px padding and no resize handle — 16px because anything smaller zooms the
+page on iOS focus, which is the same reason `SInput` carries a `phone` size, and no handle
+because a thumb has nothing to drag one with. `labelSize` works exactly as it does on
+`SInput`: `sm` (12px) by default, `md` (13px) for a form's principal field, and under
+`size="phone"` an `sm` label takes the quieter ink to say it is optional.
+
+`insert(text)` types words in at the caret, over any selection, leaving focus in the field —
+the one way anything but the keyboard may put text here. It exists for the phrase chip
+(`SButton variant="phrase"`) and writes into the prose and nothing else: there is no flag
+behind it. With no caret it appends instead, joined the way the sentence before it ended.
 
 ### STagInput
 
@@ -293,6 +338,11 @@ All tokens are in `src/style.css` under `@theme` and available as Tailwind utili
 
 **Colors** → `bg-*`, `text-*`, `border-*`:
 `bg`, `surface`, `line`, `divider`, `fg`, `fg-2`, `fg-2-soft`, `fg-3`, `micro`, `action`, `action-hover`, `risk`, `risk-hover`, `inverse`, `muted-dark`, `chrome`
+
+On the dark phone header a 0.55 ink disappears into a 0.21 ground, so both accents have a
+lifted counterpart there and only there: `action-on-dark` (the focus ring, the saved dot) and
+`risk-on-dark` (the no-signal dot and line). Still one action colour and one risk colour —
+one hue at two grounds, the way `fg-2` / `fg-2-soft` / `micro` are one quiet ink at three.
 
 The quiet inks run `fg-2` (0.40) → `fg-2-soft` (0.45) → `micro` (0.50) → `fg-3` (0.58).
 `fg-2-soft` is inactive tabs, summary captions, the Group and Lead cells, and footers.

@@ -71,13 +71,30 @@ export const OFFLINE_STATUS = 'no signal · held on phone'
 export const OFFLINE_TITLE = 'Keep going — nothing needs the network'
 
 /**
- * The reassurance, with the two supplied counts in it. A function rather than a
- * template because the counts are the only part of it this screen is given, and
- * the rest must not drift.
+ * The reassurance, built from what is actually queued.
+ *
+ * The reference draws `4 notes and 6 rooms are on this phone.` — a snapshot in
+ * which both happened to be non-zero. The real counts are whatever he has
+ * typed, so the clause is assembled from the parts that exist and the sentence
+ * is pluralised; everything after it is fixed copy and never varies.
+ *
+ * ⚠️ With nothing queued the sentence has no subject, and there is no drawn
+ * copy for that case. The banner shows its title alone rather than claiming
+ * `0 notes` — see `VisitOfflineNotice`.
  */
-export const offlineReassurance = (notes: number, rooms: number) =>
-  `${notes} notes and ${rooms} rooms are on this phone. They send themselves when signal comes back. ` +
-  'Closing the app, a call, a flat battery at 3% — none of it loses them.'
+export function offlineReassurance(notes: number, rooms: number): string | null {
+  const parts: string[] = []
+  if (notes > 0) parts.push(`${notes} ${notes === 1 ? 'note' : 'notes'}`)
+  if (rooms > 0) parts.push(`${rooms} ${rooms === 1 ? 'room' : 'rooms'}`)
+  if (parts.length === 0) return null
+
+  const subject = parts.join(' and ')
+  const verb = notes + rooms === 1 ? 'is' : 'are'
+  return (
+    `${subject} ${verb} on this phone. They send themselves when signal comes back. ` +
+    'Closing the app, a call, a flat battery at 3% — none of it loses them.'
+  )
+}
 
 export const WAITING_TO_SEND = 'Waiting to send'
 export const BACK_ONLINE = 'Back online — all sent.'

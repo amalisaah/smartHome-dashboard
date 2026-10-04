@@ -7,6 +7,7 @@ import {
   PIN_FINDING,
   PIN_SET_TITLE,
 } from '@/data/houseVisitCopy'
+import { computed } from 'vue'
 import type { VisitPin } from '@/types/houseVisit'
 import { formatAccuracy, formatCoords } from '@/utils/format'
 
@@ -19,7 +20,7 @@ import { formatAccuracy, formatCoords } from '@/utils/format'
  * directions are enough — which is true: a driver is given words, not
  * coordinates.
  */
-defineProps<{
+const props = defineProps<{
   pin: VisitPin | null
   /** The browser has been asked and has not answered yet. */
   finding?: boolean
@@ -28,6 +29,26 @@ defineProps<{
 }>()
 
 defineEmits<{ drop: []; clear: [] }>()
+
+/**
+ * The reading, in the parts that are actually known.
+ *
+ * ⚠️ A pin dropped in this session has all three — the browser hands over an
+ * accuracy and a timestamp. One read back from the API has only the position,
+ * because `ApiHouse` carries no column for either, so the line renders
+ * `5.7043, −0.1662` alone rather than claiming a `±8 m` nothing measured.
+ */
+const reading = computed(() => {
+  const pin = props.pin
+  if (!pin) return ''
+  return [
+    formatCoords(pin.lat, pin.lng),
+    pin.accuracyM === null ? null : formatAccuracy(pin.accuracyM),
+    pin.time,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+})
 </script>
 
 <template>
@@ -35,12 +56,7 @@ defineEmits<{ drop: []; clear: [] }>()
     <span class="dot" aria-hidden="true" />
     <span class="what">
       <SText type="ui">{{ PIN_SET_TITLE }}</SText>
-      <!-- The reading, whole: where, how sure, and when. Without the accuracy a
-           coordinate claims a precision the phone did not have. -->
-      <SText type="cell-meta" class="reading">
-        {{ formatCoords(pin.lat, pin.lng) }} · {{ formatAccuracy(pin.accuracyM) }} ·
-        {{ pin.time }}
-      </SText>
+      <SText type="cell-meta" class="reading">{{ reading }}</SText>
     </span>
     <SButton variant="ghost" size="md" @click="$emit('clear')">Clear</SButton>
   </div>

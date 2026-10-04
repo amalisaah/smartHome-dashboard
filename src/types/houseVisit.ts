@@ -1,18 +1,26 @@
 /**
  * Module 5, block A — the house's Visit notes tab.
  *
- * The handoff is explicit that this screen renders and computes nothing: the
- * save status, the room and installed counts, the pin's accuracy and time, which
- * room types were guessed, the offline queue and the visit summary phrase are
- * all **supplied**. Nothing in this file is a rule — it is the shape of an
- * answer the screen is given.
+ * The handoff says this screen renders and computes nothing. Where the API can
+ * answer, it now does: the fields, the rooms, the counts and the pin's position
+ * are all read, and the two writes it makes go to `PATCH /houses/{id}` and
+ * `PATCH /rooms/{id}`.
  *
- * `ApiInternetQuality` is reused rather than restated: the four values the
- * segmented control offers are the four the wire already has, in the order a
- * visit answers the question.
+ * Three things the design draws have **no representation on the wire**, and are
+ * marked where they appear below rather than filled in with a guess:
+ *
+ *   1. a pin's **accuracy and time** — `ApiHouse` carries `gps_lat`/`gps_lng`
+ *      and nothing about the reading that produced them;
+ *   2. a room type that was **guessed** from the name — `space_slug` is
+ *      required and has no "and this was inferred" beside it;
+ *   3. a room with **no type at all** — `space_slug` is non-nullable, so the
+ *      `type?` chip cannot arise from a house the API describes.
+ *
+ * `ApiInternetQuality` and `ApiSpaceSlug` are reused rather than restated: the
+ * values these controls offer are the values the wire has.
  */
 
-import type { ApiInternetQuality } from '@/types/api'
+import type { ApiInternetQuality, ApiSpaceSlug } from '@/types/api'
 
 /** The four fixed values, in the order the control draws them. */
 export const INTERNET_VALUES = ['reliable', 'weak', 'none', 'unknown'] as const
@@ -48,84 +56,71 @@ export const blankVisitNotes = (): VisitNotesDraft => ({
 })
 
 /**
- * Where he was standing. Supplied whole — the accuracy and the time come off the
- * device that took the reading, and no later screen can recover them.
+ * Where he was standing.
+ *
+ * The position is the record's. The accuracy and the time are the **reading**,
+ * and the wire has no column for either: a pin fetched back from the API knows
+ * where but not how sure or when. They are therefore nullable, and the row
+ * renders what it has rather than inventing a `±8 m` the device never claimed.
+ * A pin dropped in this session does carry both, because the browser's
+ * `GeolocationPosition` supplies them — until the page is reloaded.
+ *
+ * ⚠️ FLAG: `ApiHouse.gps_lat` / `gps_lng` only. The design draws
+ * `5.7043, −0.1662 · ±8 m · 13:41`; a stored pin can only ever render the first
+ * third of that until the house carries an accuracy and a timestamp.
  */
 export interface VisitPin {
   lat: number
   lng: number
-  /** Metres. Rendered `±8 m`. */
-  accuracyM: number
-  /** `13:41`, as the phone read the clock when the pin was dropped. */
-  time: string
+  /** Metres — `±8 m`. Null for a pin read back from the API. */
+  accuracyM: number | null
+  /** `13:41`. Null for a pin read back from the API. */
+  time: string | null
 }
 
 /**
  * Whether a room's type is his or the system's.
  *
- * `guessed` is supplied — this screen is never told the rule that guessed it and
- * must not infer one from the name. It is the only thing on block A drawn
- * dashed, and the dashes go the moment he confirms it.
+ * ⚠️ FLAG: only `confirmed` can arise from the API today. `space_slug` is
+ * required and non-nullable, and carries nothing to say it was inferred — so
+ * `guessed` (the dashed chip) and `missing` (the risk `type?` chip) have no
+ * source. The states stay in the type and in the chip because they are the
+ * design and block B needs the same three; what is missing is the column that
+ * would set them.
  */
 export type RoomTypeState = 'confirmed' | 'guessed' | 'missing'
 
 export interface VisitRoom {
   id: number
   name: string
-  /** `bedroom`, or null when nothing has been said about it. */
-  type: string | null
-  /** Supplied: whether `type` was guessed from the name rather than chosen. */
+  /** The space slug, or null for a room with no type — see the FLAG above. */
+  type: ApiSpaceSlug | null
+  /** Whether `type` was inferred from the name. Always false from the API. */
   guessed: boolean
 }
 
 export const roomTypeState = (room: VisitRoom): RoomTypeState =>
   room.type === null ? 'missing' : room.guessed ? 'guessed' : 'confirmed'
 
-/** One line of the offline queue — what is held, and when it was typed. */
-export interface HeldItem {
-  id: string
-  /** `Directions, access, wiring, internet`. */
-  label: string
-  /** `13:41–13:58`, or a single `14:02`. Supplied, already formatted. */
-  at: string
-}
+/**
+ * The slug as he reads it. `living_room` is two words to everyone but the
+ * database, and the reference draws it that way.
+ */
+export const spaceLabel = (slug: ApiSpaceSlug) => slug.replace(/_/g, ' ')
 
 /**
- * Everything the screen is handed beside the draft itself. One shape, because
- * every field in it arrives from somewhere this handoff does not specify, and
- * grouping them is what makes that visible at the call site.
+ * The types the chip cycles through, in the order it offers them — the wire's
+ * own enum, so a click can only ever produce a value `PATCH /rooms/{id}` will
+ * take. `whole_house` is absent because the API rejects it on a room.
  */
-export interface VisitContext {
-  /** `Efua Mensah` — the header's way back, and never the address. */
-  customerName: string
-  roomCount: number
-  installedCount: number
-  pin: VisitPin | null
-  rooms: VisitRoom[]
-  /** `visited 30 Sep · 13:41–14:02 · on phone` — a phrase, not parts. */
-  visitSummary: string
-  /** What the offline banner counts: `4 notes and 6 rooms are on this phone.` */
-  heldNoteCount: number
-  heldRoomCount: number
-  held: HeldItem[]
-}
-
-/**
- * The room types the A3 chip cycles through, in the order it offers them.
- *
- * Fixed here rather than fetched because the chip has to answer a click with the
- * next one immediately, and because block B owns everything else about a room.
- * A type the API knows that is not in this list still renders — it is only the
- * cycle that is closed.
- */
-export const ROOM_TYPES = [
+export const ROOM_TYPES: readonly ApiSpaceSlug[] = [
   'bedroom',
-  'living room',
+  'living_room',
   'kitchen',
   'bathroom',
-  'office',
-  'outside',
-] as const
+  'corridor',
+  'outdoor',
+]
 
 /**
  * What one click does, and the whole of it: a guess becomes his, a confirmed
@@ -137,8 +132,20 @@ export function nextRoomType(room: VisitRoom): VisitRoom {
   // A guess is confirmed by being clicked: the word was already right.
   if (room.guessed) return { ...room, guessed: false }
 
-  const at = (ROOM_TYPES as readonly string[]).indexOf(room.type)
+  const at = ROOM_TYPES.indexOf(room.type)
   // A type from outside the cycle enters it at the top rather than nowhere.
   const next = ROOM_TYPES[at === -1 ? 0 : (at + 1) % ROOM_TYPES.length]
   return { ...room, type: next, guessed: false }
+}
+
+/**
+ * One line of the offline queue — what is held, and over what span it was
+ * typed. Derived from the screen's own unsent writes; see `useVisitNotes`.
+ */
+export interface HeldItem {
+  id: string
+  /** `Directions, access, wiring, internet`. */
+  label: string
+  /** `13:41–13:58`, or a single `14:02`. */
+  at: string
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { SText } from '@/components/atoms'
 import {
   BACK_ONLINE,
@@ -19,15 +20,16 @@ import type { HeldItem } from '@/types/houseVisit'
  *
  * So the copy is about what is already safe rather than about the failure, and
  * the list under it names what is held and since when — the facts that answer
- * "will I have to do this again?". All of it is supplied; nothing is counted
- * here.
+ * "will I have to do this again?". The counts and the list are the screen's own
+ * unsent writes read out, not a description of something happening elsewhere,
+ * which is what lets it say them truthfully.
  *
  * `reconnected` replaces the band with its own ending. The header has already
  * gone back to the save time by then; this is the acknowledgement that the held
  * things went.
  */
-defineProps<{
-  /** `4 notes and 6 rooms are on this phone.` */
+const props = defineProps<{
+  /** How many note fields and rooms are queued. Both can be zero. */
   noteCount: number
   roomCount: number
   held: HeldItem[]
@@ -36,6 +38,13 @@ defineProps<{
   /** `14:09` — when it went. */
   sentAt?: string
 }>()
+
+/**
+ * Null when nothing is queued. The title alone is then the whole message, and
+ * it is still the true one — there is nothing to lose because there is nothing
+ * outstanding, and he should keep going either way.
+ */
+const reassurance = computed(() => offlineReassurance(props.noteCount, props.roomCount))
 </script>
 
 <template>
@@ -50,7 +59,7 @@ defineProps<{
       <span class="dot dot--risk" aria-hidden="true" />
       <div class="says">
         <SText type="list-title">{{ OFFLINE_TITLE }}</SText>
-        <SText type="meta">{{ offlineReassurance(noteCount, roomCount) }}</SText>
+        <SText v-if="reassurance" type="meta">{{ reassurance }}</SText>
       </div>
     </div>
 

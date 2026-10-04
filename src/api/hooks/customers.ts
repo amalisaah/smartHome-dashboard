@@ -5,7 +5,6 @@ import {
   fetchCustomer,
   fetchCustomers,
   fetchDormancyRule,
-  fetchHouse,
   fetchHouses,
 } from '@/api/customers'
 
@@ -15,7 +14,6 @@ export const customerKeys = {
   detail: (id: number) => [...customerKeys.all, 'detail', id] as const,
   contactLogs: (id: number) => [...customerKeys.all, 'contact-logs', id] as const,
   houses: (id: number) => [...customerKeys.all, 'houses', id] as const,
-  house: (id: number, houseId: number) => [...customerKeys.houses(id), houseId] as const,
 }
 
 /** A setting rather than a customer, so it is keyed as one. */
@@ -67,23 +65,6 @@ export function useCustomerHouses(id: MaybeRefOrGetter<number>) {
   return useQuery({
     queryKey: computed(() => customerKeys.houses(customerId.value)),
     queryFn: ({ signal }) => fetchHouses(customerId.value, signal),
-  })
-}
-
-/**
- * One house of hers, for the house screens. Keyed under her houses so creating
- * one invalidates both the list and anything reading a single house out of it.
- */
-export function useHouse(
-  customerId: MaybeRefOrGetter<number>,
-  houseId: MaybeRefOrGetter<number>,
-) {
-  const id = computed(() => toValue(customerId))
-  const house = computed(() => toValue(houseId))
-
-  return useQuery({
-    queryKey: computed(() => customerKeys.house(id.value, house.value)),
-    queryFn: ({ signal }) => fetchHouse(id.value, house.value, signal),
   })
 }
 

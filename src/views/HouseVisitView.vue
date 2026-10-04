@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { useCustomer, useHouse } from '@/api/hooks/customers'
+import { useCustomer } from '@/api/hooks/customers'
+import { useHouse, useHouseRooms, useInstalledCount } from '@/api/hooks/houses'
 import { SBanner, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import HouseTabBar from '@/components/house/HouseTabBar.vue'
@@ -13,9 +14,8 @@ import VisitFooterPhone from '@/components/house/VisitFooterPhone.vue'
 import VisitOfflineNotice from '@/components/house/VisitOfflineNotice.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
+import { useSaveReporter } from '@/composables/useSaveState'
 import { useVisitNotes } from '@/composables/useVisitNotes'
-import { visitContextMock, visitNotesMock } from '@/data/houseVisitMock'
-import { nextRoomType, type VisitPin, type VisitRoom } from '@/types/houseVisit'
 import { toVisitNotes, toVisitPin } from '@/utils/mapper/houseVisitMapper'
 
 /**
@@ -28,11 +28,14 @@ import { toVisitNotes, toVisitPin } from '@/utils/mapper/houseVisitMapper'
  * third layout, and nothing is captured on one that is not captured on the
  * other.
  *
- * What the whole screen turns on: **there is no save button.** Every keystroke
- * is kept as it is typed, the header (phone) or the app bar (laptop) says where
- * it has got to, and losing the connection stops nothing — see `useVisitNotes`
- * for where the words actually go, and `visitContextMock` for what the screen
- * is handed rather than told.
+ * Four reads, four fates — her name, the house, its rooms, its device count.
+ * None of them holds up another, and none of them holds up a field he can type
+ * into: a man standing in someone's compound does not wait for a count before
+ * he can write down how to get back there.
+ *
+ * Two writes, both in `useVisitNotes`: `PATCH /houses/{id}` for the fields and
+ * the pin, `PATCH /rooms/{id}` for a room's type. There is no save button,
+ * because there is nothing to press — see that file for where a keystroke goes.
  */
 const props = defineProps<{ customerId: number; houseId: number }>()
 
@@ -40,86 +43,82 @@ const router = useRouter()
 const isPhone = useMediaQuery('(max-width: 899px)')
 const online = useOnline()
 
-// Two reads, two fates. Losing her name costs the header its way back and
-// nothing else; losing the house costs the fields their starting values. Neither
-// holds up the other, and neither holds up a field he can type into.
 const customerQuery = useCustomer(() => props.customerId)
-const houseQuery = useHouse(
-  () => props.customerId,
-  () => props.houseId,
-)
+const houseQuery = useHouse(() => props.houseId)
+const roomsQuery = useHouseRooms(() => props.houseId)
+const installedQuery = useInstalledCount(() => props.houseId)
 
 const customerName = computed(() => customerQuery.data.value?.name ?? 'This customer')
 
 /** `isPending` is "nothing cached yet", so a revalidation never re-skeletons. */
 const loading = computed(() => houseQuery.isPending.value)
 
-/** A house id that is not one of hers. Said plainly; there is nothing to show. */
-const missing = computed(() => !loading.value && houseQuery.data.value === null)
-
-// --- what he types ----------------------------------------------------------
-
-const { draft, savedLabel, seed } = useVisitNotes(props.houseId)
-
 /**
- * The record's own values, once the read lands. `seed` ignores them if he has
- * already started typing — what is in front of him outranks what was stored.
- *
- * With no backend at all the mock stands in, so the frame can be seen and
- * compared against the reference.
+ * Counts, or null while they are still being read. A tab that showed `· 0`
+ * before the answer came back would be stating something about the house.
  */
+const roomCount = computed(() =>
+  roomsQuery.isSuccess.value ? (roomsQuery.data.value?.length ?? 0) : null,
+)
+
+const installedCount = computed(() =>
+  installedQuery.isSuccess.value ? (installedQuery.data.value ?? 0) : null,
+)
+
+// --- what he types and what it does -----------------------------------------
+
+const visit = useVisitNotes(props.houseId)
+
+/** The laptop says save state in the app bar, as every other desk screen does. */
+const save = useSaveReporter()
+
 watch(
   () => houseQuery.data.value,
   (house) => {
-    if (house) seed(toVisitNotes(house))
+    if (!house) return
+    visit.seed(toVisitNotes(house))
+    visit.seedPin(toVisitPin(house))
   },
   { immediate: true },
 )
 
 watch(
-  () => houseQuery.isError.value,
-  (failed) => {
-    if (failed) seed({ ...visitNotesMock })
+  () => roomsQuery.data.value,
+  (rooms) => {
+    if (rooms) visit.seedRooms(rooms)
   },
   { immediate: true },
 )
 
-// --- the pin ----------------------------------------------------------------
-
 /**
- * Where he was standing.
- *
- * The position is the record's; the accuracy and the time are **supplied**,
- * because `ApiHouse` has no column for either — a pin read back from the wire
- * knows where but not how sure or when. Rather than invent them, the supplied
- * reading stands in beside the real coordinates.
- *
- * TODO(api): once the house carries its own accuracy and timestamp, this
- * collapses to the mapper and `visitContextMock.pin` goes.
+ * A write that was refused is said; one that merely has not left the phone is
+ * not an error, and the offline band is already saying it.
  */
-const localPin = ref<VisitPin | null | undefined>(undefined)
+watch(visit.refused, (bad) => (bad ? save.failed() : save.saved()))
 
-const pin = computed<VisitPin | null>(() => {
-  if (localPin.value !== undefined) return localPin.value
-
-  const house = houseQuery.data.value
-  if (!house) return houseQuery.isError.value ? visitContextMock.pin : null
-
-  const position = toVisitPin(house)
-  if (!position) return null
-
-  const supplied = visitContextMock.pin
-  return { ...position, accuracyM: supplied?.accuracyM ?? 0, time: supplied?.time ?? '' }
+/** Queued work goes the moment there is a connection to put it through. */
+watch(online, (up, wasUp) => {
+  if (up && wasUp === false) visit.retry()
 })
+
+// --- the pin ----------------------------------------------------------------
 
 const pinFinding = ref(false)
 const pinFailed = ref(false)
 
+const CLOCK = new Intl.DateTimeFormat('en-GB', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
+
 /**
  * `Drop a pin where I'm standing` — the phone's, and only the phone's.
  *
- * TODO(api): nothing is written. `PATCH /houses/{id}` would take `gps_lat` and
- * `gps_lng`, and has nowhere to put the accuracy or the time the row shows.
+ * The position is written to `gps_lat` / `gps_lng`. The accuracy and the time
+ * the browser hands over are shown and **not** written, because the house has
+ * no column for either — so they survive until the page is reloaded and then
+ * the row falls back to the coordinates alone. See `VisitPin`.
  *
  * Failure is not an error state: the pin is optional, so the screen says it
  * could not get one and that the directions are enough, and moves on.
@@ -138,13 +137,13 @@ function dropPin() {
   navigator.geolocation.getCurrentPosition(
     ({ coords, timestamp }) => {
       pinFinding.value = false
-      localPin.value = {
+      visit.setPin({
         lat: coords.latitude,
         lng: coords.longitude,
         // The device's own figure, rounded to the metre it is good to.
         accuracyM: Math.round(coords.accuracy),
         time: CLOCK.format(new Date(timestamp)),
-      }
+      })
     },
     () => {
       pinFinding.value = false
@@ -154,38 +153,15 @@ function dropPin() {
   )
 }
 
-const CLOCK = new Intl.DateTimeFormat('en-GB', {
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-})
-
-/** TODO(api): clears it on screen only — see `dropPin`. */
 function clearPin() {
-  localPin.value = null
+  visit.setPin(null)
   pinFailed.value = false
-}
-
-// --- rooms ------------------------------------------------------------------
-
-/**
- * The rooms as the card shows them. Supplied — including which types were
- * guessed, which this screen is told and never works out from a name.
- *
- * TODO(api): `GET /houses/{id}/composition` for the list, and a write for the
- * type a click settles. Held locally meanwhile so the one interaction A3 owns
- * actually answers.
- */
-const rooms = ref<VisitRoom[]>(visitContextMock.rooms.map((room) => ({ ...room })))
-
-function cycleRoom(roomId: number) {
-  rooms.value = rooms.value.map((room) => (room.id === roomId ? nextRoomType(room) : room))
 }
 
 // --- offline ----------------------------------------------------------------
 
 /**
- * A2. The banner goes up when the connection drops and is replaced by its own
+ * A2. The band goes up when the connection drops and is replaced by its own
  * ending when it comes back — the acknowledgement that what was held went.
  *
  * None of it gates anything: the fields below stay live throughout, which is
@@ -236,37 +212,37 @@ const walkTheRooms = () =>
       <HouseVisitPhoneHeader
         :customer-name="customerName"
         :back-to="backToCustomer"
-        :saved-label="savedLabel"
+        :saved-label="visit.savedLabel.value"
         :offline="!online"
       />
 
       <HouseTabBar
         :customer-id="customerId"
         :house-id="houseId"
-        :room-count="visitContextMock.roomCount"
-        :installed-count="visitContextMock.installedCount"
+        :room-count="roomCount"
+        :installed-count="installedCount"
         size="phone"
       />
 
       <VisitOfflineNotice
         v-if="showOffline"
-        :note-count="visitContextMock.heldNoteCount"
-        :room-count="visitContextMock.heldRoomCount"
-        :held="visitContextMock.held"
+        :note-count="visit.pendingNoteCount.value"
+        :room-count="visit.pendingRoomCount.value"
+        :held="visit.queue.value"
         :reconnected="reconnectedAt !== null"
         :sent-at="reconnectedAt ?? undefined"
       />
 
-      <SBanner v-if="missing" variant="error" class="failure">
-        This house is not on her record.
+      <SBanner v-if="houseQuery.isError.value" variant="error" class="failure">
+        Could not read this house.
       </SBanner>
 
       <HouseVisitSkeleton v-else-if="loading" size="phone" />
 
       <template v-else>
         <HouseVisitPhone
-          :draft="draft"
-          :pin="pin"
+          :draft="visit.draft"
+          :pin="visit.pin.value"
           :pin-finding="pinFinding"
           :pin-failed="pinFailed"
           @drop-pin="dropPin"
@@ -288,20 +264,19 @@ const walkTheRooms = () =>
         <div class="title-row">
           <!-- "Her house", never the address — the same on both devices. -->
           <SText type="display" as="h1" class="title">Her house</SText>
-          <SText type="list-meta">{{ visitContextMock.visitSummary }}</SText>
         </div>
 
         <HouseTabBar
           :customer-id="customerId"
           :house-id="houseId"
-          :room-count="visitContextMock.roomCount"
-          :installed-count="visitContextMock.installedCount"
+          :room-count="roomCount"
+          :installed-count="installedCount"
           size="desk"
         />
       </div>
 
-      <SBanner v-if="missing" variant="error" class="failure">
-        This house is not on her record.
+      <SBanner v-if="houseQuery.isError.value" variant="error" class="failure">
+        Could not read this house.
       </SBanner>
 
       <HouseVisitSkeleton v-else-if="loading" size="desk" />
@@ -310,12 +285,14 @@ const walkTheRooms = () =>
         v-else
         :customer-id="customerId"
         :house-id="houseId"
-        :draft="draft"
-        :pin="pin"
-        :rooms="rooms"
-        :installed-count="visitContextMock.installedCount"
+        :draft="visit.draft"
+        :pin="visit.pin.value"
+        :rooms="visit.rooms.value"
+        :rooms-loading="roomsQuery.isPending.value"
+        :rooms-failed="roomsQuery.isError.value"
+        :installed-count="installedCount"
         @clear-pin="clearPin"
-        @cycle-room="cycleRoom"
+        @cycle-room="visit.cycleRoom"
       />
     </template>
   </AppLayout>

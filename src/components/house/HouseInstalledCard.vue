@@ -13,13 +13,16 @@ import { NOTHING_INSTALLED, OPEN_INSTALLED } from '@/data/houseVisitCopy'
 defineProps<{
   customerId: number
   houseId: number
-  count: number
+  /** Null until the read lands — the label then drops the number, not the tab. */
+  count: number | null
 }>()
 </script>
 
 <template>
   <section class="card">
-    <SText type="micro" color="micro" as="h2">Installed · {{ count }}</SText>
+    <SText type="micro" color="micro" as="h2">
+      Installed{{ count === null ? '' : ` · ${count}` }}
+    </SText>
     <SText v-if="count === 0" type="cell" color="fg-2">{{ NOTHING_INSTALLED }}</SText>
     <RouterLink
       :to="{ name: 'house-installed', params: { id: customerId, houseId } }"
