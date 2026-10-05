@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useCustomer } from '@/api/hooks/customers'
+import { useHouse, useHouseRooms, useInstalledCount } from '@/api/hooks/houses'
 import AppLayout from '@/components/app/AppLayout.vue'
 import HouseDeskHead from '@/components/house/HouseDeskHead.vue'
 import HouseTabBar from '@/components/house/HouseTabBar.vue'
@@ -8,12 +9,11 @@ import HouseVisitPhoneHeader from '@/components/house/HouseVisitPhoneHeader.vue'
 import RoomsDesk from '@/components/house/RoomsDesk.vue'
 import RoomsPhone from '@/components/house/RoomsPhone.vue'
 import { heldRoomsStatus, savedRoomsStatus } from '@/data/houseRoomsCopy'
-import { MOCK_ROOMS_SUMMARY } from '@/data/houseRecordMock'
+import { useHouseRoomsEditor } from '@/composables/useHouseRoomsEditor'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
 import { useRoomEntry } from '@/composables/useRoomEntry'
-import { useHouseInstalledStore } from '@/stores/houseInstalled'
-import { useHouseRoomsStore } from '@/stores/houseRooms'
+import { useSaveReporter } from '@/composables/useSaveState'
 import type { CommonRoomName } from '@/types/houseRooms'
 import type { HeaderStatus } from '@/types/house'
 
@@ -26,9 +26,15 @@ import type { HeaderStatus } from '@/types/house'
  * click and rename in place. There is no third layout, and B3 collects nothing
  * B1 does not.
  *
- * **No save button, on either.** A room is in the list the moment it is named,
- * and a type is his the moment he taps it — see `@/stores/houseRooms` for where
- * a keystroke goes, and for why it does not currently go to the API.
+ * **Three reads, three fates.** The rooms are the screen; the house's wiring
+ * and internet notes are a card beside them; the installed count is a number in
+ * a tab. None of them holds up another, and none of them holds up the field —
+ * a man standing in a hallway does not wait on a count before he can write down
+ * the name of the room he is in.
+ *
+ * **No save button.** A room is in the list the moment it is named and in the
+ * record a moment later; see `useHouseRoomsEditor` for where a keystroke goes,
+ * and for the three places the design and the wire do not meet.
  */
 const props = defineProps<{ customerId: number; houseId: number }>()
 
@@ -36,20 +42,57 @@ const isPhone = useMediaQuery('(max-width: 899px)')
 const online = useOnline()
 
 const customerQuery = useCustomer(() => props.customerId)
+const houseQuery = useHouse(() => props.houseId)
+const roomsQuery = useHouseRooms(() => props.houseId)
+const installedQuery = useInstalledCount(() => props.houseId)
+
 const customerName = computed(() => customerQuery.data.value?.name ?? 'This customer')
 
-const store = useHouseRoomsStore(props.houseId)
+/**
+ * The count, or null while it is still being read. A tab that showed `· 0`
+ * before the answer came back would be stating something about the house.
+ */
+const installedCount = computed(() =>
+  installedQuery.isSuccess.value ? (installedQuery.data.value ?? 0) : null,
+)
+
+/** The two notes beside the list. They decide what each room can take. */
+const wiring = computed(() => houseQuery.data.value?.wiring_notes ?? '')
+const internet = computed(() => houseQuery.data.value?.internet_notes ?? '')
+
+// --- what he types and what it does -----------------------------------------
+
+const rooms = useHouseRoomsEditor(props.houseId)
 const entry = useRoomEntry(props.houseId)
 
-/**
- * The Installed tab's count, read off the same record the Installed tab reads —
- * the two tabs are two views of one house, and a tab bar that disagreed with
- * the screen under it would be the first thing he stopped trusting.
- */
-const installed = useHouseInstalledStore(props.houseId)
-const installedCount = computed(() => installed.totals.value.active)
+/** The laptop says save state in the app bar, as every other desk screen does. */
+const save = useSaveReporter()
 
-const roomCount = computed(() => store.counts.value.rooms)
+watch(
+  () => roomsQuery.data.value,
+  (next) => {
+    if (next) rooms.seed(next)
+  },
+  { immediate: true },
+)
+
+/**
+ * A write that was refused is said; one that merely has not left the phone is
+ * not an error, and the header is already saying there is no signal.
+ */
+watch(rooms.refused, (bad) => (bad ? save.failed() : save.saved()))
+
+/**
+ * `isPending` is "nothing cached yet", so a revalidation never re-skeletons —
+ * and a list he has already added to is never replaced by one.
+ */
+const loadingRooms = computed(
+  () => roomsQuery.isPending.value && rooms.rooms.value.length === 0,
+)
+
+const failedRooms = computed(
+  () => roomsQuery.isError.value && rooms.rooms.value.length === 0,
+)
 
 /**
  * `saved · 6 rooms`, or the amber line that says they are on the phone. Both
@@ -58,19 +101,19 @@ const roomCount = computed(() => store.counts.value.rooms)
  */
 const status = computed<HeaderStatus>(() =>
   online.value
-    ? { label: savedRoomsStatus(roomCount.value), tone: 'action', dot: true }
-    : { label: heldRoomsStatus(roomCount.value), tone: 'risk', dot: true },
+    ? { label: savedRoomsStatus(rooms.counts.value.rooms), tone: 'action', dot: true }
+    : { label: heldRoomsStatus(rooms.counts.value.rooms), tone: 'risk', dot: true },
 )
 
 /** Return, or `Add`, or the `+` at the desk. All three are this. */
 function add() {
   const taken = entry.take()
-  if (taken) store.add(taken.name, taken.type, taken.guessed)
+  if (taken) void rooms.add(taken.name, taken.type, taken.guessed)
 }
 
 /** One tap on a common name: a room, named and typed, without the field moving. */
 function addCommon(common: CommonRoomName) {
-  store.add(common.name, common.type, false)
+  void rooms.add(common.name, common.type, false)
 }
 </script>
 
@@ -89,60 +132,72 @@ function addCommon(common: CommonRoomName) {
       <HouseTabBar
         :customer-id="customerId"
         :house-id="houseId"
-        :room-count="roomCount"
+        :room-count="rooms.counts.value.rooms"
         :installed-count="installedCount"
         size="phone"
       />
 
       <RoomsPhone
-        :rooms="store.rooms.value"
-        :common-names="store.commonNames.value"
-        :untyped="store.untyped.value"
-        :removed-name="store.undo.value?.room.name ?? null"
+        :rooms="rooms.rooms.value"
+        :common-names="rooms.commonNames.value"
+        :untyped="rooms.untyped.value"
+        :removed-name="rooms.undo.value?.room.name ?? null"
         :text="entry.text.value"
         :type="entry.type.value"
         :guessed="entry.guessed.value"
         :resumed="entry.resumed.value"
+        :loading="loadingRooms"
+        :failed="failedRooms"
         @update:text="entry.text.value = $event"
         @pick="entry.pick"
         @add="add"
         @add-common="addCommon"
-        @cycle="store.cycle"
-        @remove="store.remove"
-        @undo="store.undoRemove"
+        @cycle="rooms.cycle"
+        @remove="rooms.remove"
+        @undo="rooms.undoRemove"
       />
     </template>
 
     <!-- === B3 — the desk === -->
     <template v-else>
+      <!--
+        ⚠️ No summary phrase. The reference draws `visited 30 Sep · 13:41–14:02 ·
+        on phone` beside the title, and nothing on the wire says any of it: the
+        house carries `updated_at`, which is when the record last changed rather
+        than when anyone stood in it, and nothing at all about the span or the
+        device. It is left off rather than filled in with the nearest figure.
+      -->
       <HouseDeskHead
         :customer-id="customerId"
         :house-id="houseId"
         :customer-name="customerName"
-        :room-count="roomCount"
+        :room-count="rooms.counts.value.rooms"
         :installed-count="installedCount"
-        :summary="MOCK_ROOMS_SUMMARY"
       />
 
       <RoomsDesk
         :customer-id="customerId"
         :house-id="houseId"
-        :rooms="store.rooms.value"
-        :counts="store.counts.value"
-        :common-names="store.commonNames.value"
+        :rooms="rooms.rooms.value"
+        :counts="rooms.counts.value"
+        :common-names="rooms.commonNames.value"
         :installed-count="installedCount"
-        :removed-name="store.undo.value?.room.name ?? null"
+        :wiring="wiring"
+        :internet="internet"
+        :removed-name="rooms.undo.value?.room.name ?? null"
         :text="entry.text.value"
         :type="entry.type.value"
         :guessed="entry.guessed.value"
+        :loading="loadingRooms"
+        :failed="failedRooms"
         @update:text="entry.text.value = $event"
         @pick="entry.pick"
         @add="add"
         @add-common="addCommon"
-        @rename="store.rename"
-        @set-type="store.setType"
-        @remove="store.remove"
-        @undo="store.undoRemove"
+        @rename="rooms.rename"
+        @set-type="rooms.setType"
+        @remove="rooms.remove"
+        @undo="rooms.undoRemove"
       />
     </template>
   </AppLayout>

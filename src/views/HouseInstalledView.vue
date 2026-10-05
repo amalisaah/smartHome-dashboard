@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomer } from '@/api/hooks/customers'
+import { useHouseRooms } from '@/api/hooks/houses'
 import AppLayout from '@/components/app/AppLayout.vue'
 import HouseDeskHead from '@/components/house/HouseDeskHead.vue'
 import HouseTabBar from '@/components/house/HouseTabBar.vue'
@@ -12,7 +13,6 @@ import { offlineCopy, updatedByJob } from '@/data/installedCopy'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
 import { useHouseInstalledStore } from '@/stores/houseInstalled'
-import { useHouseRoomsStore } from '@/stores/houseRooms'
 import type { HeaderStatus } from '@/types/house'
 
 /**
@@ -40,7 +40,19 @@ const customerQuery = useCustomer(() => props.customerId)
 const customerName = computed(() => customerQuery.data.value?.name ?? 'This customer')
 
 const installed = useHouseInstalledStore(props.houseId)
-const rooms = useHouseRoomsStore(props.houseId)
+
+/**
+ * The room count in the tab bar, read rather than counted off this screen's own
+ * record — block B is wired to the API and this tab is not yet, so the rooms
+ * are the one figure here that is true.
+ *
+ * ⚠️ Until block C is wired, the `Installed` count beside it is this screen's
+ * mock and will not agree with what the API would say.
+ */
+const roomsQuery = useHouseRooms(() => props.houseId)
+const roomCount = computed(() =>
+  roomsQuery.isSuccess.value ? (roomsQuery.data.value?.length ?? 0) : null,
+)
 
 /**
  * Off by default, on both devices: the current picture is what somebody
@@ -92,7 +104,7 @@ const correctRoom = (roomId: number) =>
       <HouseTabBar
         :customer-id="customerId"
         :house-id="houseId"
-        :room-count="rooms.counts.value.rooms"
+        :room-count="roomCount"
         :installed-count="installed.totals.value.active"
         size="phone"
       />
@@ -116,7 +128,7 @@ const correctRoom = (roomId: number) =>
         :customer-id="customerId"
         :house-id="houseId"
         :customer-name="customerName"
-        :room-count="rooms.counts.value.rooms"
+        :room-count="roomCount"
         :installed-count="installed.totals.value.active"
         :summary="installed.summaryPhrase"
       />

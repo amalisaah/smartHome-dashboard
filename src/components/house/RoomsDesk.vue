@@ -6,7 +6,9 @@ import RoomCommonNames from '@/components/house/RoomCommonNames.vue'
 import RoomUndoStrip from '@/components/house/RoomUndoStrip.vue'
 import RoomsDeskAddRow from '@/components/house/RoomsDeskAddRow.vue'
 import RoomsDeskRow from '@/components/house/RoomsDeskRow.vue'
+import RoomsSkeleton from '@/components/house/RoomsSkeleton.vue'
 import VisitFactsCard from '@/components/house/VisitFactsCard.vue'
+import { SBanner } from '@/components/atoms'
 import {
   ROOMS_COLUMN_INDEX,
   ROOMS_COLUMN_NAME,
@@ -14,7 +16,6 @@ import {
   ROOMS_FOOTER_LEGEND,
   roomsFooterCounts,
 } from '@/data/houseRoomsCopy'
-import { MOCK_VISIT_FACTS } from '@/data/houseRecordMock'
 import type { CommonRoomName, Room, RoomCounts } from '@/types/houseRooms'
 import type { ApiSpaceSlug } from '@/types/api'
 
@@ -35,10 +36,15 @@ const props = defineProps<{
   counts: RoomCounts
   commonNames: readonly CommonRoomName[]
   installedCount: number | null
+  /** `wiring_notes` and `internet_notes`, straight off the house. */
+  wiring: string
+  internet: string
   removedName: string | null
   text: string
   type: ApiSpaceSlug | null
   guessed: boolean
+  loading?: boolean
+  failed?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -90,6 +96,12 @@ function addCommon(common: CommonRoomName) {
         <span />
       </div>
 
+      <SBanner v-if="failed" variant="error" class="failure">
+        Could not read this house's rooms.
+      </SBanner>
+
+      <RoomsSkeleton v-else-if="loading" size="desk" />
+
       <RoomsDeskRow
         v-for="(room, at) in rooms"
         ref="rowRefs"
@@ -136,8 +148,8 @@ function addCommon(common: CommonRoomName) {
       <VisitFactsCard
         :customer-id="customerId"
         :house-id="houseId"
-        :wiring="MOCK_VISIT_FACTS.wiring"
-        :internet="MOCK_VISIT_FACTS.internet"
+        :wiring="wiring"
+        :internet="internet"
       />
       <HouseInstalledCard
         :customer-id="customerId"
@@ -172,6 +184,10 @@ function addCommon(common: CommonRoomName) {
   align-items: center;
   padding: 0 0 8px;
   border-bottom: 1px solid var(--color-line);
+}
+
+.failure {
+  margin: 16px 0;
 }
 
 /* Indented to the names column, because what is under the table belongs to the

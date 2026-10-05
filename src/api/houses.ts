@@ -72,9 +72,41 @@ export async function fetchRooms(houseId: number, signal?: AbortSignal): Promise
   return rooms.map(toVisitRoom)
 }
 
-/** `PATCH /rooms/{id}` — the one write the rooms card makes. */
+/** `PATCH /rooms/{id}` — the write both the Visit notes card and block B make. */
 export const updateRoomSpace = (roomId: number, space: ApiSpaceSlug) =>
   apiSend<ApiRoom>('PATCH', `/rooms/${roomId}`, { space_slug: space } satisfies ApiRoomUpdate)
+
+/** `PATCH /rooms/{id}` — the laptop's inline field, which is the only rename. */
+export const updateRoomName = (roomId: number, name: string) =>
+  apiSend<ApiRoom>('PATCH', `/rooms/${roomId}`, { name } satisfies ApiRoomUpdate)
+
+/**
+ * `POST /houses/{id}/rooms` — one room, at the end of the walk.
+ *
+ * ⚠️ **`space_slug` is required**, and that is the one place block B does not
+ * fit the wire: the design's whole promise is that the type is never required,
+ * and an unguessable name is added as `type?` in amber. A room in that state
+ * cannot be created here at all, so the screen holds it and sends it when he
+ * gives it a type. See `useHouseRoomsEditor`.
+ *
+ * `sort_order` is left off: the endpoint puts a new room at the end, which is
+ * where the next door he walks through belongs.
+ */
+export const createRoom = (houseId: number, name: string, space: ApiSpaceSlug) =>
+  apiSend<ApiRoom>('POST', `/houses/${houseId}/rooms`, { name, space_slug: space })
+
+/**
+ * `DELETE /rooms/{id}` — which **archives** rather than deletes.
+ *
+ * ⚠️ There is no un-archive: `PATCH /rooms/{id}` takes a name, a slug and a
+ * sort order, and nothing clears `archived_at`. So Undo cannot be a second
+ * request — re-creating would mint a new id and leave the room's installed
+ * devices pointing at the archived one. The screen therefore holds the removal
+ * for as long as the undo offer stands and only sends it once the offer is
+ * gone; see `useHouseRoomsEditor`.
+ */
+export const archiveRoom = (roomId: number, keepalive?: boolean) =>
+  apiSend<ApiRoom>('DELETE', `/rooms/${roomId}`, undefined, undefined, keepalive)
 
 /**
  * How many devices are in the house.

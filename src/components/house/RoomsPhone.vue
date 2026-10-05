@@ -4,6 +4,8 @@ import RoomUndoStrip from '@/components/house/RoomUndoStrip.vue'
 import RoomsEntryDock from '@/components/house/RoomsEntryDock.vue'
 import RoomsInterruption from '@/components/house/RoomsInterruption.vue'
 import RoomsPhoneRow from '@/components/house/RoomsPhoneRow.vue'
+import RoomsSkeleton from '@/components/house/RoomsSkeleton.vue'
+import { SBanner } from '@/components/atoms'
 import {
   RESUME_TITLE,
   resumeCopy,
@@ -31,6 +33,10 @@ defineProps<{
   type: ApiSpaceSlug | null
   guessed: boolean
   resumed: ResumedEntry | null
+  /** Nothing read yet. The dock below is live throughout either way. */
+  loading?: boolean
+  /** The read failed. Said where the list would have been, and nowhere else. */
+  failed?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -81,7 +87,15 @@ function undo() {
         />
       </div>
 
-      <ol class="list">
+      <!-- The failure is reported where the names would have been: the field
+           below is still the screen, and he can go on naming rooms. -->
+      <SBanner v-if="failed" variant="error" class="failure">
+        Could not read this house's rooms.
+      </SBanner>
+
+      <RoomsSkeleton v-else-if="loading" size="phone" />
+
+      <ol v-else class="list">
         <RoomsPhoneRow
           v-for="(room, at) in rooms"
           :key="room.id"
@@ -133,6 +147,10 @@ function undo() {
   flex-direction: column;
   gap: 16px;
   padding: 16px;
+}
+
+.failure {
+  margin: 16px;
 }
 
 /* The drawn floor, so an empty house is still a list waiting for rooms rather

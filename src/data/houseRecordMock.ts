@@ -1,46 +1,21 @@
 /**
- * One house, as blocks B and C draw it.
+ * One house, as block C draws it.
  *
- * ⚠️ FLAG — **this stands in for the API.** Neither tab can be read off the
- * endpoints that exist: `ApiRoom.space_slug` is required and carries no "this
- * was guessed", so B's two central states (`type?` and the dashed guess) have
- * no source; and `ApiInstalledDevice` is one row per status where C is one row
- * per device carrying all three counts, with no fault-note / removed-note split
- * and nothing saying who wrote it. See `@/types/houseRooms` and
- * `@/types/installed` for the detail. Every value here is the handoff's own.
+ * ⚠️ FLAG — **this stands in for the API, for the Installed tab only.** The
+ * Rooms tab is wired: see `useHouseRoomsEditor`. What keeps block C off the
+ * wire is the shape — `ApiInstalledDevice` is one row per status where C is one
+ * row per device carrying all three counts at once, with no fault-note /
+ * removed-note split and nothing saying who wrote it. Deciding how one becomes
+ * the other is the business rule this screen does not own. See
+ * `@/types/installed`. Every value here is the handoff's own.
  *
- * **The reference draws two houses; this is one.** Block B is drawn on a house
- * of five rooms with nothing installed, block C on a house of six with sixteen.
- * A screen whose Rooms tab and Installed tab disagree about how many rooms
- * there are is worse than a screen that differs from the drawing by a row, so
- * block C's house is the one, and block B's list shows its six rooms. Every
- * total, chip count and footer figure is then read off these rows rather than
- * written down beside them — which reproduces block C's reference exactly
- * (16 active · 1 faulty · 3 removed) and block B's except for the room count.
+ * ⚠️ The room ids below are the reference's, not the API's, so the Installed
+ * tab's rooms are **not** the Rooms tab's rooms until block C is wired.
  */
 
-import type { Room } from '@/types/houseRooms'
 import type { BeforeYouTouch, InstalledRoom } from '@/types/installed'
 
-/**
- * Her rooms, in walk order — the order he entered them, standing in the house.
- *
- * `Kitchen` is the one guessed type, which is the state the reference is drawn
- * in: the name said `kitchen` and nobody has agreed with it out loud yet.
- */
-export const MOCK_ROOMS: readonly Room[] = [
-  { id: 1, name: 'Master', type: 'bedroom', guessed: false },
-  { id: 2, name: 'Kids room', type: 'bedroom', guessed: false },
-  { id: 3, name: 'Back bedroom', type: 'bedroom', guessed: false },
-  { id: 4, name: 'Hall', type: 'living_room', guessed: false },
-  { id: 5, name: 'Kitchen', type: 'kitchen', guessed: true },
-  { id: 6, name: 'Compound', type: 'outdoor', guessed: false },
-]
-
-/**
- * What is in them. Device ids are the record's, room ids are `MOCK_ROOMS`' —
- * the two tabs are two views of one house, so a room is the same room in both.
- */
+/** What is in her rooms, in walk order. */
 export const MOCK_INSTALLED: readonly InstalledRoom[] = [
   {
     id: 1,
@@ -264,17 +239,3 @@ export const MOCK_LAST_JOB_DATE = '14 Aug'
 
 /** The mono line beside `Her house` on the Installed tab. Supplied. */
 export const MOCK_INSTALLED_SUMMARY = 'customer since Aug 2026 · last job 14 Aug'
-
-/** The same line on the Rooms tab, which is about the visit rather than the job. */
-export const MOCK_ROOMS_SUMMARY = 'visited 30 Sep · 13:41–14:02 · on phone'
-
-/**
- * The two read-only entries beside the laptop's room list. They are here
- * because they decide what each room can take — a room with no neutral cannot
- * have a smart switch, whatever its type says.
- */
-export const MOCK_VISIT_FACTS = {
-  wiring:
-    'Opened hall and master boxes — no neutral in either. Kitchen box has one (newer extension).',
-  internet: 'Router in hall. One bar in back bedroom, gone in the compound.',
-}
