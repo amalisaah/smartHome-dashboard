@@ -248,6 +248,9 @@ a screen reader as well as to the eye.
 - `variant="accent"` carries the action border at rest — a value he decided rather than was given.
 - `prefix` is a fact about the field and is fenced off by a border; `suffix` is part of the
   value's reading and is not.
+- `enterKeyHint` is what the phone writes on its return key. A field that stays open and
+  takes another value sets `next` — block B names a room, returns, and names the next one,
+  and a keyboard saying `done` would promise a close that never comes.
 
 ### STextarea
 

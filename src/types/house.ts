@@ -1,6 +1,24 @@
 import type { ApiInternetQuality } from '@/types/api'
 
 /**
+ * What the house's phone header says about the record it is sitting over.
+ *
+ * One line in one place, on all three tabs, because the question it answers is
+ * the same on all three: where has what I just did got to. Visit notes says
+ * `saved · 14:02`, Rooms counts them, Installed dates the job that wrote it.
+ *
+ * `dot` is whether there is one at all. A dot marks something that *happened* —
+ * a save, a connection dropping. `updated by job · 14 Aug` is a fact about the
+ * record and gets none, because a dot beside it would read as news.
+ */
+export interface HeaderStatus {
+  label: string
+  /** `action` says it is kept; `risk`, that it is held here; `quiet`, neither. */
+  tone: 'action' | 'risk' | 'quiet'
+  dot: boolean
+}
+
+/**
  * A house as the form that starts one holds it.
  *
  * `POST /customers/{id}/houses` requires nothing at all, and this honours that:

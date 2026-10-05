@@ -111,15 +111,18 @@ export const spaceLabel = (slug: ApiSpaceSlug) => slug.replace(/_/g, ' ')
 /**
  * The types the chip cycles through, in the order it offers them — the wire's
  * own enum, so a click can only ever produce a value `PATCH /rooms/{id}` will
- * take. `whole_house` is absent because the API rejects it on a room.
+ * take, and the order block B draws its six chips in. `whole_house` is absent
+ * because the API rejects it on a room, and because rooms are not where it
+ * lives: it is a pseudo-space every house has one of, and it belongs to
+ * packages.
  */
 export const ROOM_TYPES: readonly ApiSpaceSlug[] = [
   'bedroom',
   'living_room',
   'kitchen',
   'bathroom',
-  'corridor',
   'outdoor',
+  'corridor',
 ]
 
 /**

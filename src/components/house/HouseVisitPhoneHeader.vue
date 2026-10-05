@@ -3,18 +3,20 @@ import { RouterLink } from 'vue-router'
 import type { RouteLocationRaw } from 'vue-router'
 import { SText } from '@/components/atoms'
 import { OFFLINE_STATUS } from '@/data/houseVisitCopy'
+import type { HeaderStatus } from '@/types/house'
 
 /**
- * A1 / A2's header. Three things and no more: the way back to her, where what
- * he is typing has got to, and what he is looking at.
+ * The house's phone header, on all three of its tabs. Three things and no
+ * more: the way back to her, where the record has got to, and what he is
+ * looking at.
  *
  * The title is **"Her house", never the address.** Someone who glances at the
  * phone on a table sees a name and not a location, and the address is a field
  * further down the screen rather than the thing the screen is called.
  *
- * There is no save button here or anywhere on the screen. The status is
- * reported, never asked for — a dot and a time, or the no-signal line, which
- * says where the words are rather than that something is in progress.
+ * There is no save button here or anywhere on these screens. The status is
+ * reported, never asked for — a dot and a time, or the no-signal line, or what
+ * the tab in front of him has to say about its own record. Never progress.
  */
 defineProps<{
   customerName: string
@@ -22,6 +24,8 @@ defineProps<{
   /** `saved · 14:02`. Null until he has changed something. */
   savedLabel: string | null
   offline: boolean
+  /** What this tab says instead. Wins over `savedLabel` and the offline line. */
+  status?: HeaderStatus | null
 }>()
 </script>
 
@@ -32,9 +36,26 @@ defineProps<{
         <SText type="cell" color="muted-dark">‹ {{ customerName }}</SText>
       </RouterLink>
 
+      <!-- A tab that has its own thing to say says it. The two below are Visit
+           notes', which is the tab that has words being typed into it. -->
+      <span v-if="status" class="status" role="status" aria-live="polite">
+        <span
+          v-if="status.dot"
+          class="dot"
+          :class="`dot--${status.tone}`"
+          aria-hidden="true"
+        />
+        <SText
+          type="cell-meta"
+          :color="status.tone === 'risk' ? 'risk-on-dark' : 'muted-dark'"
+        >
+          {{ status.label }}
+        </SText>
+      </span>
+
       <!-- Offline outranks a save time, because it explains it: the words are
            still kept, they are just kept here for now. -->
-      <span v-if="offline" class="status" role="status" aria-live="polite">
+      <span v-else-if="offline" class="status" role="status" aria-live="polite">
         <span class="dot dot--risk" aria-hidden="true" />
         <SText type="cell-meta" color="risk-on-dark">{{ OFFLINE_STATUS }}</SText>
       </span>

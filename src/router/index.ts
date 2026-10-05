@@ -7,8 +7,10 @@ import CustomerNewView from '@/views/CustomerNewView.vue'
 import CustomerPlaceholderView from '@/views/CustomerPlaceholderView.vue'
 import DesignSystemView from '@/views/DesignSystemView.vue'
 import GroupsMarkupView from '@/views/GroupsMarkupView.vue'
+import HouseInstalledCorrectView from '@/views/HouseInstalledCorrectView.vue'
+import HouseInstalledView from '@/views/HouseInstalledView.vue'
 import HouseNewView from '@/views/HouseNewView.vue'
-import HouseTabStubView from '@/views/HouseTabStubView.vue'
+import HouseRoomsView from '@/views/HouseRoomsView.vue'
 import HouseVisitView from '@/views/HouseVisitView.vue'
 import ItemDetailView from '@/views/ItemDetailView.vue'
 import ItemEditView from '@/views/ItemEditView.vue'
@@ -136,26 +138,38 @@ export const router = createRouter({
       }),
     },
     {
-      // The house's other two tabs. Blocks B and C, designed elsewhere; these
-      // exist so the tab bar, `Walk the rooms →` and `Edit rooms` all lead
-      // somewhere that says what it will be.
+      // The house's second tab — module 5, block B. Where `Walk the rooms →`
+      // and `Edit rooms` both land.
       path: '/customers/:id(\\d+)/houses/:houseId(\\d+)/rooms',
       name: 'house-rooms',
-      component: HouseTabStubView,
+      component: HouseRoomsView,
       props: (route) => ({
         customerId: Number(route.params.id),
         houseId: Number(route.params.houseId),
-        tab: 'rooms',
       }),
     },
     {
+      // The third — module 5, block C.
       path: '/customers/:id(\\d+)/houses/:houseId(\\d+)/installed',
       name: 'house-installed',
-      component: HouseTabStubView,
+      component: HouseInstalledView,
       props: (route) => ({
         customerId: Number(route.params.id),
         houseId: Number(route.params.houseId),
-        tab: 'installed',
+      }),
+    },
+    {
+      // C2, correcting one room's counts by hand. Its own address, so the back
+      // gesture closes the correction rather than leaving the house — the same
+      // reason the phone's item form has one. The laptop has no such screen:
+      // correcting there is a mode of C3's table, and the view redirects.
+      path: '/customers/:id(\\d+)/houses/:houseId(\\d+)/installed/:roomId(\\d+)/correct',
+      name: 'house-installed-correct',
+      component: HouseInstalledCorrectView,
+      props: (route) => ({
+        customerId: Number(route.params.id),
+        houseId: Number(route.params.houseId),
+        roomId: Number(route.params.roomId),
       }),
     },
     {

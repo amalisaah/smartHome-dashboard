@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useCustomer } from '@/api/hooks/customers'
 import { useHouse, useHouseRooms, useInstalledCount } from '@/api/hooks/houses'
-import { SBanner, SText } from '@/components/atoms'
+import { SBanner } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
+import HouseDeskHead from '@/components/house/HouseDeskHead.vue'
 import HouseTabBar from '@/components/house/HouseTabBar.vue'
 import HouseVisitDesk from '@/components/house/HouseVisitDesk.vue'
 import HouseVisitPhone from '@/components/house/HouseVisitPhone.vue'
@@ -275,26 +276,17 @@ const walkTheRooms = () =>
 
     <!-- === A3 — the desk === -->
     <template v-else>
-      <div class="head">
-        <SText type="cell-meta" color="fg-2-soft">
-          Customers ›
-          <RouterLink :to="backToCustomer" class="crumb">{{ customerName }}</RouterLink>
-          ›
-        </SText>
-
-        <div class="title-row">
-          <!-- "Her house", never the address — the same on both devices. -->
-          <SText type="display" as="h1" class="title">Her house</SText>
-        </div>
-
-        <HouseTabBar
-          :customer-id="customerId"
-          :house-id="houseId"
-          :room-count="roomCount"
-          :installed-count="installedCount"
-          size="desk"
-        />
-      </div>
+      <!-- Shared with Rooms and Installed, so the three tabs are literally the
+           same head rather than three that have to be kept looking alike. It
+           carries no summary phrase here: this tab has nothing supplied to say
+           about the record that the fields below it do not say better. -->
+      <HouseDeskHead
+        :customer-id="customerId"
+        :house-id="houseId"
+        :customer-name="customerName"
+        :room-count="roomCount"
+        :installed-count="installedCount"
+      />
 
       <SBanner
         v-if="houseQuery.isError.value && !visit.unsentWork.value"
@@ -325,43 +317,6 @@ const walkTheRooms = () =>
 </template>
 
 <style scoped>
-.head {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 24px 32px 0;
-}
-
-.title-row {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-/* The reference tracks the page title a touch looser than the display role's
-   own -0.02em: at 32px it is a name, not a figure. */
-.title {
-  letter-spacing: -0.01em;
-}
-
-.crumb {
-  color: var(--color-action-ink);
-  text-decoration: none;
-}
-
-.crumb:hover {
-  color: var(--color-action-ink);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.crumb:focus-visible {
-  outline: 2px solid var(--color-action);
-  outline-offset: 2px;
-  border-radius: var(--radius-flag);
-}
-
 .failure {
   margin: 20px 32px;
 }

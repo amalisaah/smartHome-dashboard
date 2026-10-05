@@ -28,11 +28,22 @@ const props = defineProps<{
 const withCount = (word: string, count: number | null) =>
   count === null ? word : `${word} · ${count}`
 
+/**
+ * `Installed · 16 active` at the desk, where the count is the first column of a
+ * stock sheet and the word says which of the three it is. The phone has three
+ * tabs across 390px and no room for it, and neither has a house with nothing in
+ * it — `0 active` is a reading of a record that has not been written yet.
+ */
+const installedLabel = computed(() => {
+  const label = withCount('Installed', props.installedCount)
+  return props.size === 'desk' && props.installedCount ? `${label} active` : label
+})
+
 const tabs = computed(() => [
   { label: 'Visit notes', to: { name: 'house-detail' }, quiet: false },
   { label: withCount('Rooms', props.roomCount), to: { name: 'house-rooms' }, quiet: false },
   {
-    label: withCount('Installed', props.installedCount),
+    label: installedLabel.value,
     to: { name: 'house-installed' },
     quiet: props.installedCount === 0,
   },

@@ -5,22 +5,31 @@ import { UNTYPED_ROOM } from '@/data/houseVisitCopy'
 import { roomTypeState, spaceLabel, type VisitRoom } from '@/types/houseVisit'
 
 /**
- * A room's type, and the one click that settles it.
+ * A room's type, and the one tap that settles it.
  *
  * The three states are the system's visual language, not three colours:
  *
  *   **solid** — he set it. `bedroom`.
  *   **dashed** — the system guessed it from the name, and is saying so.
- *                `kitchen ?`. The dashes go the moment he clicks.
+ *                `kitchen ?`. The dashes go the moment he taps.
  *   **risk** — there is no type, and a room with no type is a blank that costs
  *              something later. `type?`.
  *
- * A click confirms a guess, advances a confirmed type, and gives a blank the
- * first one — the same interaction as block B, so a type learned here is a type
- * learned there. Everything *else* about rooms stays in B: renaming, adding,
- * removing, reordering.
+ * A tap confirms a guess, advances a confirmed type, and gives a blank the
+ * first one — the same interaction on the Visit notes card and in block B's
+ * phone list, so a type learned in one place is a type learned in both.
+ *
+ * Two doors, because it is tapped on two devices. `card` is the chip beside a
+ * room in a panel, where it sits in a line of 11px labels. `row` is the phone's
+ * list, where it is a 36px thing a thumb has to land on and the label grows to
+ * 12px to match. The `row` door draws its own box rather than wearing a badge:
+ * at 36px with a tap target under it, this stopped being a badge and became a
+ * control, and dressing a button up as a badge to borrow three border colours
+ * would hide that.
  */
-const props = defineProps<{ room: VisitRoom }>()
+const props = withDefaults(defineProps<{ room: VisitRoom; size?: 'card' | 'row' }>(), {
+  size: 'card',
+})
 
 defineEmits<{ cycle: [] }>()
 
@@ -55,17 +64,18 @@ const described = computed(() =>
   <button
     type="button"
     class="chip"
-    :class="`chip--${state}`"
+    :class="[`chip--${state}`, `chip--${size}`]"
     :aria-label="described"
     @click="$emit('cycle')"
   >
-    <SBadge :variant="VARIANT[state]" size="status">{{ label }}</SBadge>
+    <SBadge v-if="size === 'card'" :variant="VARIANT[state]" size="status">{{ label }}</SBadge>
+    <template v-else>{{ label }}</template>
   </button>
 </template>
 
 <style scoped>
-/* The badge is the drawn box; the button is only what makes it clickable, so it
-   contributes no padding, no border and no ground of its own. */
+/* On the `card` door the badge is the drawn box and the button is only what
+   makes it clickable, so it contributes no padding, no border and no ground. */
 .chip {
   display: inline-flex;
   padding: 0;
@@ -82,16 +92,69 @@ const described = computed(() =>
 
 /* Reaching for it firms the border, as reaching for a field does. Not on the
    untyped one: its border is the warning, and a hover must not take that off. */
-.chip--confirmed:hover :deep(.s-badge) {
+.chip--card.chip--confirmed:hover :deep(.s-badge) {
   border-color: var(--color-fg-3);
 }
 
-.chip--guessed:hover :deep(.s-badge) {
+.chip--card.chip--guessed:hover :deep(.s-badge) {
   background: var(--color-surface);
 }
 
 .chip:focus-visible {
   outline: 2px solid var(--color-action);
   outline-offset: 2px;
+}
+
+/* === the phone's list row === */
+.chip--row {
+  position: relative;
+  align-items: center;
+  flex: none;
+  padding: 0 10px;
+  min-height: 36px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  transition: border-color 120ms ease-out, background-color 120ms ease-out;
+}
+
+.chip--row.chip--confirmed {
+  border-color: var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-fg-2);
+}
+
+.chip--row.chip--guessed {
+  border-style: dashed;
+  border-color: var(--color-fg-3);
+  background: var(--color-bg);
+  color: var(--color-fg-2);
+}
+
+.chip--row.chip--missing {
+  border-color: var(--color-risk);
+  background: var(--color-bg);
+  color: var(--color-risk);
+}
+
+
+/* The drawn box is 36px and a thumb needs 48. The box keeps the height it is
+   drawn at and the target is hung off it, rather than the control growing to
+   hold it — the same answer the house's tab bar and header link give. */
+.chip--row::after {
+  content: '';
+  position: absolute;
+  inset: 50% 0 auto 0;
+  height: var(--hit-min);
+  transform: translateY(-50%);
+}
+
+/* The press has to read with a thumb on top of the chip, so the answer is the
+   whole box filling rather than anything at its edge. */
+.chip--row:active {
+  background: var(--color-surface);
 }
 </style>

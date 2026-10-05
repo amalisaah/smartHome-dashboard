@@ -53,6 +53,13 @@ const props = defineProps<{
   labelSize?: 'sm' | 'md'
   /** Use when the field has no visible label. */
   ariaLabel?: string
+  /**
+   * What the phone writes on its return key. `next` is the field that stays
+   * open and takes another value — block B names a room, returns, and names the
+   * next one, so the key has to say `next` rather than `done` or the keyboard
+   * promises a close that never comes.
+   */
+  enterKeyHint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send'
 }>()
 
 defineEmits<{
@@ -103,6 +110,7 @@ defineExpose({ focus: () => inputEl.value?.focus() })
         :disabled="disabled || derived"
         :readonly="derived"
         :aria-label="ariaLabel"
+        :enterkeyhint="enterKeyHint"
         class="s-input"
         :class="[
           `s-input--${size ?? 'md'}`,
