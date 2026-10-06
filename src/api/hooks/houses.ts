@@ -1,6 +1,6 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { fetchHouse, fetchInstalledCount, fetchRooms } from '@/api/houses'
+import { fetchHouse, fetchInstalledGroups, fetchRooms } from '@/api/houses'
 
 /**
  * Three reads, three fates — the rule this project applies to every screen that
@@ -39,14 +39,18 @@ export function useHouseRooms(id: MaybeRefOrGetter<number>) {
 }
 
 /**
- * How many devices are in the house. Its own query because it is the quietest
- * thing on the screen — a number in a tab — and the slowest to matter.
+ * Every installed row of the house, grouped by room, whatever its status.
+ *
+ * One query behind both the Installed tab and the count in every tab bar: the
+ * count is a sum of these rows, and asking twice would let the tab and the
+ * screen under it disagree. What the screen renders is this folded against the
+ * rooms — see `toInstalledRooms`, which is where the two shapes meet.
  */
-export function useInstalledCount(id: MaybeRefOrGetter<number>) {
+export function useInstalledGroups(id: MaybeRefOrGetter<number>) {
   const houseId = computed(() => toValue(id))
 
   return useQuery({
     queryKey: computed(() => houseKeys.installed(houseId.value)),
-    queryFn: ({ signal }) => fetchInstalledCount(houseId.value, signal),
+    queryFn: ({ signal }) => fetchInstalledGroups(houseId.value, signal),
   })
 }

@@ -34,9 +34,16 @@ const props = defineProps<{
   room: InstalledRoom
   showRemoved: boolean
   correcting: boolean
+  /**
+   * Whether a step can be made at all. The API cannot empty a row or put one
+   * back to `active`, so the last unit of a status has nowhere to go — the `−`
+   * is inert there rather than failing after the press. See
+   * `useHouseInstalledEditor`.
+   */
+  canStep: (deviceId: string, field: CountField, by: number) => boolean
 }>()
 
-defineEmits<{ step: [deviceId: number, field: CountField, by: number] }>()
+defineEmits<{ step: [deviceId: string, field: CountField, by: number] }>()
 
 const faulted = computed(() => roomHasFault(props.room))
 const empty = computed(() => roomIsEmpty(props.room))
@@ -47,12 +54,15 @@ const devices = computed(() =>
   ),
 )
 
-/** `bedroom · 4 active`, or `bedroom · nothing installed`. */
-const meta = computed(() =>
-  `${spaceLabel(props.room.type)} · ${
-    empty.value ? NOTHING_INSTALLED_META : activeCount(roomActive(props.room))
-  }`,
-)
+/**
+ * `bedroom · 4 active`, or `bedroom · nothing installed`.
+ *
+ * The whole-house group has no type, so it says only what it holds.
+ */
+const meta = computed(() => {
+  const says = empty.value ? NOTHING_INSTALLED_META : activeCount(roomActive(props.room))
+  return props.room.type === null ? says : `${spaceLabel(props.room.type)} · ${says}`
+})
 </script>
 
 <template>
@@ -71,6 +81,7 @@ const meta = computed(() =>
       :key="device.id"
       :device="device"
       :correcting="correcting"
+      :can-step="canStep"
       @step="(field, by) => $emit('step', device.id, field, by)"
     />
 

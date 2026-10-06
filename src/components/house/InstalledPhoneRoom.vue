@@ -45,7 +45,9 @@ const times = (device: { active: number }) => `${device.active}×`
       <SText type="screen-title" as="h3" :color="empty ? 'fg-2' : undefined">
         {{ room.name }}
       </SText>
-      <SText type="cell-meta" color="fg-2-soft">{{ spaceLabel(room.type) }}</SText>
+      <SText v-if="room.type" type="cell-meta" color="fg-2-soft">
+        {{ spaceLabel(room.type) }}
+      </SText>
     </div>
 
     <SText v-if="empty" type="cell" color="fg-2-soft" class="empty">

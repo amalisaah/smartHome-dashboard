@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomer } from '@/api/hooks/customers'
-import { useHouse, useHouseRooms, useInstalledCount } from '@/api/hooks/houses'
+import { useHouse, useHouseRooms, useInstalledGroups } from '@/api/hooks/houses'
 import { SBanner } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import HouseDeskHead from '@/components/house/HouseDeskHead.vue'
@@ -13,6 +13,7 @@ import HouseVisitPhoneHeader from '@/components/house/HouseVisitPhoneHeader.vue'
 import HouseVisitSkeleton from '@/components/house/HouseVisitSkeleton.vue'
 import VisitFooterPhone from '@/components/house/VisitFooterPhone.vue'
 import VisitOfflineNotice from '@/components/house/VisitOfflineNotice.vue'
+import { installedUnits } from '@/utils/mapper/installedMapper'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
 import { useSaveReporter } from '@/composables/useSaveState'
@@ -47,7 +48,7 @@ const online = useOnline()
 const customerQuery = useCustomer(() => props.customerId)
 const houseQuery = useHouse(() => props.houseId)
 const roomsQuery = useHouseRooms(() => props.houseId)
-const installedQuery = useInstalledCount(() => props.houseId)
+const installedQuery = useInstalledGroups(() => props.houseId)
 
 const customerName = computed(() => customerQuery.data.value?.name ?? 'This customer')
 
@@ -63,7 +64,7 @@ const roomCount = computed(() =>
 )
 
 const installedCount = computed(() =>
-  installedQuery.isSuccess.value ? (installedQuery.data.value ?? 0) : null,
+  installedQuery.isSuccess.value ? installedUnits(installedQuery.data.value ?? []) : null,
 )
 
 // --- what he types and what it does -----------------------------------------

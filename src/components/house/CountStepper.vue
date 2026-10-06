@@ -31,8 +31,19 @@ const props = withDefaults(
     size?: 'phone' | 'desk'
     /** Whether a zero reads as `0` or as the `—` the read mode uses. */
     dashAtZero?: boolean
+    /**
+     * Whether the record can take the step at all.
+     *
+     * Not the same as "the figure would go below zero": the API behind this
+     * cannot empty a row or put one back to active, so the last unit of a
+     * status has nowhere to go even though the number says one. A button that
+     * cannot do anything says so by being inert, rather than by failing a
+     * second after it is pressed.
+     */
+    canDown?: boolean
+    canUp?: boolean
   }>(),
-  { tone: 'plain', size: 'desk', dashAtZero: false },
+  { tone: 'plain', size: 'desk', dashAtZero: false, canDown: true, canUp: true },
 )
 
 const emit = defineEmits<{ step: [by: number] }>()
@@ -41,8 +52,8 @@ const shown = computed(() =>
   props.dashAtZero && props.modelValue === 0 ? '—' : String(props.modelValue),
 )
 
-/** Nothing to take away. The button stays reachable and says so by being inert. */
-const atFloor = computed(() => props.modelValue <= 0)
+/** Nothing to take away — no units, or no move the record can express. */
+const atFloor = computed(() => props.modelValue <= 0 || !props.canDown)
 </script>
 
 <template>
@@ -62,6 +73,7 @@ const atFloor = computed(() => props.modelValue <= 0)
     <button
       type="button"
       class="step"
+      :disabled="!canUp"
       :aria-label="`One more. ${label}`"
       @click="emit('step', 1)"
     >

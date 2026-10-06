@@ -1,11 +1,15 @@
 import type {
   ApiHouse,
   ApiHouseUpdate,
+  ApiInstalledDevice,
   ApiInstalledGroup,
   ApiRoom,
   ApiRoomUpdate,
   ApiSpaceSlug,
 } from '@/types/api'
+
+/** The three a row can be in. There is no action that puts one back to active. */
+type ApiDeviceStatus = ApiInstalledDevice['status']
 import type { VisitNotesDraft, VisitPin, VisitRoom } from '@/types/houseVisit'
 import { toVisitNotes, toVisitRoom } from '@/utils/mapper/houseVisitMapper'
 import { apiGet, apiSend } from './http'
@@ -109,24 +113,53 @@ export const archiveRoom = (roomId: number, keepalive?: boolean) =>
   apiSend<ApiRoom>('DELETE', `/rooms/${roomId}`, undefined, undefined, keepalive)
 
 /**
- * How many devices are in the house.
+ * `GET /houses/{id}/installed-devices` — every row, whatever its status.
  *
- * There is no count on the wire — the endpoint answers with the devices grouped
- * by room — so the figure is the length of what came back. Removed ones do not
- * count as installed; the endpoint leaves them out by default and this says so
- * again rather than trusting it, since the difference is a number on screen.
+ * ⚠️ `include_removed` is not optional for this screen. The parameter is
+ * documented as letting removed rows through, but the default view also drops
+ * **faulty** ones — so without it a house with a broken bulb reads as a house
+ * with nothing wrong, on the screen whose whole job is to say a bulb is broken.
+ * The statuses are told apart here instead.
  */
-export async function fetchInstalledCount(houseId: number, signal?: AbortSignal): Promise<number> {
-  const groups = await apiGet<ApiInstalledGroup[]>(
+export const fetchInstalledGroups = (houseId: number, signal?: AbortSignal) =>
+  apiGet<ApiInstalledGroup[]>(
     `/houses/${houseId}/installed-devices`,
-    undefined,
+    { include_removed: 'true' },
     signal,
   )
-  return groups.reduce(
-    (total, group) => total + group.devices.filter((d) => d.status !== 'removed').length,
-    0,
-  )
-}
+
+// --- what the Installed tab writes ------------------------------------------
+
+/**
+ * `PATCH /installed-devices/{id}` — how many of this thing there are.
+ *
+ * ⚠️ `quantity` has an exclusive minimum of 0, and there is **no delete**. So a
+ * row can never be emptied: the last unit of a status cannot be stepped away,
+ * only flipped to another status with the actions below. See
+ * `useHouseInstalledEditor`, which guards the three steppers this blocks.
+ */
+export const setDeviceQuantity = (deviceId: number, quantity: number) =>
+  apiSend<ApiInstalledDevice>('PATCH', `/installed-devices/${deviceId}`, { quantity })
+
+/**
+ * `POST /houses/{id}/installed-devices` — a row that did not exist.
+ *
+ * `job_id` is left off, which is what makes the line read `by hand`: this
+ * endpoint is here so the owner can record houses he fitted before the jobs
+ * module landed, and a row with no job is exactly that.
+ */
+export const createDevice = (
+  houseId: number,
+  device: { item_id: number; room_id: number | null; quantity: number; status: ApiDeviceStatus },
+) => apiSend<ApiInstalledDevice>('POST', `/houses/${houseId}/installed-devices`, device)
+
+/** `POST /installed-devices/{id}/faulty` — the whole row, broken. */
+export const markDeviceFaulty = (deviceId: number) =>
+  apiSend<ApiInstalledDevice>('POST', `/installed-devices/${deviceId}/faulty`)
+
+/** `POST /installed-devices/{id}/remove` — the whole row, off the wall. */
+export const markDeviceRemoved = (deviceId: number) =>
+  apiSend<ApiInstalledDevice>('POST', `/installed-devices/${deviceId}/remove`)
 
 /** Re-exported so a caller reads the house's fields without a second import. */
 export { toVisitNotes }

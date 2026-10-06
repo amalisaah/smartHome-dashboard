@@ -28,8 +28,15 @@ export const removedToggle = (shown: boolean, count: number) =>
 export const activeCount = (count: number) => `${count} active`
 export const faultyCount = (count: number) => `${count} faulty`
 
-/** `Written by jobs. Last: 14 Aug.` */
-export const writtenByJobs = (date: string) => `Written by jobs. Last: ${date}.`
+/**
+ * `Written by jobs. Last: 14 Aug.`
+ *
+ * ⚠️ With no job behind any row — which is every row this API has returned —
+ * there is no date to name, so the sentence stops after what is true. The
+ * handoff draws only the dated form; this is the undrawn half of it.
+ */
+export const writtenByJobs = (date: string | null) =>
+  date ? `Written by jobs. Last: ${date}.` : 'Written by jobs.'
 
 export const INSTALLED_FOOTER_LEGEND =
   'in walk order · dashed = written by a job · solid = by hand · counts only, never which unit'
@@ -67,7 +74,24 @@ export const handChip = (date: string) => `by hand · ${date}`
 
 // --- the phone header --------------------------------------------------------
 
-/** `updated by job · 14 Aug` */
-export const updatedByJob = (date: string) => `updated by job · ${date}`
+/** `updated by job · 14 Aug`, or the record's own name when no job wrote it. */
+export const updatedByJob = (date: string | null) =>
+  date ? `updated by job · ${date}` : 'what is installed'
+
 /** `offline copy · 14 Aug` */
-export const offlineCopy = (date: string) => `offline copy · ${date}`
+export const offlineCopy = (date: string | null) =>
+  date ? `offline copy · ${date}` : 'offline copy'
+
+/**
+ * The mono line beside `Her house` — `customer since Aug 2026 · last job 14 Aug`.
+ *
+ * Both halves are read: the month she became a customer, and when a job last
+ * wrote this record. With no job behind any row the phrase stops after the
+ * first half rather than naming a date nothing supports.
+ */
+export const installedSummary = (since: string | null, lastJob: string | null) => {
+  const parts: string[] = []
+  if (since) parts.push(`customer since ${since}`)
+  if (lastJob) parts.push(`last job ${lastJob}`)
+  return parts.length > 0 ? parts.join(' · ') : null
+}

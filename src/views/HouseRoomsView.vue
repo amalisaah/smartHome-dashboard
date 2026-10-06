@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useCustomer } from '@/api/hooks/customers'
-import { useHouse, useHouseRooms, useInstalledCount } from '@/api/hooks/houses'
+import { useHouse, useHouseRooms, useInstalledGroups } from '@/api/hooks/houses'
 import AppLayout from '@/components/app/AppLayout.vue'
 import HouseDeskHead from '@/components/house/HouseDeskHead.vue'
 import HouseTabBar from '@/components/house/HouseTabBar.vue'
@@ -10,6 +10,7 @@ import RoomsDesk from '@/components/house/RoomsDesk.vue'
 import RoomsPhone from '@/components/house/RoomsPhone.vue'
 import { heldRoomsStatus, savedRoomsStatus } from '@/data/houseRoomsCopy'
 import { useHouseRoomsEditor } from '@/composables/useHouseRoomsEditor'
+import { installedUnits } from '@/utils/mapper/installedMapper'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
 import { useRoomEntry } from '@/composables/useRoomEntry'
@@ -44,7 +45,7 @@ const online = useOnline()
 const customerQuery = useCustomer(() => props.customerId)
 const houseQuery = useHouse(() => props.houseId)
 const roomsQuery = useHouseRooms(() => props.houseId)
-const installedQuery = useInstalledCount(() => props.houseId)
+const installedQuery = useInstalledGroups(() => props.houseId)
 
 const customerName = computed(() => customerQuery.data.value?.name ?? 'This customer')
 
@@ -53,7 +54,7 @@ const customerName = computed(() => customerQuery.data.value?.name ?? 'This cust
  * before the answer came back would be stating something about the house.
  */
 const installedCount = computed(() =>
-  installedQuery.isSuccess.value ? (installedQuery.data.value ?? 0) : null,
+  installedQuery.isSuccess.value ? installedUnits(installedQuery.data.value ?? []) : null,
 )
 
 /** The two notes beside the list. They decide what each room can take. */

@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { SText } from '@/components/atoms'
 import InstalledBeforeYouTouch from '@/components/house/InstalledBeforeYouTouch.vue'
 import InstalledPhoneRoom from '@/components/house/InstalledPhoneRoom.vue'
+import RoomsSkeleton from '@/components/house/RoomsSkeleton.vue'
+import { SBanner } from '@/components/atoms'
 import {
   activeCount,
   CORRECT_BY_HAND,
@@ -23,17 +26,32 @@ import type { BeforeYouTouch, InstalledRoom, InstalledTotals } from '@/types/ins
  * in the footer, because a hand-typed count is the exception and the footer is
  * where the screen says who wrote it.
  */
-defineProps<{
+const props = defineProps<{
   customerId: number
   houseId: number
   rooms: readonly InstalledRoom[]
   totals: InstalledTotals
   facts: BeforeYouTouch
-  lastJobDate: string
+  /** Null until a job has written anything here. */
+  lastJobDate: string | null
   showRemoved: boolean
+  loading?: boolean
+  failed?: boolean
 }>()
 
 defineEmits<{ toggleRemoved: []; correct: [roomId: number] }>()
+
+/** The whole-house group has no room to correct, so it is not a door. */
+const roomDoor = (id: number | null) => id
+
+/**
+ * Where the footer's `Correct by hand` goes. The first room of the walk, which
+ * is where the walk starts; the whole-house group is skipped because there is
+ * no room of it to correct.
+ */
+const firstRoom = computed(
+  () => props.rooms.find((room) => room.id !== null)?.id ?? null,
+)
 </script>
 
 <template>
@@ -62,24 +80,34 @@ defineEmits<{ toggleRemoved: []; correct: [roomId: number] }>()
 
     <!-- Tapping a room is the other way into correcting it, and the one that
          answers "this room" without a second question. -->
-    <button
-      v-for="room in rooms"
-      :key="room.id"
-      type="button"
-      class="room-door"
-      :aria-label="`Correct ${room.name} by hand`"
-      @click="$emit('correct', room.id)"
-    >
-      <InstalledPhoneRoom :room="room" :show-removed="showRemoved" />
-    </button>
+    <SBanner v-if="failed" variant="error" class="failure">
+      Could not read what is installed here.
+    </SBanner>
+
+    <RoomsSkeleton v-else-if="loading" size="phone" :rows="5" />
+
+    <template v-for="room in rooms" v-else :key="room.id ?? 'whole-house'">
+      <button
+        v-if="roomDoor(room.id) !== null"
+        type="button"
+        class="room-door"
+        :aria-label="`Correct ${room.name} by hand`"
+        @click="$emit('correct', room.id as number)"
+      >
+        <InstalledPhoneRoom :room="room" :show-removed="showRemoved" />
+      </button>
+      <!-- Whole-house equipment belongs to no room, so there is no room of it
+           to correct and the group is read-only here. -->
+      <InstalledPhoneRoom v-else :room="room" :show-removed="showRemoved" />
+    </template>
 
     <div class="footer">
       <SText type="cell-meta" color="fg-2-soft">{{ writtenByJobs(lastJobDate) }}</SText>
       <button
-        v-if="rooms.length > 0"
+        v-if="firstRoom !== null"
         type="button"
         class="correct"
-        @click="$emit('correct', rooms[0].id)"
+        @click="$emit('correct', firstRoom as number)"
       >
         {{ CORRECT_BY_HAND }}
       </button>
@@ -142,6 +170,10 @@ defineEmits<{ toggleRemoved: []; correct: [roomId: number] }>()
 .room-door:focus-visible {
   outline: 2px solid var(--color-action);
   outline-offset: -2px;
+}
+
+.failure {
+  margin: 16px;
 }
 
 /* The room is a door, and the button is only what makes it one: it contributes

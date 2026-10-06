@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomer } from '@/api/hooks/customers'
-import { useHouseRooms } from '@/api/hooks/houses'
+import { useHouse, useHouseRooms, useInstalledGroups } from '@/api/hooks/houses'
 import AppLayout from '@/components/app/AppLayout.vue'
 import HouseDeskHead from '@/components/house/HouseDeskHead.vue'
 import HouseTabBar from '@/components/house/HouseTabBar.vue'
 import HouseVisitPhoneHeader from '@/components/house/HouseVisitPhoneHeader.vue'
 import InstalledDesk from '@/components/house/InstalledDesk.vue'
 import InstalledPhone from '@/components/house/InstalledPhone.vue'
-import { offlineCopy, updatedByJob } from '@/data/installedCopy'
+import { installedSummary, offlineCopy, updatedByJob } from '@/data/installedCopy'
+import { useHouseInstalledEditor } from '@/composables/useHouseInstalledEditor'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
-import { useHouseInstalledStore } from '@/stores/houseInstalled'
+import { useSaveReporter } from '@/composables/useSaveState'
+import { formatMonthYear } from '@/utils/format'
+import { installedUnits, lastJobDate, toInstalledRooms } from '@/utils/mapper/installedMapper'
+import type { BeforeYouTouch } from '@/types/installed'
 import type { HeaderStatus } from '@/types/house'
 
 /**
@@ -24,11 +28,19 @@ import type { HeaderStatus } from '@/types/house'
  * stock sheet, with correction as a **mode of that table** rather than a screen
  * of its own.
  *
+ * **Three reads, and the screen is a fold of two of them.** The rooms are the
+ * walk; the installed rows are what hangs off each; the house carries the three
+ * lines a fixer reads first. The rooms are read separately and deliberately:
+ * the grouped devices endpoint only answers with rooms that hold something, and
+ * an empty room — `Back bedroom · nothing installed` — is the one the design
+ * most wants on screen. See `toInstalledRooms` for how the two meet.
+ *
  * **Counts only, and never which unit.** Nothing on either frame can express a
  * serial or a position, because the record cannot hold one.
  *
  * **No save button.** `Done` leaves the mode; a stepped count is kept as it is
- * stepped and flips its own row to `by hand` — see `@/stores/houseInstalled`.
+ * stepped and flips its own row to `by hand` — see `useHouseInstalledEditor`,
+ * and for the one move this API cannot make.
  */
 const props = defineProps<{ customerId: number; houseId: number }>()
 
@@ -37,27 +49,73 @@ const isPhone = useMediaQuery('(max-width: 899px)')
 const online = useOnline()
 
 const customerQuery = useCustomer(() => props.customerId)
+const houseQuery = useHouse(() => props.houseId)
+const roomsQuery = useHouseRooms(() => props.houseId)
+const installedQuery = useInstalledGroups(() => props.houseId)
+
 const customerName = computed(() => customerQuery.data.value?.name ?? 'This customer')
 
-const installed = useHouseInstalledStore(props.houseId)
+/** The walk, with what is on the wall in each room hung off it. */
+const record = computed(() =>
+  toInstalledRooms(roomsQuery.data.value ?? [], installedQuery.data.value ?? []),
+)
 
-/**
- * The room count in the tab bar, read rather than counted off this screen's own
- * record — block B is wired to the API and this tab is not yet, so the rooms
- * are the one figure here that is true.
- *
- * ⚠️ Until block C is wired, the `Installed` count beside it is this screen's
- * mock and will not agree with what the API would say.
- */
-const roomsQuery = useHouseRooms(() => props.houseId)
+const installed = useHouseInstalledEditor(props.houseId)
+
+watch(record, (next) => installed.seed(next), { immediate: true })
+
+/** The laptop says save state in the app bar, as every other desk screen does. */
+const save = useSaveReporter()
+watch(installed.refused, (bad) => (bad ? save.failed() : save.saved()))
+
 const roomCount = computed(() =>
   roomsQuery.isSuccess.value ? (roomsQuery.data.value?.length ?? 0) : null,
 )
 
+/** Units on the wall — the same figure every tab bar in the house shows. */
+const installedCount = computed(() =>
+  installedQuery.isSuccess.value ? installedUnits(installedQuery.data.value ?? []) : null,
+)
+
+/** When a job last wrote this record. Null until the jobs module writes one. */
+const lastJob = computed(() => lastJobDate(installedQuery.data.value ?? []))
+
+/**
+ * The three lines a fixer reads first, off the house's own notes.
+ *
+ * ⚠️ The handoff calls these "short read-only summaries"; nothing summarises
+ * anything, so they are the notes as written. A long wiring note will read long
+ * here, where the reference draws one line.
+ */
+const facts = computed<BeforeYouTouch>(() => ({
+  wiring: houseQuery.data.value?.wiring_notes ?? '',
+  internet: houseQuery.data.value?.internet_notes ?? '',
+  access: houseQuery.data.value?.access_notes ?? '',
+}))
+
+const summary = computed(() =>
+  installedSummary(
+    customerQuery.data.value ? formatMonthYear(customerQuery.data.value.createdAt) : null,
+    lastJob.value,
+  ),
+)
+
+/**
+ * `isPending` is "nothing cached yet", so a revalidation never re-skeletons —
+ * and the list a stepper has just moved is never replaced by a loading state.
+ */
+const loading = computed(
+  () => installedQuery.isPending.value && installed.rooms.value.length === 0,
+)
+
+const failed = computed(
+  () => installedQuery.isError.value && installed.rooms.value.length === 0,
+)
+
 /**
  * Off by default, on both devices: the current picture is what somebody
- * standing in the house needs, and three struck-through lines in it are three
- * things that are not there.
+ * standing in the house needs, and struck-through lines in it are things that
+ * are not there.
  */
 const showRemoved = ref(false)
 
@@ -71,8 +129,8 @@ const correcting = ref(false)
  */
 const status = computed<HeaderStatus>(() =>
   online.value
-    ? { label: updatedByJob(installed.lastJobDate), tone: 'quiet', dot: false }
-    : { label: offlineCopy(installed.lastJobDate), tone: 'risk', dot: true },
+    ? { label: updatedByJob(lastJob.value), tone: 'quiet', dot: false }
+    : { label: offlineCopy(lastJob.value), tone: 'risk', dot: true },
 )
 
 /**
@@ -105,7 +163,7 @@ const correctRoom = (roomId: number) =>
         :customer-id="customerId"
         :house-id="houseId"
         :room-count="roomCount"
-        :installed-count="installed.totals.value.active"
+        :installed-count="installedCount"
         size="phone"
       />
 
@@ -114,9 +172,11 @@ const correctRoom = (roomId: number) =>
         :house-id="houseId"
         :rooms="installed.rooms.value"
         :totals="installed.totals.value"
-        :facts="installed.beforeYouTouch"
-        :last-job-date="installed.lastJobDate"
+        :facts="facts"
+        :last-job-date="lastJob"
         :show-removed="showRemoved"
+        :loading="loading"
+        :failed="failed"
         @toggle-removed="showRemoved = !showRemoved"
         @correct="correctRoom"
       />
@@ -129,8 +189,8 @@ const correctRoom = (roomId: number) =>
         :house-id="houseId"
         :customer-name="customerName"
         :room-count="roomCount"
-        :installed-count="installed.totals.value.active"
-        :summary="installed.summaryPhrase"
+        :installed-count="installedCount"
+        :summary="summary"
       />
 
       <InstalledDesk
@@ -138,9 +198,12 @@ const correctRoom = (roomId: number) =>
         :house-id="houseId"
         :rooms="installed.rooms.value"
         :totals="installed.totals.value"
-        :facts="installed.beforeYouTouch"
+        :facts="facts"
         :show-removed="showRemoved"
         :correcting="correcting"
+        :loading="loading"
+        :failed="failed"
+        :can-step="installed.canStep"
         @toggle-removed="showRemoved = !showRemoved"
         @correct="correcting = true"
         @done="correcting = false"

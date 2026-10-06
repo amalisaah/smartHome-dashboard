@@ -30,18 +30,27 @@ import type { CountField, InstalledRoom } from '@/types/installed'
  * the room has more devices in it than that — a collapsed row says its count in
  * four characters and opens when it is the one being corrected.
  */
-defineProps<{ room: InstalledRoom }>()
+const props = defineProps<{
+  room: InstalledRoom
+  /**
+   * Whether a step can be made at all. The API cannot empty a row or put one
+   * back to `active`, so the last unit of a status has nowhere to go — the `−`
+   * is inert there rather than failing after the press. See
+   * `useHouseInstalledEditor`.
+   */
+  canStep: (deviceId: string, field: CountField, by: number) => boolean
+}>()
 
 defineEmits<{
   cancel: []
   done: []
-  step: [deviceId: number, field: CountField, by: number]
+  step: [deviceId: string, field: CountField, by: number]
 }>()
 
 /** Which row is open. One, because three steppers already fill the thumb's reach. */
-const open = ref<number | null>(null)
+const open = ref<string | null>(null)
 
-const toggle = (id: number) => (open.value = open.value === id ? null : id)
+const toggle = (id: string) => (open.value = open.value === id ? null : id)
 </script>
 
 <template>
@@ -96,6 +105,8 @@ const toggle = (id: number) => (open.value = open.value === id ? null : id)
             :label="`${COUNT_LABELS[field]}, ${device.name}`"
             :tone="field === 'faulty' ? 'risk' : field === 'removed' ? 'muted' : 'plain'"
             size="phone"
+            :can-down="props.canStep(device.id, field, -1)"
+            :can-up="props.canStep(device.id, field, 1)"
             @step="$emit('step', device.id, field, $event)"
           />
         </div>

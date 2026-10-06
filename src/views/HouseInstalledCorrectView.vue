@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useHouseRooms, useInstalledGroups } from '@/api/hooks/houses'
 import AppLayout from '@/components/app/AppLayout.vue'
 import InstalledCorrectPhone from '@/components/house/InstalledCorrectPhone.vue'
+import { useHouseInstalledEditor } from '@/composables/useHouseInstalledEditor'
 import { useMediaQuery } from '@/composables/useMediaQuery'
-import { useHouseInstalledStore } from '@/stores/houseInstalled'
+import { toInstalledRooms } from '@/utils/mapper/installedMapper'
 
 /**
  * C2 — correcting one room's counts by hand, on the phone.
@@ -24,11 +26,23 @@ const props = defineProps<{ customerId: number; houseId: number; roomId: number 
 const router = useRouter()
 const isPhone = useMediaQuery('(max-width: 899px)')
 
-const installed = useHouseInstalledStore(props.houseId)
+const roomsQuery = useHouseRooms(() => props.houseId)
+const installedQuery = useInstalledGroups(() => props.houseId)
+
+const record = computed(() =>
+  toInstalledRooms(roomsQuery.data.value ?? [], installedQuery.data.value ?? []),
+)
+
+const installed = useHouseInstalledEditor(props.houseId)
+
+watch(record, (next) => installed.seed(next), { immediate: true })
 
 const room = computed(
   () => installed.rooms.value.find((candidate) => candidate.id === props.roomId) ?? null,
 )
+
+/** Still reading. A room that is not here yet is not a room that is gone. */
+const loading = computed(() => roomsQuery.isPending.value || installedQuery.isPending.value)
 
 const installedTab = computed(() => ({
   name: 'house-installed',
@@ -39,9 +53,9 @@ const close = () => router.push(installedTab.value)
 
 /** The desk has no such screen, and a room that is gone has nothing to correct. */
 watch(
-  [isPhone, room],
-  ([phone, found]) => {
-    if (!phone || !found) router.replace(installedTab.value)
+  [isPhone, room, loading],
+  ([phone, found, reading]) => {
+    if (!phone || (!found && !reading)) router.replace(installedTab.value)
   },
   { immediate: true },
 )
@@ -52,6 +66,7 @@ watch(
     <InstalledCorrectPhone
       v-if="room && isPhone"
       :room="room"
+      :can-step="installed.canStep"
       @cancel="close"
       @done="close"
       @step="installed.step"

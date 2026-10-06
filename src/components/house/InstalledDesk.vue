@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { SButton, SText } from '@/components/atoms'
+import { SBanner, SButton, SText } from '@/components/atoms'
 import InstalledBeforeYouTouch from '@/components/house/InstalledBeforeYouTouch.vue'
 import InstalledDeskRoom from '@/components/house/InstalledDeskRoom.vue'
+import RoomsSkeleton from '@/components/house/RoomsSkeleton.vue'
 import {
   activeCount,
   CORRECT_BY_HAND,
@@ -41,13 +42,22 @@ defineProps<{
   facts: BeforeYouTouch
   showRemoved: boolean
   correcting: boolean
+  loading?: boolean
+  failed?: boolean
+  /**
+   * Whether a step can be made at all. The API cannot empty a row or put one
+   * back to `active`, so the last unit of a status has nowhere to go — the `−`
+   * is inert there rather than failing after the press. See
+   * `useHouseInstalledEditor`.
+   */
+  canStep: (deviceId: string, field: CountField, by: number) => boolean
 }>()
 
 defineEmits<{
   toggleRemoved: []
   correct: []
   done: []
-  step: [deviceId: number, field: CountField, by: number]
+  step: [deviceId: string, field: CountField, by: number]
 }>()
 </script>
 
@@ -98,12 +108,20 @@ defineEmits<{
           <SText type="column-header" color="micro">Written by</SText>
         </div>
 
+        <SBanner v-if="failed" variant="error" class="failure">
+          Could not read what is installed here.
+        </SBanner>
+
+        <RoomsSkeleton v-else-if="loading" size="desk" :rows="5" />
+
         <InstalledDeskRoom
           v-for="room in rooms"
-          :key="room.id"
+          v-else"
+          :key="room.id ?? 'whole-house'"
           :room="room"
           :show-removed="showRemoved"
           :correcting="correcting"
+          :can-step="canStep"
           @step="(deviceId, field, by) => $emit('step', deviceId, field, by)"
         />
       </div>
@@ -224,6 +242,10 @@ defineEmits<{
 
 .centred {
   text-align: center;
+}
+
+.failure {
+  margin: 16px 0;
 }
 
 .footer {

@@ -21,7 +21,17 @@ import { isRemovedOnly, type CountField, type InstalledDevice } from '@/types/in
  * removed — a stepper has to show the number it is stepping, and removed starts
  * from nothing often enough that a dash is the honest resting state.
  */
-const props = defineProps<{ device: InstalledDevice; correcting: boolean }>()
+const props = defineProps<{
+  device: InstalledDevice
+  correcting: boolean
+  /**
+   * Whether a step can be made at all. The API cannot empty a row or put one
+   * back to `active`, so the last unit of a status has nowhere to go — the `−`
+   * is inert there rather than failing after the press. See
+   * `useHouseInstalledEditor`.
+   */
+  canStep: (deviceId: string, field: CountField, by: number) => boolean
+}>()
 
 defineEmits<{ step: [field: CountField, by: number] }>()
 
@@ -45,12 +55,16 @@ const gone = computed(() => isRemovedOnly(props.device))
       <CountStepper
         :model-value="device.active"
         :label="`${COUNT_LABELS.active}, ${device.name}`"
+        :can-down="props.canStep(device.id, 'active', -1)"
+        :can-up="props.canStep(device.id, 'active', 1)"
         @step="$emit('step', 'active', $event)"
       />
       <CountStepper
         :model-value="device.faulty"
         :label="`${COUNT_LABELS.faulty}, ${device.name}`"
         tone="risk"
+        :can-down="props.canStep(device.id, 'faulty', -1)"
+        :can-up="props.canStep(device.id, 'faulty', 1)"
         @step="$emit('step', 'faulty', $event)"
       />
       <CountStepper
@@ -58,6 +72,8 @@ const gone = computed(() => isRemovedOnly(props.device))
         :label="`${COUNT_LABELS.removed}, ${device.name}`"
         tone="muted"
         dash-at-zero
+        :can-down="props.canStep(device.id, 'removed', -1)"
+        :can-up="props.canStep(device.id, 'removed', 1)"
         @step="$emit('step', 'removed', $event)"
       />
     </template>
