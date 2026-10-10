@@ -1,8 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AllocationPreviewView from '@/views/AllocationPreviewView.vue'
 import CatalogueListView from '@/views/CatalogueListView.vue'
+import CustomerDetailView from '@/views/CustomerDetailView.vue'
+import CustomerListView from '@/views/CustomerListView.vue'
+import CustomerNewView from '@/views/CustomerNewView.vue'
+import CustomerPlaceholderView from '@/views/CustomerPlaceholderView.vue'
 import DesignSystemView from '@/views/DesignSystemView.vue'
 import GroupsMarkupView from '@/views/GroupsMarkupView.vue'
+import HouseInstalledCorrectView from '@/views/HouseInstalledCorrectView.vue'
+import HouseInstalledView from '@/views/HouseInstalledView.vue'
+import HouseNewView from '@/views/HouseNewView.vue'
+import HouseRoomsView from '@/views/HouseRoomsView.vue'
+import HouseVisitView from '@/views/HouseVisitView.vue'
 import ItemDetailView from '@/views/ItemDetailView.vue'
 import ItemEditView from '@/views/ItemEditView.vue'
 import ItemNewView from '@/views/ItemNewView.vue'
@@ -72,6 +81,96 @@ export const router = createRouter({
       name: 'shipment-preview',
       component: AllocationPreviewView,
       props: (route) => ({ shipmentId: Number(route.params.id) }),
+    },
+    {
+      path: '/customers',
+      name: 'customers',
+      component: CustomerListView,
+    },
+    {
+      // A customer he has just started has no id: `POST /customers` gives her a
+      // number when he saves, not the click that opened a blank form. Declared
+      // above `:id` so it wins.
+      path: '/customers/new',
+      name: 'customer-new',
+      component: CustomerNewView,
+      // The name he could not find is the name he is about to enter.
+      props: (route) => ({
+        initialName: typeof route.query.name === 'string' ? route.query.name : '',
+      }),
+    },
+    {
+      // Her customer page — module 5, block F.
+      path: '/customers/:id(\\d+)',
+      name: 'customer-detail',
+      component: CustomerDetailView,
+      props: (route) => ({ customerId: Number(route.params.id) }),
+    },
+    {
+      // Her house, which is where a phone row lands, and where "Start her house"
+      // goes when she has none to name yet. Out of scope here.
+      path: '/customers/:id(\\d+)/house',
+      name: 'customer-house',
+      component: CustomerPlaceholderView,
+      props: (route) => ({ customerId: Number(route.params.id), destination: 'house' }),
+    },
+    {
+      // A house she is about to have. It has no id yet — `POST
+      // /customers/{id}/houses` mints one when the form is saved, not when the
+      // button is pressed. Declared above `:houseId` for the same reason
+      // `/items/new` is, though the `\d+` there would not match it anyway.
+      path: '/customers/:id(\\d+)/houses/new',
+      name: 'house-new',
+      component: HouseNewView,
+      props: (route) => ({ customerId: Number(route.params.id) }),
+    },
+    {
+      // One named house of hers, on its Visit notes tab — module 5, block A. A
+      // customer may have several, so a row in her house list has to address
+      // the one it names rather than "her house", even though that is what the
+      // screen is called once he is on it.
+      path: '/customers/:id(\\d+)/houses/:houseId(\\d+)',
+      name: 'house-detail',
+      component: HouseVisitView,
+      props: (route) => ({
+        customerId: Number(route.params.id),
+        houseId: Number(route.params.houseId),
+      }),
+    },
+    {
+      // The house's second tab — module 5, block B. Where `Walk the rooms →`
+      // and `Edit rooms` both land.
+      path: '/customers/:id(\\d+)/houses/:houseId(\\d+)/rooms',
+      name: 'house-rooms',
+      component: HouseRoomsView,
+      props: (route) => ({
+        customerId: Number(route.params.id),
+        houseId: Number(route.params.houseId),
+      }),
+    },
+    {
+      // The third — module 5, block C.
+      path: '/customers/:id(\\d+)/houses/:houseId(\\d+)/installed',
+      name: 'house-installed',
+      component: HouseInstalledView,
+      props: (route) => ({
+        customerId: Number(route.params.id),
+        houseId: Number(route.params.houseId),
+      }),
+    },
+    {
+      // C2, correcting one room's counts by hand. Its own address, so the back
+      // gesture closes the correction rather than leaving the house — the same
+      // reason the phone's item form has one. The laptop has no such screen:
+      // correcting there is a mode of C3's table, and the view redirects.
+      path: '/customers/:id(\\d+)/houses/:houseId(\\d+)/installed/:roomId(\\d+)/correct',
+      name: 'house-installed-correct',
+      component: HouseInstalledCorrectView,
+      props: (route) => ({
+        customerId: Number(route.params.id),
+        houseId: Number(route.params.houseId),
+        roomId: Number(route.params.roomId),
+      }),
     },
     {
       path: '/groups',

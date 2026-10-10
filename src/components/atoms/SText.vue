@@ -14,6 +14,7 @@ const props = defineProps<{
     | 'app-title'
     | 'body'
     | 'list-title'
+    | 'row-name'
     | 'ui'
     | 'cell'
     | 'meta'
@@ -34,7 +35,20 @@ const props = defineProps<{
     | 'money'
     | 'list-meta'
     | 'cell-meta'
-  color?: 'fg' | 'fg-2' | 'fg-2-soft' | 'micro' | 'fg-3' | 'action' | 'risk' | 'inverse' | 'muted-dark'
+  /** `action-ink` is the action hue at text weight; `action` is the drawn colour. */
+  color?:
+    | 'fg'
+    | 'fg-2'
+    | 'fg-2-soft'
+    | 'micro'
+    | 'fg-3'
+    | 'action'
+    | 'action-ink'
+    | 'risk'
+    /** `risk` on a dark ground — the phone header's no-signal line. */
+    | 'risk-on-dark'
+    | 'inverse'
+    | 'muted-dark'
   as?: string
 }>()
 
@@ -49,6 +63,7 @@ const BLOCK_TYPES = new Set([
   'pane-title',
   'body',
   'list-title',
+  'row-name',
   'meta',
   'label',
   'caption',
@@ -160,10 +175,20 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
   color: var(--color-fg);
 }
 
-/* Name line of a phone list row. */
+/* Sans at 15px carrying weight: the name line of a phone list row, and the one
+   line a block on a phone is about — a banner's own sentence. */
 .s-text--list-title {
   font-family: var(--font-sans);
   font-size: 15px;
+  font-weight: 500;
+  color: var(--color-fg);
+}
+
+/* The name a phone row exists to find. One step up from `list-title`, which
+   shares its row with a figure; here the name is the whole row. */
+.s-text--row-name {
+  font-family: var(--font-sans);
+  font-size: 16px;
   font-weight: 500;
   color: var(--color-fg);
 }
@@ -202,7 +227,9 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
   color: var(--color-fg-2);
 }
 
-/* Tab-bar label. Active tabs carry weight 600 from the tab bar itself. */
+/* Sans at 13px carrying weight — the label scale under `ui`. A tab-bar label
+   (active tabs take weight 600 from the tab bar itself), and the name or link
+   inside a small box on the laptop, where 14px would be the box's loudest thing. */
 .s-text--tab {
   font-family: var(--font-sans);
   font-size: 13px;
@@ -351,7 +378,9 @@ const tag = computed(() => props.as ?? (BLOCK_TYPES.has(props.type ?? 'body') ? 
 .s-text--color-micro       { color: var(--color-micro); }
 .s-text--color-fg-3        { color: var(--color-fg-3); }
 .s-text--color-action      { color: var(--color-action); }
+.s-text--color-action-ink  { color: var(--color-action-ink); }
 .s-text--color-risk        { color: var(--color-risk); }
+.s-text--color-risk-on-dark { color: var(--color-risk-on-dark); }
 .s-text--color-inverse     { color: var(--color-inverse); }
 .s-text--color-muted-dark  { color: var(--color-muted-dark); }
 </style>

@@ -16,11 +16,17 @@ defineProps<{
     | 'received'
     | 'neutral'
     | 'missing'
+    | 'quoted'
+    | 'customer'
+    | 'dormant'
   /**
    * `row` is the in-row flag chip: lowercase, untracked, tighter box.
    * `state` is the sentence-shaped chip — `draft · arrives 24 Sep` — at 11px.
+   * `status` is the customer list's standing status chip; `inline` is the same
+   * chip inside a line of prose or stacked under a name; `countdown` is the
+   * 10px derived chip that sits under a figure — `dormant in 8 d`.
    */
-  size?: 'default' | 'row' | 'state'
+  size?: 'default' | 'row' | 'state' | 'status' | 'inline' | 'countdown'
 }>()
 </script>
 
@@ -66,6 +72,60 @@ defineProps<{
   /* Sentence leading, not the tracked-label kind: these chips sit inline with
      13px prose and have to share its baseline rhythm. */
   line-height: normal;
+}
+
+/* A status is a word, not a category label, so it drops the tracking and the
+   uppercase the category chips carry. */
+.s-badge--size-status {
+  font-size: 11px;
+  padding: 4px 8px;
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: normal;
+}
+
+/* The same chip inside a line of prose — "Starts as `enquiry`". One step
+   tighter, so the line keeps the height its text gives it. */
+.s-badge--size-inline {
+  font-size: 11px;
+  padding: 3px 7px;
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: normal;
+}
+
+/* A derived value under the figure it qualifies — `dormant in 8 d`. */
+.s-badge--size-countdown {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: var(--radius-flag);
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: normal;
+}
+
+/* The only filled status, because it is the only settled one. */
+.s-badge--customer {
+  background: var(--color-fg);
+  color: var(--color-bg);
+  border: none;
+}
+
+/* A quote is out and the ball is in her court — the one status waiting on
+   someone. The action hue outlined, its label at text weight. */
+.s-badge--quoted {
+  background: transparent;
+  color: var(--color-action-ink);
+  border-color: var(--color-action);
+}
+
+/* Dormant, and the countdown towards it. Dashed `--fg-3` because the calendar
+   set it and no click of his can. `derived` is the same border in its own ink;
+   this reads at label weight, being a word he acts on rather than a figure. */
+.s-badge--dormant {
+  background: transparent;
+  color: var(--color-fg-2-soft);
+  border: 1px dashed var(--color-fg-3);
 }
 
 /* Dashed means not-yet: nothing here has happened to stock or costs. */

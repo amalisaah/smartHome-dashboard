@@ -25,6 +25,7 @@ const ONE_DP = new Intl.NumberFormat('en-US', {
  */
 const SHORT_DAY = new Intl.DateTimeFormat('en-GB', { day: 'numeric' })
 const SHORT_MONTH = new Intl.DateTimeFormat('en-US', { month: 'short' })
+const WEEKDAY = new Intl.DateTimeFormat('en-GB', { weekday: 'short' })
 
 /** Money inside a table cell or a phone row — two decimals, no currency mark. */
 export const formatMoney = (pesewas: number) => TWO_DP.format(pesewas / 100)
@@ -66,10 +67,41 @@ export const formatLead = (days: number) => `${days} d`
 
 export const formatMargin = (percent: number) => `${percent}%`
 
+/**
+ * A dropped pin as it reads on screen — `5.7043, −0.1662`.
+ *
+ * Four decimals because that is about 11 m, which is the precision a phone's GPS
+ * actually has; more would be a claim the device cannot support. The minus is
+ * the typographic one (U+2212, not a hyphen): these sit in mono beside the
+ * accuracy and the time, and a hyphen reads a third of the width.
+ */
+const COORD = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 4,
+  maximumFractionDigits: 4,
+  signDisplay: 'never',
+})
+
+const coord = (value: number) => `${value < 0 ? '−' : ''}${COORD.format(value)}`
+
+export const formatCoords = (lat: number, lng: number) => `${coord(lat)}, ${coord(lng)}`
+
+/** How sure the device was — `±8 m`. */
+export const formatAccuracy = (metres: number) => `±${WHOLE.format(metres)} m`
+
 /** An ISO date-time as `24 Sep` — chips and captions. */
 export const formatShortDate = (iso: string) => {
   const date = new Date(iso)
   return `${SHORT_DAY.format(date)} ${SHORT_MONTH.format(date)}`
+}
+
+/** `Wed 30 Sep` — the app bar's date line, which is today's and nothing else. */
+export const formatWeekdayDate = (date = new Date()) =>
+  `${WEEKDAY.format(date)} ${SHORT_DAY.format(date)} ${SHORT_MONTH.format(date)}`
+
+/** An ISO date-time as `Aug 2026` — a month is as precise as "since" gets. */
+export const formatMonthYear = (iso: string) => {
+  const date = new Date(iso)
+  return `${SHORT_MONTH.format(date)} ${date.getFullYear()}`
 }
 
 /** Splits `text` into matched / unmatched runs for the search highlight. */
