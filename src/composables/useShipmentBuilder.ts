@@ -9,6 +9,7 @@ import {
 } from '@/api/shipments'
 import type { ApiShipmentDetail, ApiShipmentLineWrite, ApiShipmentUpdate } from '@/types/api'
 import type { CatalogueItem } from '@/types/catalogue'
+import type { SaveState } from '@/composables/useSaveState'
 import {
   toApiDate,
   toCount,
@@ -195,7 +196,7 @@ const draftIsEmpty = computed(
 // --- writing it back --------------------------------------------------------
 
 /** The dot in the header: a state, never a spinner. */
-export type SaveState = 'idle' | 'saving' | 'saved' | 'failed'
+export type { SaveState }
 
 const saveState = ref<SaveState>('idle')
 const saveError = ref<string | null>(null)

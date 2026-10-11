@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import AppBar from '@/components/app/AppBar.vue'
 import AppTabBar from '@/components/app/AppTabBar.vue'
 import { useOnline } from '@/composables/useOnline'
-import { SAVE_STATUS_DATE } from '@/data/catalogueMock'
+import { saveState } from '@/composables/useSaveState'
+import { formatWeekdayDate } from '@/utils/format'
 
 withDefaults(
   defineProps<{
@@ -18,18 +19,30 @@ withDefaults(
 
 const online = useOnline()
 
-const status = computed(() =>
-  online.value
-    ? `${SAVE_STATUS_DATE} · all changes saved`
-    : 'No connection — showing last known counts',
-)
+/** Today's, read once on mount: the bar dates the session, not the minute. */
+const today = formatWeekdayDate()
+
+/**
+ * What the bar says about the session. Losing the connection outranks a save
+ * state, because it explains it — and a write that failed says so rather than
+ * letting "all changes saved" stand over an unsaved change.
+ */
+const status = computed(() => {
+  if (!online.value) return 'No connection — showing last known counts'
+  if (saveState.value === 'saving') return `${today} · saving`
+  if (saveState.value === 'failed') return `${today} · not saved`
+  // `idle` and `saved` read the same: nothing is outstanding either way.
+  return `${today} · all changes saved`
+})
+
+const alarmed = computed(() => !online.value || saveState.value === 'failed')
 </script>
 
 <template>
   <main class="page">
     <div class="frame">
       <template v-if="chrome">
-        <AppBar :status="status" :offline="!online" />
+        <AppBar :status="status" :alarmed="alarmed" />
         <AppTabBar />
       </template>
       <slot />

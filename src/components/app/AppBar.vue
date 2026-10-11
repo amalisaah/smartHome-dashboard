@@ -3,8 +3,11 @@ import { SText } from '@/components/atoms'
 
 defineProps<{
   status: string
-  /** Offline swaps the status text to risk. Nothing else on the screen changes. */
-  offline?: boolean
+  /**
+   * The status is reporting something wrong — no connection, or a write that
+   * did not land. It takes risk ink; nothing else on the screen changes.
+   */
+  alarmed?: boolean
 }>()
 </script>
 
@@ -13,7 +16,7 @@ defineProps<{
     <SText type="app-title" color="inverse">Smart Home Ops</SText>
     <SText
       type="cell-meta"
-      :color="offline ? 'risk' : 'muted-dark'"
+      :color="alarmed ? 'risk' : 'muted-dark'"
       role="status"
       aria-live="polite"
     >

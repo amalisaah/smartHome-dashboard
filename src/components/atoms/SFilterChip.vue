@@ -4,8 +4,13 @@ defineProps<{
    * `risk-filled` is the loud chip (low stock), `risk-outlined` the quiet one
    * (needs attention). The emphasis is fixed per chip — it marks severity, not
    * selection; selection is the ring.
+   *
+   * `choice` is the exception because it is a different control: a
+   * *single-select* set, not independent toggles. Exactly one is always chosen,
+   * so the fill can say which, and a ring on a chip that cannot be unchosen says
+   * nothing. It carries no severity, hence the neutral inks.
    */
-  variant?: 'risk-filled' | 'risk-outlined' | 'neutral-outlined'
+  variant?: 'risk-filled' | 'risk-outlined' | 'neutral-outlined' | 'choice'
   size?: 'md' | 'phone'
   selected?: boolean
 }>()
@@ -85,6 +90,34 @@ defineProps<{
   background: var(--color-surface);
 }
 
+/* One point larger than the toggles: it labels the whole list rather than
+   flagging a condition in it. */
+.s-chip--choice {
+  font-size: 12px;
+  background: var(--color-bg);
+  border-color: var(--color-line);
+  color: var(--color-fg-2);
+}
+
+.s-chip--choice:hover:not(.s-chip--selected) {
+  border-color: var(--color-fg-3);
+}
+
+/* The fill is the selection here, so no ring — see the variant note. */
+.s-chip--choice.s-chip--selected {
+  background: var(--color-fg);
+  border-color: var(--color-fg);
+  color: var(--color-bg);
+  box-shadow: none;
+}
+
+/* The drawn box is 40px; the 48px target comes from the ::after overlay, so the
+   chips stay 8px apart instead of being forced to a 48px rhythm. */
+.s-chip--choice.s-chip--phone {
+  padding: 0 12px;
+  min-height: 40px;
+}
+
 /* Selected — a ring held off the chip by the page ground, so it reads the same
    whether the chip underneath is filled or outlined. */
 .s-chip--selected {
@@ -100,7 +133,13 @@ defineProps<{
   outline-offset: -1px;
 }
 
-.s-chip--neutral-outlined:focus-visible {
+.s-chip--neutral-outlined:focus-visible,
+.s-chip--choice:focus-visible {
   outline-color: var(--color-action);
+}
+
+/* A filled chip is `--fg`, so an inset ring would be lost in it. */
+.s-chip--choice.s-chip--selected:focus-visible {
+  outline-offset: 2px;
 }
 </style>

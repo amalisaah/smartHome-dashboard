@@ -202,6 +202,236 @@ export interface ApiItemCreate {
   image_url?: string
 }
 
+// --- customers --------------------------------------------------------------
+
+/** The four words, in these spellings. */
+export type ApiCustomerStatus = 'enquiry' | 'quoted' | 'customer' | 'dormant'
+
+/** `GET /customers`, `GET /customers/{id}`, and what a create or a contact answers with. */
+export interface ApiCustomer {
+  id: number
+  /** A placeholder once anonymised. */
+  name: string
+  phone: string | null
+  alt_phone: string | null
+  email: string | null
+  /**
+   * The *effective* status. `dormant` is derived on read from
+   * `stored_status = quoted` plus a stale `last_contact_at`, which is why
+   * logging any contact clears it with no write to this field.
+   */
+  status: ApiCustomerStatus
+  /** The status actually on the row. Never `dormant`. */
+  stored_status: ApiCustomerStatus
+  /** The latest contact-log entry's `occurred_at`. Derived, never writable. */
+  last_contact_at: string | null
+  /** Whole days since `last_contact_at`; null when never contacted. */
+  days_since_last_contact: number | null
+  source: string | null
+  notes: string | null
+  anonymised_at: string | null
+  archived_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** `POST /customers`. Only `name` is required; `dormant` is rejected. */
+export interface ApiCustomerCreate {
+  name: string
+  phone?: string | null
+  alt_phone?: string | null
+  email?: string | null
+  status?: Exclude<ApiCustomerStatus, 'dormant'>
+  source?: string | null
+  notes?: string | null
+}
+
+/**
+ * `PATCH /customers/{id}`. Partial: an omitted field is left untouched and an
+ * explicit `null` clears a nullable one — which is the difference between "I am
+ * not editing her number" and "she has no number".
+ *
+ * `status` is accepted here but deliberately absent below: block F's edit form
+ * is name and phone, and `dormant` would be rejected anyway, being derived.
+ * **An anonymised customer cannot be edited at all.**
+ */
+export interface ApiCustomerUpdate {
+  name?: string
+  phone?: string | null
+  alt_phone?: string | null
+  email?: string | null
+  source?: string | null
+  notes?: string | null
+}
+
+export type ApiContactKind = 'call' | 'whatsapp' | 'visit' | 'quote_sent' | 'other'
+
+/** An entry of `GET /customers/{id}/contact-logs`. */
+export interface ApiContactLogEntry {
+  id: number
+  customer_id: number
+  kind: ApiContactKind
+  note: string | null
+  occurred_at: string
+}
+
+/** `POST /customers/{id}/contact` — the customer comes back already moved. */
+export interface ApiContactResult {
+  entry: ApiContactLogEntry
+  customer: ApiCustomer
+}
+
+/**
+ * Structured because it is quotable: no internet means a router, an extender and
+ * sometimes a subscription, and that is money on a quote.
+ */
+export type ApiInternetQuality = 'reliable' | 'weak' | 'none' | 'unknown'
+
+/**
+ * An item of `GET /customers/{id}/houses`.
+ *
+ * Note what is **not** here: no room count, no device count, no fault count.
+ * Those live behind `GET /houses/{id}/composition` and
+ * `GET /houses/{id}/installed-devices`, one call per house.
+ *
+ * Note also what is here and must never reach the customer screen —
+ * `address_text`, `landmark_directions`, `gps_lat`, `gps_lng`, `access_notes`.
+ * Those belong inside the house, and block F says so on the screen itself.
+ */
+export interface ApiHouse {
+  id: number
+  customer_id: number
+  /** Short name, e.g. "Spintex house". */
+  label: string | null
+  address_text: string | null
+  landmark_directions: string | null
+  gps_lat: number | null
+  gps_lng: number | null
+  access_notes: string | null
+  /** Whether the wall boxes have a neutral wire — the expensive thing to learn. */
+  wiring_notes: string | null
+  internet_quality: ApiInternetQuality
+  internet_notes: string | null
+  notes: string | null
+  /** Soft-delete timestamp. */
+  archived_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * `POST /customers/{id}/houses`. Nothing is required — "a house is its own
+ * record pointing at a customer", and what is known about it on the day it is
+ * created is whatever the visit turned up.
+ */
+export interface ApiHouseCreate {
+  label?: string | null
+  address_text?: string | null
+  landmark_directions?: string | null
+  gps_lat?: number | null
+  gps_lng?: number | null
+  access_notes?: string | null
+  wiring_notes?: string | null
+  internet_quality?: ApiInternetQuality
+  internet_notes?: string | null
+  notes?: string | null
+}
+
+/**
+ * `PATCH /houses/{id}`. Every field optional; omitted fields are left untouched,
+ * which is what lets a screen with no save button send only what changed.
+ */
+export interface ApiHouseUpdate {
+  label?: string | null
+  address_text?: string | null
+  landmark_directions?: string | null
+  gps_lat?: number | null
+  gps_lng?: number | null
+  access_notes?: string | null
+  wiring_notes?: string | null
+  internet_quality?: ApiInternetQuality
+  internet_notes?: string | null
+  notes?: string | null
+}
+
+/**
+ * The space a room counts as, for package expansion.
+ *
+ * Closed, and **not nullable**: every room has one. `whole_house` exists in the
+ * packages module and is deliberately absent here — the API rejects it on a
+ * room with a 400, because it is a pseudo-space every house has exactly one of
+ * and never a room.
+ */
+export type ApiSpaceSlug =
+  | 'bedroom'
+  | 'living_room'
+  | 'kitchen'
+  | 'bathroom'
+  | 'outdoor'
+  | 'corridor'
+
+/** An item of `GET /houses/{id}/rooms`, in `sort_order`. */
+export interface ApiRoom {
+  id: number
+  house_id: number
+  /** Rooms are named, not counted — `Master`, `Kids room`, `Back bedroom`. */
+  name: string
+  space_slug: ApiSpaceSlug
+  /** Ascending display order, 0 first. */
+  sort_order: number
+  archived_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** `PATCH /rooms/{id}`. */
+export interface ApiRoomUpdate {
+  name?: string
+  space_slug?: ApiSpaceSlug
+  sort_order?: number
+}
+
+/** One device record from `GET /houses/{id}/installed-devices`. */
+export interface ApiInstalledDevice {
+  id: number
+  house_id: number
+  /** Null for whole-house equipment — the hub, the router, the door lock. */
+  room_id: number | null
+  item_id: number
+  item_name: string | null
+  /** Per item per room; individual units are not tracked. */
+  quantity: number
+  status: 'active' | 'removed' | 'faulty'
+  installed_at: string | null
+  removed_at: string | null
+  job_id: number | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * `GET /houses/{id}/installed-devices` — grouped by room, rooms in `sort_order`,
+ * with the whole-house group (`room: null`) last. There is no scalar count on
+ * the wire; a count is the length of what comes back.
+ */
+export interface ApiInstalledGroup {
+  room: {
+    id: number
+    name: string
+    space_slug: ApiSpaceSlug
+    archived_at: string | null
+  } | null
+  devices: ApiInstalledDevice[]
+}
+
+/** `GET /settings/dormancy`. */
+export interface ApiDormancySettings {
+  dormant_after_days: number
+  /** The shipped default, for a "reset" affordance. */
+  default_dormant_after_days: number
+}
+
 /** The error envelope every route shares. */
 export interface ApiError {
   statusCode: number
