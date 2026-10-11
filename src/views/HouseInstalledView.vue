@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useCatalogueItems } from '@/api/hooks/catalogue'
 import { useCustomer } from '@/api/hooks/customers'
 import { useHouse, useHouseRooms, useInstalledGroups } from '@/api/hooks/houses'
 import AppLayout from '@/components/app/AppLayout.vue'
@@ -112,6 +113,24 @@ const failed = computed(
   () => installedQuery.isError.value && installed.rooms.value.length === 0,
 )
 
+
+/**
+ * The catalogue, for the per-room search in correction mode.
+ *
+ * `GET /items` is unpaginated, so it is read once and the field narrows it in
+ * memory — a keystroke costs no round trip, which is the same bargain the
+ * catalogue list itself makes. Its own read, its own fate: a catalogue that
+ * will not load leaves the record perfectly readable and only the search empty.
+ */
+const catalogueQuery = useCatalogueItems()
+
+const catalogue = computed(() =>
+  (catalogueQuery.data.value ?? []).map((item) => ({
+    label: item.name ?? `Item #${item.id}`,
+    value: item.id,
+  })),
+)
+
 /**
  * Off by default, on both devices: the current picture is what somebody
  * standing in the house needs, and struck-through lines in it are things that
@@ -204,10 +223,12 @@ const correctRoom = (roomId: number) =>
         :loading="loading"
         :failed="failed"
         :can-step="installed.canStep"
+        :catalogue="catalogue"
         @toggle-removed="showRemoved = !showRemoved"
         @correct="correcting = true"
         @done="correcting = false"
         @step="installed.step"
+        @add="installed.addDevice"
       />
     </template>
   </AppLayout>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useCatalogueItems } from '@/api/hooks/catalogue'
 import { useHouseRooms, useInstalledGroups } from '@/api/hooks/houses'
 import AppLayout from '@/components/app/AppLayout.vue'
 import InstalledCorrectPhone from '@/components/house/InstalledCorrectPhone.vue'
@@ -44,6 +45,24 @@ const room = computed(
 /** Still reading. A room that is not here yet is not a room that is gone. */
 const loading = computed(() => roomsQuery.isPending.value || installedQuery.isPending.value)
 
+
+/**
+ * The catalogue, for the per-room search in correction mode.
+ *
+ * `GET /items` is unpaginated, so it is read once and the field narrows it in
+ * memory — a keystroke costs no round trip, which is the same bargain the
+ * catalogue list itself makes. Its own read, its own fate: a catalogue that
+ * will not load leaves the record perfectly readable and only the search empty.
+ */
+const catalogueQuery = useCatalogueItems()
+
+const catalogue = computed(() =>
+  (catalogueQuery.data.value ?? []).map((item) => ({
+    label: item.name ?? `Item #${item.id}`,
+    value: item.id,
+  })),
+)
+
 const installedTab = computed(() => ({
   name: 'house-installed',
   params: { id: props.customerId, houseId: props.houseId },
@@ -67,9 +86,11 @@ watch(
       v-if="room && isPhone"
       :room="room"
       :can-step="installed.canStep"
+      :catalogue="catalogue"
       @cancel="close"
       @done="close"
       @step="installed.step"
+      @add="installed.addDevice"
     />
   </AppLayout>
 </template>
