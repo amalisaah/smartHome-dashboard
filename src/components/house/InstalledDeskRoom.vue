@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { SInput, SText } from '@/components/atoms'
+import { SCombobox, SText } from '@/components/atoms'
 import InstalledDeskRow from '@/components/house/InstalledDeskRow.vue'
 import {
   activeCount,
@@ -41,9 +41,27 @@ const props = defineProps<{
    * `useHouseInstalledEditor`.
    */
   canStep: (deviceId: string, field: CountField, by: number) => boolean
+  /**
+   * The catalogue, as this field offers it. Read once by the screen and
+   * filtered in the field: `GET /items` is unpaginated, so a keystroke narrows
+   * the list without a round trip — the same bargain the catalogue list makes.
+   */
+  catalogue: readonly { label: string; value: number }[]
 }>()
 
-defineEmits<{ step: [deviceId: string, field: CountField, by: number] }>()
+const emit = defineEmits<{
+  step: [deviceId: string, field: CountField, by: number]
+  add: [roomId: number | null, itemId: number]
+}>()
+
+/**
+ * Picking an item puts one of it on this room's wall and empties the field for
+ * the next — there is no second button to press afterwards, for the same reason
+ * there is no save button anywhere on this screen.
+ */
+function pick(itemId: number | string) {
+  if (typeof itemId === 'number') emit('add', props.room.id, itemId)
+}
 
 const faulted = computed(() => roomHasFault(props.room))
 const empty = computed(() => roomIsEmpty(props.room))
@@ -85,17 +103,17 @@ const meta = computed(() => {
       @step="(field, by) => $emit('step', device.id, field, by)"
     />
 
-    <!-- ⚠️ A stub. The catalogue's search results are out of this handoff's
-         scope; the field is drawn, focuses and firms as specified, and picking
-         an item is where block C meets the catalogue module. -->
     <div v-if="correcting" class="add">
-      <SInput
-        :model-value="''"
+      <SCombobox
+        :model-value="undefined"
+        :options="[...catalogue]"
         :placeholder="catalogueSearchDesk(room.name)"
         :aria-label="`Add to ${room.name} from catalogue`"
-        size="split"
+        size="row"
         dashed
+        hide-chevron
         class="search"
+        @update:model-value="pick"
       />
     </div>
 

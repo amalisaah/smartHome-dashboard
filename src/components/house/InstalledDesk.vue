@@ -51,6 +51,12 @@ defineProps<{
    * `useHouseInstalledEditor`.
    */
   canStep: (deviceId: string, field: CountField, by: number) => boolean
+  /**
+   * The catalogue, as this field offers it. Read once by the screen and
+   * filtered in the field: `GET /items` is unpaginated, so a keystroke narrows
+   * the list without a round trip — the same bargain the catalogue list makes.
+   */
+  catalogue: readonly { label: string; value: number }[]
 }>()
 
 defineEmits<{
@@ -58,6 +64,7 @@ defineEmits<{
   correct: []
   done: []
   step: [deviceId: string, field: CountField, by: number]
+  add: [roomId: number | null, itemId: number]
 }>()
 </script>
 
@@ -122,7 +129,9 @@ defineEmits<{
           :show-removed="showRemoved"
           :correcting="correcting"
           :can-step="canStep"
+          :catalogue="catalogue"
           @step="(deviceId, field, by) => $emit('step', deviceId, field, by)"
+          @add="(roomId, itemId) => $emit('add', roomId, itemId)"
         />
       </div>
 

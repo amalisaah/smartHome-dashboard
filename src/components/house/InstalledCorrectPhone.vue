@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { SInput, SText } from '@/components/atoms'
+import { SCombobox, SText } from '@/components/atoms'
 import CountStepper from '@/components/house/CountStepper.vue'
 import {
   CANCEL,
@@ -39,13 +39,25 @@ const props = defineProps<{
    * `useHouseInstalledEditor`.
    */
   canStep: (deviceId: string, field: CountField, by: number) => boolean
+  /**
+   * The catalogue, as this field offers it. Read once by the screen and
+   * filtered in the field: `GET /items` is unpaginated, so a keystroke narrows
+   * the list without a round trip — the same bargain the catalogue list makes.
+   */
+  catalogue: readonly { label: string; value: number }[]
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   cancel: []
   done: []
   step: [deviceId: string, field: CountField, by: number]
+  add: [roomId: number | null, itemId: number]
 }>()
+
+/** Picking one puts it on this room's wall and empties the field for the next. */
+function pick(itemId: number | string) {
+  if (typeof itemId === 'number') emit('add', props.room.id, itemId)
+}
 
 /** Which row is open. One, because three steppers already fill the thumb's reach. */
 const open = ref<string | null>(null)
@@ -114,15 +126,15 @@ const toggle = (id: string) => (open.value = open.value === id ? null : id)
     </div>
 
     <div class="add">
-      <!-- ⚠️ A stub. The catalogue's search results are out of this handoff's
-           scope; the field is drawn and focuses, and picking an item from it is
-           where block C meets the catalogue module. -->
-      <SInput
-        :model-value="''"
+      <SCombobox
+        :model-value="undefined"
+        :options="[...catalogue]"
         :placeholder="CATALOGUE_SEARCH_PHONE"
         aria-label="Add from catalogue"
         size="phone"
         dashed
+        hide-chevron
+        @update:model-value="pick"
       />
       <SText type="caption" class="note">{{ COUNTS_ONLY_NOTE }}</SText>
     </div>

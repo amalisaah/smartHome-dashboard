@@ -20,8 +20,19 @@ const props = defineProps<{
   /** Mono micro sitting inside the field, right-aligned: `no match in 214 items`. */
   hint?: string
   hideChevron?: boolean
-  /** `row` is the 44px inline-create row at the foot of a table. */
-  size?: 'md' | 'row'
+  /**
+   * `row` is the 44px inline-create row at the foot of a table. `phone` is the
+   * phone's door: 48px at 16px, which is the size below which iOS zooms the
+   * page on focus — the same reason `SInput` carries one.
+   */
+  size?: 'md' | 'row' | 'phone'
+  /**
+   * A field that is not a row yet. It keeps its dashes until it is reached for,
+   * then goes solid with the action border — a search that adds something and
+   * empties itself is never "filled in", so the dashes are its resting state
+   * rather than a stage it leaves.
+   */
+  dashed?: boolean
   /** Use when the field has no visible label. */
   ariaLabel?: string
 }>()
@@ -206,6 +217,7 @@ watch(() => props.modelValue, () => {
           's-cbx-wrap--open': open,
           's-cbx-wrap--error': error,
           's-cbx-wrap--disabled': disabled,
+          's-cbx-wrap--dashed': dashed,
         },
       ]"
     >
@@ -338,6 +350,30 @@ watch(() => props.modelValue, () => {
 .s-cbx-wrap--error:focus-within {
   border-color: var(--color-risk);
   outline-color: var(--color-risk);
+}
+
+/* Not a row yet. The dashes go the moment he reaches for it, because what he
+   is doing then is real. */
+.s-cbx-wrap--dashed {
+  border-style: dashed;
+  border-color: var(--color-fg-3);
+}
+
+.s-cbx-wrap--dashed.s-cbx-wrap--open,
+.s-cbx-wrap--dashed:focus-within {
+  border-style: solid;
+}
+
+/* The phone's door. 16px because anything smaller zooms the page on focus. */
+.s-cbx-wrap--size-phone {
+  min-height: var(--hit-min);
+  border-radius: var(--radius-md);
+}
+
+.s-cbx-wrap--size-phone .s-cbx-input {
+  padding: 0 0 0 12px;
+  font-size: 16px;
+  align-self: stretch;
 }
 
 /* The inline-create row at the foot of a table. */

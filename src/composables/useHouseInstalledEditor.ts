@@ -173,6 +173,38 @@ export function useHouseInstalledEditor(houseId: number) {
     }))
   }
 
+  /**
+   * One of something from the catalogue, onto this room's wall.
+   *
+   * The room already having one is the common case — he is correcting a count,
+   * not discovering a device — so it goes through the same `+1` the stepper
+   * does rather than creating a second row for the same item. A row with no
+   * `job_id` is what makes the line read `by hand`.
+   */
+  async function addDevice(roomId: number | null, itemId: number) {
+    const existing = rooms.value
+      .find((room) => room.id === roomId)
+      ?.devices.find((device) => device.itemId === itemId)
+
+    if (existing) {
+      await step(existing.id, 'active', 1)
+      return
+    }
+
+    try {
+      await createDevice(houseId, {
+        item_id: itemId,
+        room_id: roomId,
+        quantity: 1,
+        status: 'active',
+      })
+      refused.value = false
+    } catch (error) {
+      refused.value = !isUnreachable(error)
+    }
+    await reread()
+  }
+
   /** How many units a status' own row holds, as opposed to the folded count. */
   const onRow = (device: InstalledDevice, field: CountField) =>
     field === 'active' ? device.active - device.faulty : device[field]
@@ -249,5 +281,5 @@ export function useHouseInstalledEditor(houseId: number) {
 
   const totals = computed(() => installedTotals(rooms.value))
 
-  return { rooms, totals, refused, busy, seed, step, canStep }
+  return { rooms, totals, refused, busy, seed, step, canStep, addDevice }
 }
