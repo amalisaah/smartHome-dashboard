@@ -12,8 +12,7 @@ dist
 dist-ssr
 *.local
 
-# Design handoff reference material (not part of the app)
-design_handoff*/
+
 openapi.json
 
 # Editor directories and files

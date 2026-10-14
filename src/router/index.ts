@@ -15,6 +15,8 @@ import HouseVisitView from '@/views/HouseVisitView.vue'
 import ItemDetailView from '@/views/ItemDetailView.vue'
 import ItemEditView from '@/views/ItemEditView.vue'
 import ItemNewView from '@/views/ItemNewView.vue'
+import QuoteBuilderView from '@/views/QuoteBuilderView.vue'
+import QuotesListView from '@/views/QuotesListView.vue'
 import ShipmentBuilderView from '@/views/ShipmentBuilderView.vue'
 import ShipmentsListView from '@/views/ShipmentsListView.vue'
 
@@ -171,6 +173,23 @@ export const router = createRouter({
         houseId: Number(route.params.houseId),
         roomId: Number(route.params.roomId),
       }),
+    },
+    {
+      // The quote list — out of scope in this handoff, so a stub. It exists
+      // because `‹ Quotes` and the `Quotes ›` breadcrumb both point at it.
+      path: '/quotes',
+      name: 'quotes',
+      component: QuotesListView,
+    },
+    {
+      // One quote, on the builder — modules 3+4, block A. There is no
+      // `/quotes/new`: starting a quote belongs to the list, which this
+      // handoff does not cover, so every quote reached here already has the id
+      // `POST /quotes` gave it.
+      path: '/quotes/:id(\\d+)',
+      name: 'quote-builder',
+      component: QuoteBuilderView,
+      props: (route) => ({ quoteId: Number(route.params.id) }),
     },
     {
       path: '/groups',

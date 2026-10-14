@@ -84,6 +84,49 @@
   --shadow-elev-0: 0 1px 2px oklch(0.21 0.01 260 / 0.06);
   --shadow-elev-1: 0 1px 3px oklch(0.21 0.01 260 / 0.08);
   --shadow-elev-2: 0 10px 30px oklch(0.21 0.01 260 / 0.16);
+
+  /* A bottom sheet throws its shadow upward, onto the screen it rose over.
+     Same ink and spread as elev-2; only the direction differs. */
+  --shadow-elev-sheet: 0 -10px 30px oklch(0.21 0.01 260 / 0.16);
+
+  /* === The customer side of audience mode ===
+     Not a dark theme for the app: the one surface a customer reads. The quote
+     builder has two audiences, and brightness is what tells them apart across a
+     room. These are named so that the two dark cues inside his *light* view —
+     the `Show her` button and the "On her quote" top edge, both of which look
+     like the screen they open — can name the colour they are quoting rather
+     than hardcode it. `.audience-customer` below maps the ordinary tokens onto
+     them, so every atom renders dark inside it without knowing it has. */
+  --color-customer-bg: oklch(0.19 0.012 260);
+  --color-customer-surface: oklch(0.235 0.012 260);
+  --color-customer-line: oklch(0.32 0.012 260);
+  --color-customer-fg: oklch(0.95 0.004 260);
+  --color-customer-fg-2: oklch(0.74 0.008 260);
+  --color-customer-fg-3: oklch(0.60 0.01 260);
+}
+
+/* The her-view root, and nothing else. Her view is a separate screen built from
+   customer-safe data — this scope is what makes the atoms inside it legible on a
+   dark ground, never what hides a cost figure. A cost value that reached this
+   subtree would be visible; the guarantee is that one never arrives. */
+.audience-customer {
+  --color-bg: var(--color-customer-bg);
+  --color-surface: var(--color-customer-surface);
+  --color-line: var(--color-customer-line);
+  --color-divider: var(--color-customer-line);
+  --color-fg: var(--color-customer-fg);
+  --color-fg-2: var(--color-customer-fg-2);
+  --color-fg-2-soft: var(--color-customer-fg-2);
+  --color-micro: var(--color-customer-fg-2);
+  --color-fg-3: var(--color-customer-fg-3);
+
+  /* Both accents lift on this ground for the same reason they lift on the dark
+     phone header: a 0.55 ink disappears into a 0.19 one. */
+  --color-action: var(--color-action-on-dark);
+  --color-risk: var(--color-risk-on-dark);
+
+  background: var(--color-bg);
+  color: var(--color-fg);
 }
 
 /* === Base reset === */
