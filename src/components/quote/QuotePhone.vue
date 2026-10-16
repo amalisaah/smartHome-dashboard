@@ -49,124 +49,131 @@ const results = computed(() => b.search(query.value))
   <div class="phone">
     <QuoteModeBand phone />
 
-    <QuotePhoneHeader
-      :header="header"
-      :surname="surname"
-      :area="area"
-      :online="online"
-      :saved-at="savedAt"
-      :dirty="b.dirty.value"
-    />
-
-    <div class="controls">
-      <div class="seg">
-        <SSegmented v-model="b.groupBy.value" :options="GROUP_OPTIONS" size="lg" />
-      </div>
-      <QuoteOffToggle
-        phone
-        :count="b.offCount.value"
-        :showing="b.showOff.value"
-        @toggle="b.showOff.value = !b.showOff.value"
+    <!-- One scroll, from the household name down to Show her. Pinning six bands
+         around the list left it 445px of an 844px screen — under four rows —
+         so everything but the band travels with the list now. -->
+    <div class="page">
+      <QuotePhoneHeader
+        :header="header"
+        :surname="surname"
+        :area="area"
+        :online="online"
+        :saved-at="savedAt"
+        :dirty="b.dirty.value"
       />
-    </div>
 
-    <QuoteRoomChips
-      v-if="b.groupBy.value === 'room'"
-      :rooms="b.summaries.value"
-      :active-id="b.activeRoomId.value"
-      @select="b.selectRoom"
-    />
-
-    <div class="scroll">
-      <template v-if="b.groupBy.value === 'room'">
-        <!-- Sticky, because the one question a tap on + Add must never raise is
-             "which room is this going into". -->
-        <div class="adding">
-          <span class="adding-text">
-            <SText type="micro" color="fg-3">Adding to</SText>
-            <SText type="heading" as="h2">{{ b.activeRoom.value?.name ?? 'the quote' }}</SText>
-          </span>
-          <SButton v-if="b.editable.value" size="phone-wide" @click="b.openPicker">+ Add</SButton>
+      <div class="controls">
+        <div class="seg">
+          <SSegmented v-model="b.groupBy.value" :options="GROUP_OPTIONS" size="lg" />
         </div>
-
-        <QuotePhoneLineRow
-          v-for="line in b.roomLines.value"
-          :key="line.id"
-          :line="line"
-          :default-need="b.defaultNeedFor(line.itemId)"
-          :expanded="b.expandedLineId.value === line.id"
-          :editable="b.editable.value"
-          @toggle="b.toggleLine(line.id)"
-          @step="b.step(line.id, $event)"
-          @need="b.setNeed(line.id, $event)"
-          @note="b.setNote(line.id, $event)"
-          @off="b.switchOff(line.id)"
+        <QuoteOffToggle
+          phone
+          :count="b.offCount.value"
+          :showing="b.showOff.value"
+          @toggle="b.showOff.value = !b.showOff.value"
         />
+      </div>
 
-        <div v-if="b.roomLines.value.length === 0" class="empty">
-          <SText type="cell" color="fg-2">
-            Nothing in {{ b.activeRoom.value?.name ?? 'this room' }} yet.{{ b.editable.value ? ' Tap + Add.' : '' }}
-          </SText>
-        </div>
+      <QuoteRoomChips
+        v-if="b.groupBy.value === 'room'"
+        :rooms="b.summaries.value"
+        :active-id="b.activeRoomId.value"
+        @select="b.selectRoom"
+      />
 
-        <template v-if="b.showOff.value">
-          <QuoteOffRow
-            v-for="line in b.roomOffLines.value"
+      <div class="list">
+        <template v-if="b.groupBy.value === 'room'">
+          <!-- Sticky, because the one question a tap on + Add must never raise
+               is "which room is this going into". It is the only thing besides
+               the band that holds its place now. -->
+          <div class="adding">
+            <span class="adding-text">
+              <SText type="micro" color="fg-3">Adding to</SText>
+              <SText type="heading" as="h2">{{ b.activeRoom.value?.name ?? 'the quote' }}</SText>
+            </span>
+            <SButton v-if="b.editable.value" size="phone-wide" @click="b.openPicker">+ Add</SButton>
+          </div>
+
+          <QuotePhoneLineRow
+            v-for="line in b.roomLines.value"
             :key="line.id"
             :line="line"
-            phone
+            :default-need="b.defaultNeedFor(line.itemId)"
+            :expanded="b.expandedLineId.value === line.id"
             :editable="b.editable.value"
-            @on="b.switchOn(line.id)"
+            @toggle="b.toggleLine(line.id)"
+            @step="b.step(line.id, $event)"
+            @need="b.setNeed(line.id, $event)"
+            @note="b.setNote(line.id, $event)"
+            @off="b.switchOff(line.id)"
           />
+
+          <div v-if="b.roomLines.value.length === 0" class="empty">
+            <SText type="cell" color="fg-2">
+              Nothing in {{ b.activeRoom.value?.name ?? 'this room' }} yet.{{ b.editable.value ? ' Tap + Add.' : '' }}
+            </SText>
+          </div>
+
+          <template v-if="b.showOff.value">
+            <QuoteOffRow
+              v-for="line in b.roomOffLines.value"
+              :key="line.id"
+              :line="line"
+              phone
+              :editable="b.editable.value"
+              @on="b.switchOn(line.id)"
+            />
+          </template>
+
+          <SText type="micro" color="fg-3" class="other-label">Other rooms</SText>
+          <button
+            v-for="room in b.otherRooms.value"
+            :key="room.id"
+            type="button"
+            class="other"
+            @click="b.selectRoom(room.id)"
+          >
+            <SText type="cell" as="span" class="other-name">
+              {{ room.name }}
+              <SText type="cell-meta" as="span" class="other-meta">
+                ·
+                {{ room.lineCount ? `${room.lineCount} line${room.lineCount === 1 ? '' : 's'}` : 'empty' }}
+              </SText>
+            </SText>
+            <SText type="money" class="other-total">
+              {{ room.lineCount ? formatMoney(room.totalPesewas) : '' }}
+            </SText>
+          </button>
         </template>
 
-        <SText type="micro" color="fg-3" class="other-label">Other rooms</SText>
-        <button
-          v-for="room in b.otherRooms.value"
-          :key="room.id"
-          type="button"
-          class="other"
-          @click="b.selectRoom(room.id)"
-        >
-          <SText type="cell" as="span" class="other-name">
-            {{ room.name }}
-            <SText type="cell-meta" as="span" class="other-meta">
-              ·
-              {{ room.lineCount ? `${room.lineCount} line${room.lineCount === 1 ? '' : 's'}` : 'empty' }}
-            </SText>
-          </SText>
-          <SText type="money" class="other-total">
-            {{ room.lineCount ? formatMoney(room.totalPesewas) : '' }}
-          </SText>
-        </button>
-      </template>
+        <QuotePhoneByNeed v-else :lines="b.lines.value" />
+      </div>
 
-      <QuotePhoneByNeed v-else :lines="b.lines.value" />
-    </div>
+      <div class="edit">
+        <QuoteEditBar
+          phone
+          :editing="b.editable.value"
+          :dirty="b.dirty.value"
+          :change-count="b.changeCount.value"
+          :submitting="b.submitting.value"
+          :error="b.submitError.value"
+          @edit="b.startEditing"
+          @reset="b.reset"
+          @submit="b.submit"
+        />
+      </div>
 
-    <QuoteAddedToast v-if="b.toast.value" :text="b.toast.value" />
-
-    <div class="edit">
-      <QuoteEditBar
-        phone
-        :editing="b.editable.value"
-        :dirty="b.dirty.value"
-        :change-count="b.changeCount.value"
-        :submitting="b.submitting.value"
-        :error="b.submitError.value"
-        @edit="b.startEditing"
-        @reset="b.reset"
-        @submit="b.submit"
+      <QuotePhoneMoneyBar
+        v-if="b.money.value"
+        :money="b.money.value"
+        :labour-missing="b.labourMissing.value"
+        @money="b.moneyOpen.value = true"
+        @her="b.showHer"
       />
     </div>
 
-    <QuotePhoneMoneyBar
-      v-if="b.money.value"
-      :money="b.money.value"
-      :labour-missing="b.labourMissing.value"
-      @money="b.moneyOpen.value = true"
-      @her="b.showHer"
-    />
+    <!-- Outside the scroll: it is pinned to the screen, not to the document. -->
+    <QuoteAddedToast v-if="b.toast.value" :text="b.toast.value" />
 
     <QuotePickerSheet
       v-if="b.pickerOpen.value"
@@ -232,13 +239,29 @@ const results = computed(() => b.search(query.value))
   border-top: none;
 }
 
-.scroll {
+/* The one scroll on this screen. It starts under the band, so `.adding` can
+   stick to its top without having to know how tall the band is. */
+.page {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  /* It scrolls without drawing a bar, as the room rail above it does. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.page::-webkit-scrollbar {
+  display: none;
+}
+
+/* Grows to fill a short quote so the money still sits at the foot of the
+   screen, never shrinks a long one — that is `0` for flex-shrink, and it is
+   what keeps the rows at their own height instead of squeezing them to fit. */
+.list {
+  flex: 1 0 auto;
   border-top: 1px solid var(--color-line);
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-line) transparent;
 }
 
 .adding {
