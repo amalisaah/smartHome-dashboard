@@ -15,6 +15,7 @@ import type {
   ApiQuoteChargesUpdate,
   ApiQuoteCustomerView,
   ApiQuoteLine,
+  ApiQuoteLineBulkUpdate,
   ApiQuoteLineUpdate,
   ApiQuoteMoney,
   ApiQuoteOwnerView,
@@ -153,6 +154,19 @@ export function toLinePatch(fields: {
   if (fields.need !== undefined) patch.need = fields.need
   if (fields.note !== undefined) patch.note = fields.note?.trim() || null
   if (fields.roomId !== undefined) patch.room_id = fields.roomId
+  return patch
+}
+
+/**
+ * One entry of the bulk line patch. `removed` becomes `is_removed`, which is
+ * how the one call carries a switch-off or a switch-back-on as well as an edit.
+ */
+export function toLineBulkPatch(
+  lineId: number,
+  fields: Parameters<typeof toLinePatch>[0] & { removed?: boolean },
+): ApiQuoteLineBulkUpdate {
+  const patch: ApiQuoteLineBulkUpdate = { id: lineId, ...toLinePatch(fields) }
+  if (fields.removed !== undefined) patch.is_removed = fields.removed
   return patch
 }
 

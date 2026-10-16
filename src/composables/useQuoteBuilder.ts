@@ -1,12 +1,6 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
-import {
-  addQuoteLines,
-  removeQuoteLine,
-  restoreQuoteLine,
-  updateQuoteCharges,
-  updateQuoteLine,
-} from '@/api/quotes'
+import { addQuoteLines, updateQuoteCharges, updateQuoteLines } from '@/api/quotes'
 import { quoteKeys } from '@/api/hooks/quotes'
 import { clearDraft, getDraft, setDraft } from '@/stores/quoteDrafts'
 import { useSaveReporter } from '@/composables/useSaveState'
@@ -45,8 +39,8 @@ import type { CatalogueItem } from '@/types/catalogue'
  * so twenty edits in a living room came to sixty requests. Each small request
  * wakes the phone's radio and holds it awake for seconds afterwards, so the
  * cost was mostly battery spent on nothing. Submitting sends one bulk add per
- * room, one patch per genuinely changed line, one charges write, and re-reads
- * the quote once.
+ * room, one bulk patch for every changed line, and one charges write — and the
+ * last of those answers with the new totals, so there is nothing to re-read.
  *
  * While he edits, the money is worked out here from figures the server already
  * supplied — each line's unit selling price and unit landed cost — because the
@@ -378,10 +372,9 @@ export function useQuoteBuilder({ quoteId, ownerView, rooms, catalogue, online }
    *
    * A field put back to what the server already holds stops being an edit, and
    * a line with nothing left to say drops out of the draft entirely. Without
-   * that, switching a line off and straight back on would submit a `restore`
-   * for a line that was never removed — a request that does nothing on a good
-   * day and fails the whole submit on a bad one — and would count as a change
-   * on a quote that is unchanged.
+   * that, switching a line off and straight back on would submit an
+   * `is_removed: false` for a line that was never removed, and would count as a
+   * change on a quote that is unchanged.
    */
   function edit(lineId: number, fields: LineEdit) {
     const server = (ownerView.value?.lines ?? []).find((line) => line.id === lineId)
@@ -496,12 +489,12 @@ export function useQuoteBuilder({ quoteId, ownerView, rooms, catalogue, online }
 
   /**
    * Everything he changed, in as few requests as the API allows: one bulk add
-   * per room, one patch per line he actually altered, one write for the money,
-   * and one re-read at the end.
+   * per room, one bulk patch for every line he altered or switched, and one
+   * write for the money.
    *
-   * There is no bulk patch on the wire, so a line edited is still a request of
-   * its own. That is the one remaining per-item cost and it is bounded by what
-   * he touched rather than by how many times he touched it.
+   * The last two answer with the quote and its new totals, so the server's own
+   * figures go straight into the cache and a submit that touched a line or the
+   * money needs no re-read at all.
    */
   async function submit(): Promise<boolean> {
     if (!dirty.value || submitting.value) return true
@@ -543,19 +536,22 @@ export function useQuoteBuilder({ quoteId, ownerView, rooms, catalogue, online }
         })
       }
 
-      for (const [key, edit] of Object.entries(current.lines)) {
-        const lineId = Number(key)
-        const { removed, ...fields } = edit
-        if (Object.keys(fields).length > 0) await updateQuoteLine(lineId, fields)
-        if (removed === true) await removeQuoteLine(lineId)
-        if (removed === false) await restoreQuoteLine(lineId)
+      // The server's own figures, from whichever write answered last.
+      let settled: QuoteOwnerView | null = null
+
+      const edits = Object.entries(current.lines)
+      if (edits.length > 0) {
+        settled = await updateQuoteLines(
+          quoteId.value,
+          edits.map(([key, fields]) => ({ lineId: Number(key), fields })),
+        )
         change((next) => {
-          delete next.lines[key]
+          for (const [key] of edits) delete next.lines[key]
         })
       }
 
       if (current.charges) {
-        await updateQuoteCharges(quoteId.value, {
+        settled = await updateQuoteCharges(quoteId.value, {
           labourPesewas: toPesewas(current.charges.labour),
           materialsPesewas: toPesewas(current.charges.materials),
           miscPesewas: toPesewas(current.charges.misc) ?? 0,
@@ -571,8 +567,12 @@ export function useQuoteBuilder({ quoteId, ownerView, rooms, catalogue, online }
       expandedLineId.value = null
       save.saved()
 
-      // One re-read, at the end, for the server's own figures.
-      await queryClient.invalidateQueries({ queryKey: quoteKeys.ownerView(quoteId.value) })
+      // A submit that patched anything already has the new totals in hand. One
+      // that only added lines does not — the bulk add answers with the lines —
+      // so that is the only case left that re-reads.
+      if (settled) queryClient.setQueryData(quoteKeys.ownerView(quoteId.value), settled)
+      else await queryClient.invalidateQueries({ queryKey: quoteKeys.ownerView(quoteId.value) })
+
       await queryClient.invalidateQueries({
         queryKey: [...quoteKeys.all, 'customer-view', quoteId.value],
       })

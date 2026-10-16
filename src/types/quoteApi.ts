@@ -175,6 +175,13 @@ export interface ApiQuoteLineUpdate {
   room_id?: number | null
 }
 
+/** One line's changes inside `PATCH /quotes/{id}/lines/bulk`. */
+export interface ApiQuoteLineBulkUpdate extends ApiQuoteLineUpdate {
+  id: number
+  /** True switches the line off, false switches it back on. */
+  is_removed?: boolean
+}
+
 /**
  * `PATCH /quotes/{id}/charges`. Leave either charge `null` and it derives again —
  * labour from the room count, materials from the misc estimate plus the markup.

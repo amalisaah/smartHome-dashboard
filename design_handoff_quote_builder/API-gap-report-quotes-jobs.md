@@ -5,9 +5,26 @@ the screen has to do instead, and what it costs.
 
 ---
 
-## 1. There is no bulk write for line **edits** — only for line **adds**
+## 1. ~~There is no bulk write for line **edits** — only for line **adds**~~ — **closed**
 
-**Priority: high.** This is the one worth fixing first.
+`PATCH /quotes/{id}/lines/bulk` now exists, in the shape this section asked for:
+one transaction, `is_removed` folding `remove` and `restore` in, and the quote
+with its new totals as the answer. The builder takes all three — the submit
+above is now:
+
+```
+POST  /quotes/2/lines/bulk      1   (the three adds, one transaction)
+PATCH /quotes/2/lines/bulk      1   (both quantities and the switch-off)
+PATCH /quotes/2/charges         1
+                             ── 3 requests
+```
+
+The owner-view re-read is gone: the last patch answers with the new totals and
+they go straight into the cache. A submit that only *adds* lines still re-reads,
+because `POST .../lines/bulk` answers with the created lines rather than the
+quote. Her view is a second document and is still refetched when it is on screen.
+
+What follows is the original gap, kept for the record.
 
 ### What exists
 

@@ -22,7 +22,7 @@ import type {
 import {
   toChargesPatch,
   toCustomerQuote,
-  toLinePatch,
+  toLineBulkPatch,
   toQuoteOwnerView,
   toQuoteRoom,
 } from '@/utils/mapper/quoteMapper'
@@ -120,25 +120,36 @@ export const addQuoteLines = (
   lines: Omit<ApiQuoteLineCreate, 'room_id'>[],
 ) => apiSend<ApiQuoteLine[]>('POST', `/quotes/${quoteId}/lines/bulk`, { room_id: roomId, lines })
 
-/** `PATCH /quote-lines/{id}` — quantity, need, note. */
-export const updateQuoteLine = (
-  lineId: number,
-  fields: Parameters<typeof toLinePatch>[0],
-) => apiSend<ApiQuoteLine>('PATCH', `/quote-lines/${lineId}`, toLinePatch(fields))
+/**
+ * `PATCH /quotes/{id}/lines/bulk` — every line he changed, in a single
+ * transaction and a single request. `is_removed` carries the switch-offs and
+ * switch-backs-on, so a negotiation is one call rather than one per line.
+ *
+ * It answers with the quote and its new totals, which is why this is what
+ * submitting uses: there is no follow-up `GET /owner-view` behind it.
+ */
+export const updateQuoteLines = async (
+  quoteId: number,
+  edits: { lineId: number; fields: Parameters<typeof toLineBulkPatch>[1] }[],
+): Promise<QuoteOwnerView> => {
+  const view = await apiSend<ApiQuoteOwnerView>('PATCH', `/quotes/${quoteId}/lines/bulk`, {
+    lines: edits.map((edit) => toLineBulkPatch(edit.lineId, edit.fields)),
+  })
+  return toQuoteOwnerView(view)
+}
 
 /**
- * `POST /quote-lines/{id}/remove` — switch the line off. It is never deleted:
- * it leaves every total and her view, and keeps its date so it can come back.
+ * `PATCH /quotes/{id}/charges` — labour, materials and the misc estimate. It
+ * answers with the quote and its new totals, as the bulk line patch does.
  */
-export const removeQuoteLine = (lineId: number) =>
-  apiSend<ApiQuoteLine>('POST', `/quote-lines/${lineId}/remove`)
-
-/** `POST /quote-lines/{id}/restore` — switch it back on. */
-export const restoreQuoteLine = (lineId: number) =>
-  apiSend<ApiQuoteLine>('POST', `/quote-lines/${lineId}/restore`)
-
-/** `PATCH /quotes/{id}/charges` — labour, materials and the misc estimate. */
-export const updateQuoteCharges = (
+export const updateQuoteCharges = async (
   quoteId: number,
   fields: Parameters<typeof toChargesPatch>[0],
-) => apiSend<ApiQuoteOwnerView>('PATCH', `/quotes/${quoteId}/charges`, toChargesPatch(fields))
+): Promise<QuoteOwnerView> => {
+  const view = await apiSend<ApiQuoteOwnerView>(
+    'PATCH',
+    `/quotes/${quoteId}/charges`,
+    toChargesPatch(fields),
+  )
+  return toQuoteOwnerView(view)
+}
