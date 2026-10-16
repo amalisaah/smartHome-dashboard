@@ -52,6 +52,9 @@ const meta = computed(() => {
   /* Dashed: not gone, just not counted. */
   border-bottom: 1px dashed var(--color-line);
   color: var(--color-fg-3);
+  /* At the desk this sits in a table that scrolls sideways, so the rule runs
+     the full width of the rows above it; the phone defines no floor and gets 0. */
+  min-width: var(--desk-min, 0);
 }
 
 .off-row--phone {

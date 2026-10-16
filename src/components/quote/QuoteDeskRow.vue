@@ -91,9 +91,12 @@ const stock = computed(() => {
 </template>
 
 <style scoped>
+/* The columns and the floor come from `.table` in QuoteDesk, so the head and
+   every row keep one definition between them and cannot drift apart. */
 .row {
   display: grid;
-  grid-template-columns: minmax(200px, 2fr) 120px 120px 96px 80px minmax(0, 1fr) 84px;
+  grid-template-columns: var(--desk-cols);
+  min-width: var(--desk-min);
   gap: 12px;
   align-items: center;
   padding: 10px 24px;

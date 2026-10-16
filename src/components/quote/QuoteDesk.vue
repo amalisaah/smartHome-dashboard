@@ -84,7 +84,10 @@ const alarmed = computed(() => !props.online || saveState.value === 'failed')
             @toggle-off="b.showOff.value = !b.showOff.value"
           />
 
-          <div class="table">
+          <!-- Not `table`: that is a Tailwind utility (`display: table`), and a
+               table box ignores `overflow` in Chrome and shrink-wraps to its
+               content — which is how this spilled under the money rail. -->
+          <div class="desk-table">
             <div class="thead">
               <SText type="column-header">Item</SText>
               <SText type="column-header">Need</SText>
@@ -174,19 +177,48 @@ const alarmed = computed(() => !props.online || saveState.value === 'failed')
   min-height: 0;
 }
 
-.table {
+.desk-table {
+  /* Block, explicitly. The class is scoped, but `display` is what the Tailwind
+     `table` utility was setting, and a block container is what makes `overflow`
+     mean anything at all here. */
+  display: block;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  /* Both axes. On a 1280px laptop the centre column is ~740px — narrower than
+     the floor below — so the table scrolls sideways rather than pushing its
+     last columns out under the money rail. */
+  overflow: auto;
+  /* It scrolls, but it does not draw a bar: the rail beside it and the rows
+     under it are the frame, and a gutter cutting across both is noise. Firefox
+     and old Edge take a property; Chrome and Safari take the pseudo-element
+     below. Wheel, trackpad, shift-wheel and the keyboard all still scroll it. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  /* The row grid, declared once here and inherited by every row in the table —
+     the head, a line, a switched-off line. One place to change a column. */
+  --desk-cols: minmax(200px, 2fr) 120px 120px 96px 80px minmax(160px, 1fr) 84px;
+  /* The floor is the sum of the tracks' own minimums — 200 + 120 + 120 + 96 +
+     80 + 160 + 84 — plus six 12px gaps and 24px of padding each side. It counts
+     the note's 160px, because a note column squeezed to nothing is not a
+     narrower table, it is a lost column: below this width the table scrolls. */
+  --desk-min: 980px;
+}
+
+.desk-table::-webkit-scrollbar {
+  display: none;
 }
 
 .thead {
   display: grid;
-  grid-template-columns: minmax(200px, 2fr) 120px 120px 96px 80px minmax(0, 1fr) 84px;
+  grid-template-columns: var(--desk-cols);
+  min-width: var(--desk-min);
   gap: 12px;
   padding: 10px 24px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-line);
+  /* Vertically sticky only — it travels with the rows when they scroll
+     sideways, which is the whole point of a column header. */
   position: sticky;
   top: 0;
   z-index: 1;
@@ -201,6 +233,7 @@ const alarmed = computed(() => !props.online || saveState.value === 'failed')
 }
 
 .empty {
+  min-width: var(--desk-min);
   padding: 32px 24px;
 }
 </style>
