@@ -13,6 +13,13 @@ import {
  * looking at, and her view must be able to refetch on its own when he flips the
  * itemise switch.
  *
+ * **These reads are deliberately quiet.** The quote screen is used standing in
+ * somebody's hallway on mobile data, and the default policy — a 60s staleness
+ * window plus a refetch every time the app regains focus — would re-read the
+ * whole quote each time he glances at WhatsApp and comes back. Nothing moves a
+ * quote but this screen, and this screen re-reads it itself the moment a submit
+ * lands, so there is nothing a background refetch could learn.
+ *
  * `customerView` carries `itemised` in the key. It is a different document, not
  * a filter applied to the same one — the server decides whether her quote names
  * the devices — so the two cache separately and flipping back is instant.
@@ -41,6 +48,9 @@ export function useQuoteOwnerView(id: MaybeRefOrGetter<number>) {
   return useQuery({
     queryKey: computed(() => quoteKeys.ownerView(quoteId.value)),
     queryFn: ({ signal }) => fetchQuoteOwnerView(quoteId.value, signal),
+    // Submitting invalidates this key itself; nothing else changes a quote.
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   })
 }
 
@@ -51,6 +61,9 @@ export function useQuoteRooms(id: MaybeRefOrGetter<number>) {
   return useQuery({
     queryKey: computed(() => quoteKeys.rooms(quoteId.value)),
     queryFn: ({ signal }) => fetchQuoteRooms(quoteId.value, signal),
+    // Rooms come from the house and are not editable here at all.
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   })
 }
 
@@ -63,8 +76,10 @@ export function useQuoteRooms(id: MaybeRefOrGetter<number>) {
  * only owner-side value that can reach her screen is a date string, and it has
  * to be handed over deliberately.
  *
- * `staleTime: 0`: he turns the phone round seconds after changing a figure, and
- * a stale total on her screen is the one thing this view may not show.
+ * Her document only moves when a submit moves it, and a submit invalidates this
+ * key on its way out — so it is cached like the rest rather than re-fetched on
+ * every flip. What keeps her total honest is that `Show her` submits first when
+ * there is anything pending, not a request per tap.
  */
 export function useQuoteCustomerView(
   id: MaybeRefOrGetter<number>,
@@ -85,6 +100,7 @@ export function useQuoteCustomerView(
         signal,
       ),
     enabled: computed(() => known.value !== null),
-    staleTime: 0,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   })
 }

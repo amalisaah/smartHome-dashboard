@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { SButton, SText } from '@/components/atoms'
+import QuoteEditBar from './QuoteEditBar.vue'
 import QuoteMoneyBoxes from './QuoteMoneyBoxes.vue'
 import { formatCurrency } from '@/utils/format'
 import type { ChargesDraft, QuoteMoney } from '@/types/quote'
@@ -19,6 +20,11 @@ defineProps<{
   charges: ChargesDraft
   itemised: boolean
   labourMissing: boolean
+  editing: boolean
+  dirty: boolean
+  changeCount: number
+  submitting: boolean
+  submitError: string | null
 }>()
 
 const emit = defineEmits<{
@@ -26,6 +32,9 @@ const emit = defineEmits<{
   'update:itemised': [value: boolean]
   her: []
   send: []
+  edit: []
+  reset: []
+  submit: []
 }>()
 </script>
 
@@ -36,11 +45,25 @@ const emit = defineEmits<{
       :charges="charges"
       :itemised="itemised"
       figures="inline"
+      :editable="editing"
       @charge="(field, value) => emit('charge', field, value)"
       @update:itemised="emit('update:itemised', $event)"
     />
 
     <div class="send">
+      <QuoteEditBar
+        :editing="editing"
+        :dirty="dirty"
+        :change-count="changeCount"
+        :submitting="submitting"
+        :error="submitError"
+        @edit="emit('edit')"
+        @reset="emit('reset')"
+        @submit="emit('submit')"
+      />
+
+      <div class="rule" />
+
       <div class="proposed">
         <SText type="micro">Proposed</SText>
         <SText type="figure">{{ formatCurrency(money.proposedPesewas) }}</SText>
@@ -67,22 +90,44 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 20px;
+  padding: 20px 20px 0;
   background: var(--color-surface);
   border-left: 1px solid var(--color-line);
   overflow-y: auto;
+  /* Scroll room beneath the sticky card. */
+  padding-bottom: 20px;
 }
 
+/*
+ * The card he acts from, and it must never be the thing he has to go looking
+ * for.
+ *
+ * `margin-top: auto` alone puts it at the end of the rail's *scroll*, which on
+ * a 768px laptop means Edit, Reset and Submit sit ~85px below the fold inside a
+ * column most people never think to scroll — the buttons may as well not exist.
+ * Sticking it to the bottom of the scrollport keeps it on screen whatever the
+ * height, with the money boxes scrolling behind it.
+ */
 .send {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  /* The end of the rail, wherever the boxes above it finish. */
   margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
   padding: 16px;
   background: var(--color-bg);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-card);
+  /* It is over the boxes now, so it says so rather than appearing to sit in
+     the same plane as them. */
+  box-shadow: var(--shadow-elev-1);
+}
+
+.rule {
+  height: 1px;
+  background: var(--color-divider);
 }
 
 .proposed {

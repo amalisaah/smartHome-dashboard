@@ -10,6 +10,7 @@ import QuoteDeskRoomHeader from './QuoteDeskRoomHeader.vue'
 import QuoteDeskRow from './QuoteDeskRow.vue'
 import QuoteModeBand from './QuoteModeBand.vue'
 import QuoteOffRow from './QuoteOffRow.vue'
+import { saveState } from '@/composables/useSaveState'
 import type { QuoteBuilder } from '@/composables/useQuoteBuilder'
 import type { QuoteHeader } from '@/types/quote'
 
@@ -34,17 +35,26 @@ const query = ref('')
 
 const results = computed(() => (query.value.trim() ? b.search(query.value) : []))
 
-const status = computed(() =>
-  props.online
-    ? `saved${props.savedAt ? ` · ${props.savedAt}` : ''}`
-    : 'no signal · held on this laptop',
-)
+/**
+ * What the app bar says. Offline outranks everything; after that it reports the
+ * actual write state rather than assuming the last one worked — it used to read
+ * "saved" seconds after a submit had failed.
+ */
+const status = computed(() => {
+  if (!props.online) return 'no signal · held on this laptop'
+  if (saveState.value === 'saving') return 'submitting…'
+  if (saveState.value === 'failed') return 'not submitted'
+  if (b.dirty.value) return 'unsubmitted changes'
+  return `saved${props.savedAt ? ` · ${props.savedAt}` : ''}`
+})
+
+const alarmed = computed(() => !props.online || saveState.value === 'failed')
 </script>
 
 <template>
   <div class="desk">
     <QuoteModeBand />
-    <AppBar :status="status" :alarmed="!online" />
+    <AppBar :status="status" :alarmed="alarmed" />
     <AppTabBar />
 
     <div class="body">
@@ -68,6 +78,7 @@ const status = computed(() =>
             :off-count="b.offCount.value"
             :show-off="b.showOff.value"
             :toast="b.toast.value"
+            :editable="b.editable.value"
             @update:query="query = $event"
             @add="b.add"
             @toggle-off="b.showOff.value = !b.showOff.value"
@@ -89,6 +100,7 @@ const status = computed(() =>
               :key="line.id"
               :line="line"
               :default-need="b.defaultNeedFor(line.itemId)"
+              :editable="b.editable.value"
               @step="b.step(line.id, $event)"
               @need="b.setNeed(line.id, $event)"
               @note="b.setNote(line.id, $event)"
@@ -106,6 +118,7 @@ const status = computed(() =>
                 v-for="line in b.roomOffLines.value"
                 :key="line.id"
                 :line="line"
+                :editable="b.editable.value"
                 @on="b.switchOn(line.id)"
               />
             </template>
@@ -121,6 +134,14 @@ const status = computed(() =>
         :charges="b.charges.value"
         :itemised="b.itemised.value"
         :labour-missing="b.labourMissing.value"
+        :editing="b.editable.value"
+        :dirty="b.dirty.value"
+        :change-count="b.changeCount.value"
+        :submitting="b.submitting.value"
+        :submit-error="b.submitError.value"
+        @edit="b.startEditing"
+        @reset="b.reset"
+        @submit="b.submit"
         @charge="b.setCharge"
         @update:itemised="b.itemised.value = $event"
         @her="b.showHer"

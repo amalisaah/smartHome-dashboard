@@ -14,7 +14,12 @@ import type { QuoteLine } from '@/types/quote'
  * Tab order follows the eye: need, then quantity, then the note, then the way to
  * switch it off.
  */
-const props = defineProps<{ line: QuoteLine; defaultNeed: string | null }>()
+const props = defineProps<{
+  line: QuoteLine
+  defaultNeed: string | null
+  /** False while the quote is being read rather than changed. */
+  editable?: boolean
+}>()
 
 defineEmits<{
   step: [by: 1 | -1]
@@ -44,11 +49,17 @@ const stock = computed(() => {
       :value="line.need"
       :default-need="defaultNeed"
       :label="name"
+      :disabled="!editable"
       @pick="$emit('need', $event)"
     />
 
     <div class="qty">
-      <QuoteStepper :value="line.quantity" :label="name" @step="$emit('step', $event)" />
+      <QuoteStepper
+        :value="line.quantity"
+        :label="name"
+        :disabled="!editable"
+        @step="$emit('step', $event)"
+      />
     </div>
 
     <span class="total">
@@ -65,15 +76,17 @@ const stock = computed(() => {
       <SInput
         :model-value="line.note ?? ''"
         variant="flat"
+        :disabled="!editable"
         placeholder="—"
         :aria-label="`Note, ${name}`"
         @update:model-value="$emit('note', $event)"
       />
     </div>
 
-    <button type="button" class="off" @click="$emit('off')">
+    <button v-if="editable" type="button" class="off" @click="$emit('off')">
       <SText type="label" as="span" color="fg-2">Switch off</SText>
     </button>
+    <span v-else />
   </div>
 </template>
 

@@ -32,12 +32,19 @@ export function useCustomers() {
   })
 }
 
+/**
+ * One customer. Idle until there is an id to ask about: a caller that reads the
+ * id off another record passes `0` while that record is still in flight, and
+ * `GET /customers/0` is a request that cannot succeed. Ids are
+ * `exclusiveMinimum: 0` on the wire, so zero is never a customer.
+ */
 export function useCustomer(id: MaybeRefOrGetter<number>) {
   const customerId = computed(() => toValue(id))
 
   return useQuery({
     queryKey: computed(() => customerKeys.detail(customerId.value)),
     queryFn: ({ signal }) => fetchCustomer(customerId.value, signal),
+    enabled: computed(() => customerId.value > 0),
   })
 }
 

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { SButton, SSegmented, SText } from '@/components/atoms'
 import QuoteAddedToast from './QuoteAddedToast.vue'
+import QuoteEditBar from './QuoteEditBar.vue'
 import QuoteModeBand from './QuoteModeBand.vue'
 import QuoteMoneySheet from './QuoteMoneySheet.vue'
 import QuoteOffRow from './QuoteOffRow.vue'
@@ -54,6 +55,7 @@ const results = computed(() => b.search(query.value))
       :area="area"
       :online="online"
       :saved-at="savedAt"
+      :dirty="b.dirty.value"
     />
 
     <div class="controls">
@@ -84,7 +86,7 @@ const results = computed(() => b.search(query.value))
             <SText type="micro" color="fg-3">Adding to</SText>
             <SText type="heading" as="h2">{{ b.activeRoom.value?.name ?? 'the quote' }}</SText>
           </span>
-          <SButton size="phone-wide" @click="b.openPicker">+ Add</SButton>
+          <SButton v-if="b.editable.value" size="phone-wide" @click="b.openPicker">+ Add</SButton>
         </div>
 
         <QuotePhoneLineRow
@@ -93,6 +95,7 @@ const results = computed(() => b.search(query.value))
           :line="line"
           :default-need="b.defaultNeedFor(line.itemId)"
           :expanded="b.expandedLineId.value === line.id"
+          :editable="b.editable.value"
           @toggle="b.toggleLine(line.id)"
           @step="b.step(line.id, $event)"
           @need="b.setNeed(line.id, $event)"
@@ -102,7 +105,7 @@ const results = computed(() => b.search(query.value))
 
         <div v-if="b.roomLines.value.length === 0" class="empty">
           <SText type="cell" color="fg-2">
-            Nothing in {{ b.activeRoom.value?.name ?? 'this room' }} yet. Tap + Add.
+            Nothing in {{ b.activeRoom.value?.name ?? 'this room' }} yet.{{ b.editable.value ? ' Tap + Add.' : '' }}
           </SText>
         </div>
 
@@ -112,6 +115,7 @@ const results = computed(() => b.search(query.value))
             :key="line.id"
             :line="line"
             phone
+            :editable="b.editable.value"
             @on="b.switchOn(line.id)"
           />
         </template>
@@ -142,6 +146,20 @@ const results = computed(() => b.search(query.value))
 
     <QuoteAddedToast v-if="b.toast.value" :text="b.toast.value" />
 
+    <div class="edit">
+      <QuoteEditBar
+        phone
+        :editing="b.editable.value"
+        :dirty="b.dirty.value"
+        :change-count="b.changeCount.value"
+        :submitting="b.submitting.value"
+        :error="b.submitError.value"
+        @edit="b.startEditing"
+        @reset="b.reset"
+        @submit="b.submit"
+      />
+    </div>
+
     <QuotePhoneMoneyBar
       v-if="b.money.value"
       :money="b.money.value"
@@ -166,6 +184,7 @@ const results = computed(() => b.search(query.value))
       :money="b.money.value"
       :charges="b.charges.value"
       :itemised="b.itemised.value"
+      :editable="b.editable.value"
       @charge="b.setCharge"
       @update:itemised="b.itemised.value = $event"
       @close="b.moneyOpen.value = false"
@@ -198,6 +217,19 @@ const results = computed(() => b.search(query.value))
 .seg :deep(.s-seg) {
   display: flex;
   width: 100%;
+}
+
+.edit {
+  padding: 10px 12px 0;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-line);
+  flex: none;
+}
+
+/* The strip above already carries the rule that closes the scroll, so the money
+   bar does not draw a second one against it. */
+.edit + :deep(.bar) {
+  border-top: none;
 }
 
 .scroll {

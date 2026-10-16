@@ -18,6 +18,7 @@ defineProps<{
   money: QuoteMoney
   charges: ChargesDraft
   itemised: boolean
+  editable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -44,6 +45,7 @@ useDialogKeys(sheet, { onDismiss: () => emit('close') })
         :itemised="itemised"
         phone
         figures="none"
+        :editable="editable"
         @charge="(field, value) => emit('charge', field, value)"
         @update:itemised="emit('update:itemised', $event)"
       />

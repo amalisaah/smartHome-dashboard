@@ -24,6 +24,8 @@ const props = defineProps<{
   offCount: number
   showOff: boolean
   toast: string
+  /** False while the quote is being read rather than changed. */
+  editable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -87,7 +89,7 @@ function stock(item: CatalogueItem) {
       <QuoteOffToggle :count="offCount" :showing="showOff" @toggle="emit('toggleOff')" />
     </div>
 
-    <div class="add">
+    <div v-if="editable" class="add">
       <input
         ref="field"
         class="field"
@@ -101,7 +103,7 @@ function stock(item: CatalogueItem) {
       <SText v-if="toast" type="list-meta" color="action" class="toast">✓ {{ toast }}</SText>
     </div>
 
-    <div v-if="open" class="results">
+    <div v-if="open && editable" class="results">
       <button
         v-for="item in results"
         :key="item.id"

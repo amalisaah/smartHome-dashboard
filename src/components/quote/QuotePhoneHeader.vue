@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { SText } from '@/components/atoms'
+import { saveState } from '@/composables/useSaveState'
 import type { QuoteHeader } from '@/types/quote'
 
 /**
@@ -12,14 +14,35 @@ import type { QuoteHeader } from '@/types/quote'
  * says where the work is being held rather than that something has gone wrong,
  * because nothing has.
  */
-defineProps<{
+const props = defineProps<{
   header: QuoteHeader
   surname: string
   area: string | null
   online: boolean
   /** `14:02`, or null before anything has been written this session. */
   savedAt: string | null
+  /** Whether unsubmitted work is sitting on this device. */
+  dirty?: boolean
 }>()
+
+/**
+ * Offline outranks everything; after that it reports what actually happened.
+ *
+ * It must never read "saved" while a submit has failed or while changes are
+ * still only on the phone — this one line is how he knows the quote is safe,
+ * and saying so when it is not is the worst thing this header can do.
+ */
+const status = computed(() => {
+  if (!props.online) return 'no signal · held on phone'
+  if (saveState.value === 'saving') return 'submitting…'
+  if (saveState.value === 'failed') return 'not submitted'
+  if (props.dirty) return 'held on phone · not submitted'
+  return `saved${props.savedAt ? ` · ${props.savedAt}` : ''}`
+})
+
+const alarmed = computed(
+  () => !props.online || saveState.value === 'failed' || props.dirty === true,
+)
 </script>
 
 <template>
@@ -29,13 +52,9 @@ defineProps<{
         <SText type="cell" color="fg-2">‹ Quotes</SText>
       </RouterLink>
 
-      <span v-if="online" class="state">
-        <span class="dot dot--saved" />
-        <SText type="cell-meta" color="fg-2">saved{{ savedAt ? ` · ${savedAt}` : '' }}</SText>
-      </span>
-      <span v-else class="state">
-        <span class="dot dot--off" />
-        <SText type="cell-meta" color="risk">no signal · held on phone</SText>
+      <span class="state">
+        <span class="dot" :class="alarmed ? 'dot--off' : 'dot--saved'" />
+        <SText type="cell-meta" :color="alarmed ? 'risk' : 'fg-2'">{{ status }}</SText>
       </span>
     </div>
 

@@ -20,6 +20,8 @@ const props = defineProps<{
   line: QuoteLine
   defaultNeed: string | null
   expanded: boolean
+  /** False while the quote is being read rather than changed. */
+  editable?: boolean
 }>()
 
 defineEmits<{
@@ -50,7 +52,14 @@ const stock = computed(() => {
 
 <template>
   <div class="line">
-    <button type="button" class="row" :aria-expanded="expanded" @click="$emit('toggle')">
+    <component
+      :is="editable ? 'button' : 'div'"
+      :type="editable ? 'button' : undefined"
+      class="row"
+      :class="{ 'row--static': !editable }"
+      :aria-expanded="editable ? expanded : undefined"
+      @click="editable && $emit('toggle')"
+    >
       <span class="left">
         <SText type="list-title" as="span">{{ name }}</SText>
         <SText type="cell-meta" color="fg-2">{{ meta }}</SText>
@@ -61,9 +70,9 @@ const stock = computed(() => {
         <SText type="list-figure">{{ formatMoney(line.totalPesewas) }}</SText>
         <SText type="cell-meta" color="fg-2">cost {{ formatMoney(line.costPesewas) }}</SText>
       </span>
-    </button>
+    </component>
 
-    <div v-if="expanded" class="editor">
+    <div v-if="expanded && editable" class="editor">
       <div class="field-row">
         <SText type="row-meta">Quantity</SText>
         <QuoteStepper :value="line.quantity" :label="name" phone @step="$emit('step', $event)" />
@@ -119,6 +128,15 @@ const stock = computed(() => {
 
 .row:active {
   background: var(--color-surface);
+}
+
+/* Read-only: it is a line of the record, not an offer to change one. */
+.row--static {
+  cursor: default;
+}
+
+.row--static:active {
+  background: transparent;
 }
 
 .row:focus-visible {

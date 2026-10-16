@@ -204,6 +204,68 @@ export function fromPesewas(pesewas: number): string {
   return (pesewas / 100).toFixed(2).replace(/\.00$/, '')
 }
 
+// --- the draft ---------------------------------------------------------------
+
+/**
+ * What the screen is doing with the quote. It opens **reading**: a quote is
+ * looked at far more often than it is changed, and a screen that is live the
+ * moment it loads invites an accidental tap into a record a customer is about
+ * to be shown.
+ */
+export type QuoteMode = 'reading' | 'editing'
+
+/** What has changed about a line that already exists on the server. */
+export interface LineEdit {
+  quantity?: number
+  need?: string
+  note?: string | null
+  /** True = switched off, false = switched back on, absent = untouched. */
+  removed?: boolean
+}
+
+/** A line he has added that the server has never seen. */
+export interface AddedLine {
+  /** Negative, and local to this draft. The server mints the real one. */
+  tempId: number
+  itemId: number
+  roomId: number | null
+  quantity: number
+  need: string
+  note: string | null
+}
+
+/**
+ * Everything he has changed and not yet submitted.
+ *
+ * Held as a **diff against the server's answer**, not as a copy of the whole
+ * quote: a copy would go stale against figures that moved, and submitting it
+ * would write back fields he never touched.
+ */
+export interface QuoteDraft {
+  /** Keyed by line id, as a string because that is what JSON gives back. */
+  lines: Record<string, LineEdit>
+  added: AddedLine[]
+  /** Null until he touches one of the three money fields. */
+  charges: ChargesDraft | null
+  touchedAt: string
+}
+
+export const emptyDraft = (): QuoteDraft => ({
+  lines: {},
+  added: [],
+  charges: null,
+  touchedAt: new Date().toISOString(),
+})
+
+/** Whether there is anything to submit. An empty draft is not a draft. */
+export const draftIsEmpty = (draft: QuoteDraft) =>
+  Object.keys(draft.lines).length === 0 && draft.added.length === 0 && draft.charges === null
+
+/** How many separate things he has changed — what the Submit button counts. */
+export function draftChangeCount(draft: QuoteDraft): number {
+  return Object.keys(draft.lines).length + draft.added.length + (draft.charges ? 1 : 0)
+}
+
 // --- what the screen counts for itself --------------------------------------
 
 /**
@@ -212,11 +274,22 @@ export function fromPesewas(pesewas: number): string {
  *
  * Switched-off lines are left out, because they are out of every total.
  */
+/**
+ * The id the screen uses for equipment that belongs to no room — the hub, the
+ * front door lock. The wire calls that `room_id: null`, but `null` already
+ * means "he has not picked a room", so the two need telling apart.
+ */
+export const WHOLE_HOUSE = -1
+
+/** `WHOLE_HOUSE` back to what the wire wants. */
+export const roomIdToApi = (roomId: number | null) =>
+  roomId === WHOLE_HOUSE ? null : roomId
+
 export function roomSummaries(
   rooms: readonly QuoteRoom[],
   lines: readonly QuoteLine[],
 ): QuoteRoomSummary[] {
-  return rooms.map((room) => {
+  const summaries = rooms.map((room) => {
     const live = lines.filter((line) => !line.isRemoved && line.roomId === room.id)
     return {
       ...room,
@@ -224,6 +297,23 @@ export function roomSummaries(
       totalPesewas: live.reduce((sum, line) => sum + line.totalPesewas, 0),
     }
   })
+
+  // Whole-house lines are on the quote and in its totals, so they must be
+  // somewhere he can see and switch off. The row appears only when there are
+  // any — a house with none should not be told about the idea.
+  const loose = lines.filter((line) => !line.isRemoved && line.roomId === null)
+  if (loose.length === 0) return summaries
+
+  return [
+    ...summaries,
+    {
+      id: WHOLE_HOUSE,
+      name: 'Whole house',
+      sortOrder: Number.MAX_SAFE_INTEGER,
+      lineCount: loose.length,
+      totalPesewas: loose.reduce((sum, line) => sum + line.totalPesewas, 0),
+    },
+  ]
 }
 
 /** One need's lines, for the By need sanity check. Only needs with lines appear. */

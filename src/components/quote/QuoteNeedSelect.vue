@@ -13,7 +13,12 @@ import { needOptions } from '@/types/quote'
  * A native `<select>` on purpose: it is one tab stop, it opens with the keyboard
  * alone, and the eight needs do not need searching.
  */
-const props = defineProps<{ value: string; defaultNeed: string | null; label: string }>()
+const props = defineProps<{
+  value: string
+  defaultNeed: string | null
+  label: string
+  disabled?: boolean
+}>()
 defineEmits<{ pick: [need: string] }>()
 
 /** Still the one it came with. */
@@ -27,6 +32,7 @@ const options = computed(() => needOptions(props.value))
     class="need"
     :class="{ 'need--default': isDefault }"
     :value="value"
+    :disabled="disabled"
     :aria-label="`Need, ${label}`"
     @change="$emit('pick', ($event.target as HTMLSelectElement).value)"
   >
@@ -53,8 +59,15 @@ const options = computed(() => needOptions(props.value))
   border-style: dashed;
 }
 
-.need:hover {
+.need:hover:not(:disabled) {
   border-color: var(--color-fg-2);
+}
+
+/* Not live, but still his record to read: the value keeps full ink. */
+.need:disabled {
+  background: var(--color-surface);
+  color: var(--color-fg);
+  cursor: not-allowed;
 }
 
 .need:focus-visible {

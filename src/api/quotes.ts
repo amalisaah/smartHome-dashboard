@@ -106,6 +106,20 @@ export async function fetchQuoteRooms(
 export const addQuoteLine = (quoteId: number, line: ApiQuoteLineCreate) =>
   apiSend<ApiQuoteLine>('POST', `/quotes/${quoteId}/lines`, line)
 
+/**
+ * `POST /quotes/{id}/lines/bulk` — every line he added to one room, in a single
+ * transaction and a single request.
+ *
+ * This is what submitting uses instead of a POST per line. Four items added to
+ * a living room is one round trip, not four, which on a phone is the difference
+ * between one radio wake-up and four.
+ */
+export const addQuoteLines = (
+  quoteId: number,
+  roomId: number | null,
+  lines: Omit<ApiQuoteLineCreate, 'room_id'>[],
+) => apiSend<ApiQuoteLine[]>('POST', `/quotes/${quoteId}/lines/bulk`, { room_id: roomId, lines })
+
 /** `PATCH /quote-lines/{id}` — quantity, need, note. */
 export const updateQuoteLine = (
   lineId: number,

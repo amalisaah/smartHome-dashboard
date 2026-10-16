@@ -19,12 +19,18 @@ export const houseKeys = {
   installed: (id: number) => [...houseKeys.all, 'installed', id] as const,
 }
 
+/**
+ * One house. Idle until there is an id — a caller reading the id off a quote
+ * passes `0` while that quote is still loading, and `GET /houses/0` is a
+ * request that cannot succeed.
+ */
 export function useHouse(id: MaybeRefOrGetter<number>) {
   const houseId = computed(() => toValue(id))
 
   return useQuery({
     queryKey: computed(() => houseKeys.detail(houseId.value)),
     queryFn: ({ signal }) => fetchHouse(houseId.value, signal),
+    enabled: computed(() => houseId.value > 0),
   })
 }
 

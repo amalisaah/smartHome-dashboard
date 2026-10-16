@@ -26,6 +26,12 @@ const props = defineProps<{
   phone?: boolean
   /** The laptop keeps profit and floor inside the amber box; the phone uses cards. */
   figures?: 'inline' | 'none'
+  /**
+   * False while the quote is being read. The fields recede onto `--surface` and
+   * stop taking input, but every value keeps full ink: a locked field still
+   * holds a figure he needs to read out loud.
+   */
+  editable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -74,6 +80,7 @@ const materialsHint = computed(() =>
             mono
             align="right"
             dashed
+            :disabled="!editable"
             :placeholder="fromPesewas(money.labourPesewas)"
             aria-label="Labour charge"
             @update:model-value="emit('charge', 'labour', $event)"
@@ -91,6 +98,7 @@ const materialsHint = computed(() =>
             mono
             align="right"
             dashed
+            :disabled="!editable"
             :placeholder="fromPesewas(money.materialsPesewas)"
             aria-label="Materials charge"
             @update:model-value="emit('charge', 'materials', $event)"
@@ -132,6 +140,7 @@ const materialsHint = computed(() =>
             mono
             align="right"
             error
+            :disabled="!editable"
             placeholder="0"
             aria-label="Misc cost estimate"
             @update:model-value="emit('charge', 'misc', $event)"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { SText } from '@/components/atoms'
+import { computed, ref, watch } from 'vue'
+import { SButton, SText } from '@/components/atoms'
 import QuoteCustomerView from '@/components/quote/QuoteCustomerView.vue'
 import QuoteDesk from '@/components/quote/QuoteDesk.vue'
 import QuotePhone from '@/components/quote/QuotePhone.vue'
@@ -103,10 +103,11 @@ watch(saveState, (state) => {
   }
 })
 
-// A tab going away must not take unsent work with it.
-const onHide = () => builder.flushNow()
-onMounted(() => window.addEventListener('pagehide', onHide))
-onBeforeUnmount(() => window.removeEventListener('pagehide', onHide))
+/**
+ * Nothing to flush on the way out. Every change is written to session storage
+ * as he makes it, so a closed tab loses nothing and a reload picks the draft
+ * back up — without a single request having been made.
+ */
 
 /**
  * `isPending` is "nothing cached yet", so a revalidation never re-skeletons.
@@ -132,7 +133,25 @@ const sendStub = ref(false)
       <!-- Her screen is already dark: it must never flash his light one while
            the document is being fetched. -->
       <div class="her-wait audience-customer">
-        <SText type="body" color="fg-2">One moment…</SText>
+        <!--
+          If her document cannot be fetched there is nothing safe to show her,
+          and the way back lives inside the view that did not render — so
+          without this the screen is a dark dead end with his costs one failed
+          request away and no door. The door is a plain button rather than the
+          hold pill: there is nothing on screen to protect.
+        -->
+        <template v-if="herQuery.isError.value">
+          <SText type="body" color="fg-2">This quote can’t be shown right now.</SText>
+          <div class="her-actions">
+            <SButton variant="secondary" :size="isPhone ? 'lg' : 'md'" @click="herQuery.refetch()">
+              Try again
+            </SButton>
+            <SButton variant="ghost" :size="isPhone ? 'lg' : 'md'" @click="builder.backToOwner">
+              Go back
+            </SButton>
+          </div>
+        </template>
+        <SText v-else type="body" color="fg-2">One moment…</SText>
       </div>
     </template>
 
@@ -190,9 +209,18 @@ const sendStub = ref(false)
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  text-align: center;
   background: var(--color-bg);
+}
+
+.her-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .loading {

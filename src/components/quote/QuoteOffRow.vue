@@ -13,7 +13,7 @@ import type { QuoteLine } from '@/types/quote'
  * these rows are dashed rather than gone, and why they are out of every total
  * while they sit here.
  */
-const props = defineProps<{ line: QuoteLine; phone?: boolean }>()
+const props = defineProps<{ line: QuoteLine; phone?: boolean; editable?: boolean }>()
 defineEmits<{ on: [] }>()
 
 const name = computed(() => props.line.itemName ?? 'Untitled item')
@@ -30,7 +30,13 @@ const meta = computed(() => {
       <SText :type="phone ? 'list-title' : 'cell'" as="span" class="name">{{ name }}</SText>
       <SText type="cell-meta" class="meta">{{ meta }}</SText>
     </span>
-    <button type="button" class="on" :class="{ 'on--phone': phone }" @click="$emit('on')">
+    <button
+      v-if="editable"
+      type="button"
+      class="on"
+      :class="{ 'on--phone': phone }"
+      @click="$emit('on')"
+    >
       <SText :type="phone ? 'row-meta' : 'label'" as="span" color="action">Switch on</SText>
     </button>
   </div>

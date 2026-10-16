@@ -12,7 +12,7 @@ import { SText } from '@/components/atoms'
  *
  * Buttons, so Tab reaches them and Space or Enter steps them.
  */
-defineProps<{ value: number; label: string; phone?: boolean }>()
+defineProps<{ value: number; label: string; phone?: boolean; disabled?: boolean }>()
 defineEmits<{ step: [by: 1 | -1] }>()
 </script>
 
@@ -21,7 +21,7 @@ defineEmits<{ step: [by: 1 | -1] }>()
     <button
       type="button"
       class="key"
-      :disabled="value <= 1"
+      :disabled="disabled || value <= 1"
       :aria-label="`One fewer, ${label}`"
       @click="$emit('step', -1)"
     >
@@ -32,7 +32,13 @@ defineEmits<{ step: [by: 1 | -1] }>()
     <SText :type="phone ? 'list-figure' : 'count'" class="value" aria-live="polite">
       {{ value }}
     </SText>
-    <button type="button" class="key" :aria-label="`One more, ${label}`" @click="$emit('step', 1)">
+    <button
+      type="button"
+      class="key"
+      :disabled="disabled"
+      :aria-label="`One more, ${label}`"
+      @click="$emit('step', 1)"
+    >
       +
     </button>
   </div>
