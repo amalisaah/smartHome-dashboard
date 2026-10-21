@@ -15,8 +15,8 @@ import HouseVisitView from '@/views/HouseVisitView.vue'
 import ItemDetailView from '@/views/ItemDetailView.vue'
 import ItemEditView from '@/views/ItemEditView.vue'
 import ItemNewView from '@/views/ItemNewView.vue'
-import QuoteBuilderView from '@/views/QuoteBuilderView.vue'
 import QuoteStubView from '@/views/QuoteStubView.vue'
+import QuoteView from '@/views/QuoteView.vue'
 import QuotesListView from '@/views/QuotesListView.vue'
 import ShipmentBuilderView from '@/views/ShipmentBuilderView.vue'
 import ShipmentsListView from '@/views/ShipmentsListView.vue'
@@ -194,33 +194,28 @@ export const router = createRouter({
       props: { destination: 'new' },
     },
     {
-      // One quote, on the builder — modules 3+4, block A. Where a **draft** row
-      // on the list lands.
+      // One quote. **Every row on the list lands here**, whatever its state —
+      // one address per quote. `QuoteView` reads the state and renders the
+      // builder for a draft or the quote's own page for the rest, because what
+      // he can do to a quote depends on where it has got to.
       path: '/quotes/:id(\\d+)',
-      name: 'quote-builder',
-      component: QuoteBuilderView,
+      name: 'quote-detail',
+      component: QuoteView,
       props: (route) => ({ quoteId: Number(route.params.id) }),
     },
     {
-      // Block B, "What did she agree to?" — where a **sent** row lands, because
-      // the only reason he taps one is that she has answered. Its own address,
-      // so the back gesture returns to the list rather than leaving the quote.
+      // Block B, "What did she agree to?" — the primary action on a sent
+      // quote's page. Its own address, so the back gesture returns to the
+      // quote rather than to the list.
       path: '/quotes/:id(\\d+)/answer',
       name: 'quote-answer',
       component: QuoteStubView,
       props: (route) => ({ reference: Number(route.params.id), destination: 'answer' }),
     },
     {
-      // A **declined** quote, read-only. Out of scope; stubbed.
-      path: '/quotes/:id(\\d+)/read',
-      name: 'quote-read-only',
-      component: QuoteStubView,
-      props: (route) => ({ reference: Number(route.params.id), destination: 'read-only' }),
-    },
-    {
-      // Block C, the job — where an **accepted** row lands. Addressed by the
-      // job's own number rather than the quote's: by this point the job is the
-      // record, and the quote is what it came from.
+      // Block C, the job — the primary action on an accepted quote's page.
+      // Addressed by the job's own number rather than the quote's: by this
+      // point the job is the record, and the quote is what it came from.
       path: '/jobs/:id(\\d+)',
       name: 'job-detail',
       component: QuoteStubView,

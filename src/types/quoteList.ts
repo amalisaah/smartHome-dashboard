@@ -105,30 +105,25 @@ export function quoteRowMatches(row: QuoteListRow, query: string): boolean {
 }
 
 /**
- * Where a row goes when tapped. The destination is the status: the row is one
- * hit target with no buttons inside it, so this is the whole of its behaviour.
+ * Where a row goes when tapped: **the quote**, whatever state it is in.
  *
- * A sent quote opens **B** rather than the builder, because the only reason he
- * is tapping it is that she has answered.
+ * The row stays one hit target with no buttons inside it. The handoff sends a
+ * sent row straight to block B instead, on the grounds that the only reason he
+ * taps one is that she has answered — but that leaves a quote he merely wants
+ * to look at with nowhere to be looked at, and gives one list four URL shapes
+ * for the same kind of thing. One address per quote; what the quote needs next
+ * is the primary action on its own page, one tap further on.
  */
 export function quoteRowDestination(row: QuoteListRow): RouteLocationRaw {
-  switch (row.status) {
-    case 'sent':
-      return { name: 'quote-answer', params: { id: row.id } }
-    case 'draft':
-      return { name: 'quote-builder', params: { id: row.id } }
-    case 'accepted':
-      // Accepted rows always carry their job number; the fallback keeps a row
-      // whose link is missing readable rather than routing to `/jobs/NaN`.
-      return row.jobNumber
-        ? { name: 'job-detail', params: { id: Number(row.jobNumber) } }
-        : { name: 'quote-read-only', params: { id: row.id } }
-    case 'declined':
-      return { name: 'quote-read-only', params: { id: row.id } }
-  }
+  return { name: 'quote-detail', params: { id: row.id } }
 }
 
-/** The blue line at the foot of a row — sent and accepted only. */
+/**
+ * The blue line at the foot of a row — sent and accepted only.
+ *
+ * It names what the quote needs next rather than where the tap lands, and the
+ * page it lands on offers exactly that as its primary action.
+ */
 export function quoteRowActionHint(row: QuoteListRow): string | null {
   if (row.status === 'sent') return 'Record her answer ›'
   if (row.status === 'accepted' && row.jobNumber) return `Job ${row.jobNumber} ›`
