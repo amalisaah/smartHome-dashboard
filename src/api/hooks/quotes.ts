@@ -6,6 +6,7 @@ import {
   fetchQuoteRooms,
   fetchQuotes,
 } from '@/api/quotes'
+import { fetchQuoteListRows } from '@/data/quoteListMock'
 
 /**
  * The owner view, her view and the rooms are three keys, because they are three
@@ -27,6 +28,7 @@ import {
 export const quoteKeys = {
   all: ['quotes'] as const,
   list: () => [...quoteKeys.all, 'list'] as const,
+  listRows: () => [...quoteKeys.all, 'list-rows'] as const,
   ownerView: (id: number) => [...quoteKeys.all, 'owner-view', id] as const,
   customerView: (id: number, itemised: boolean) =>
     [...quoteKeys.all, 'customer-view', id, itemised] as const,
@@ -38,6 +40,26 @@ export function useQuotes() {
   return useQuery({
     queryKey: quoteKeys.list(),
     queryFn: ({ signal }) => fetchQuotes(signal),
+  })
+}
+
+/**
+ * The quote list's rows — block D.
+ *
+ * A separate key from `list()` because it is a different read: that one is the
+ * quote records, this one is the list screen's rows with the household names,
+ * the days-waiting counts and the job links on them. It is served from a
+ * fixture today (gap C10); see `@/data/quoteListMock`.
+ *
+ * Left on the default policy rather than the builder's `staleTime: Infinity`.
+ * The builder is one document nothing else moves, so it caches hard; this is a
+ * list whose days-waiting counts age by the day and whose rows change whenever
+ * he answers one. Coming back to this tab should show what is true now.
+ */
+export function useQuoteListRows() {
+  return useQuery({
+    queryKey: quoteKeys.listRows(),
+    queryFn: () => fetchQuoteListRows(),
   })
 }
 

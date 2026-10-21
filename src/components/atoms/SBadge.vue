@@ -19,6 +19,8 @@ defineProps<{
     | 'quoted'
     | 'customer'
     | 'dormant'
+    | 'outcome-accepted'
+    | 'outcome-declined'
   /**
    * `row` is the in-row flag chip: lowercase, untracked, tighter box.
    * `state` is the sentence-shaped chip — `draft · arrives 24 Sep` — at 11px.
@@ -102,6 +104,29 @@ defineProps<{
   letter-spacing: normal;
   text-transform: none;
   line-height: normal;
+}
+
+/* What she said, on a quote she has answered. The pair is deliberately the only
+   place in the chip vocabulary where the *outline* carries the meaning: both
+   outcomes are settled, so neither may be dashed, and a fill would make one of
+   them shout across a column of the other. Accepted takes the action hue
+   because it leads somewhere — its job is one tap on. Declined is the quiet
+   one: it is recorded, and there is nothing to do about it.
+
+   Visually `outcome-accepted` is `overridden` and `outcome-declined` is
+   `category-outlined`. They are their own variants anyway, because they mean
+   something unrelated to a price override or a category, and sharing a class
+   would mean a later change to one silently restyled the other. */
+.s-badge--outcome-accepted {
+  background: transparent;
+  color: var(--color-action);
+  border-color: var(--color-action);
+}
+
+.s-badge--outcome-declined {
+  background: transparent;
+  color: var(--color-fg-2);
+  border-color: var(--color-line);
 }
 
 /* The only filled status, because it is the only settled one. */

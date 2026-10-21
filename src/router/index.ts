@@ -16,6 +16,7 @@ import ItemDetailView from '@/views/ItemDetailView.vue'
 import ItemEditView from '@/views/ItemEditView.vue'
 import ItemNewView from '@/views/ItemNewView.vue'
 import QuoteBuilderView from '@/views/QuoteBuilderView.vue'
+import QuoteStubView from '@/views/QuoteStubView.vue'
 import QuotesListView from '@/views/QuotesListView.vue'
 import ShipmentBuilderView from '@/views/ShipmentBuilderView.vue'
 import ShipmentsListView from '@/views/ShipmentsListView.vue'
@@ -175,21 +176,55 @@ export const router = createRouter({
       }),
     },
     {
-      // The quote list — out of scope in this handoff, so a stub. It exists
-      // because `‹ Quotes` and the `Quotes ›` breadcrumb both point at it.
+      // The quote list — modules 3+4, block D.
       path: '/quotes',
       name: 'quotes',
       component: QuotesListView,
     },
     {
-      // One quote, on the builder — modules 3+4, block A. There is no
-      // `/quotes/new`: starting a quote belongs to the list, which this
-      // handoff does not cover, so every quote reached here already has the id
-      // `POST /quotes` gave it.
+      // A quote he has just started has no id: `POST /quotes` gives it a number
+      // when it is created, not the click that asked for a blank one. Declared
+      // above `:id` so it wins — though the `\d+` there would not match it.
+      //
+      // A stub, because starting a quote picks the customer and the house
+      // first and that picker is block G.
+      path: '/quotes/new',
+      name: 'quote-new',
+      component: QuoteStubView,
+      props: { destination: 'new' },
+    },
+    {
+      // One quote, on the builder — modules 3+4, block A. Where a **draft** row
+      // on the list lands.
       path: '/quotes/:id(\\d+)',
       name: 'quote-builder',
       component: QuoteBuilderView,
       props: (route) => ({ quoteId: Number(route.params.id) }),
+    },
+    {
+      // Block B, "What did she agree to?" — where a **sent** row lands, because
+      // the only reason he taps one is that she has answered. Its own address,
+      // so the back gesture returns to the list rather than leaving the quote.
+      path: '/quotes/:id(\\d+)/answer',
+      name: 'quote-answer',
+      component: QuoteStubView,
+      props: (route) => ({ reference: Number(route.params.id), destination: 'answer' }),
+    },
+    {
+      // A **declined** quote, read-only. Out of scope; stubbed.
+      path: '/quotes/:id(\\d+)/read',
+      name: 'quote-read-only',
+      component: QuoteStubView,
+      props: (route) => ({ reference: Number(route.params.id), destination: 'read-only' }),
+    },
+    {
+      // Block C, the job — where an **accepted** row lands. Addressed by the
+      // job's own number rather than the quote's: by this point the job is the
+      // record, and the quote is what it came from.
+      path: '/jobs/:id(\\d+)',
+      name: 'job-detail',
+      component: QuoteStubView,
+      props: (route) => ({ reference: Number(route.params.id), destination: 'job' }),
     },
     {
       path: '/groups',

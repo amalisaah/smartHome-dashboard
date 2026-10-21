@@ -161,7 +161,18 @@ control. A chip that looked selectable would promise a column that does not exis
 <SBadge variant="received" size="state">received 12 Aug</SBadge>
 <SBadge variant="neutral" size="state">3 costs down</SBadge>
 <SBadge variant="missing" size="state">no group</SBadge>
+<SBadge variant="outcome-accepted" size="inline">accepted 6 Oct</SBadge>
+<SBadge variant="outcome-declined" size="inline">declined 8 Oct</SBadge>
 ```
+
+`outcome-accepted` / `outcome-declined` are **what she said**, on a quote she has answered.
+They are the one pair where the *outline* carries the meaning: both outcomes are settled, so
+neither may be dashed, and a fill would make one of them shout across a column of the other.
+Accepted takes the action hue because it leads somewhere — its job is one tap on; declined is
+quiet, because it is recorded and there is nothing to do about it. Visually they are
+`overridden` and `category-outlined`; they are their own variants because they mean something
+unrelated to a price override or a category, and sharing a class would mean a later change to
+one silently restyled the other.
 
 `size="state"` is the sentence-shaped chip at 11px (`5px 9px`, `rounded-chip`, no tracking),
 for a chip that says a state or a count rather than labelling a category. `draft` is dashed
@@ -212,7 +223,15 @@ alone is too quiet an answer to a reach.
 
 ```vue
 <SSegmented v-model="draft.internet" :options="INTERNET_SEGMENTS" variant="joined" size="lg" />
+<SSegmented v-model="tab" :options="QUOTE_TABS" size="phone" />   <!-- track, 44px, full width -->
 ```
+
+On `track` there is a third size, `phone`: a full-width rail of 44px segments at 14px, for a
+control that is the **screen's** navigation rather than something inside it — the quote list's
+Waiting / Drafts / Answered. It is the one place a track stretches; everywhere else a track
+sits at its labels' width. An option may also carry a `count`, rendered mono beside the label
+(`Waiting 7`), because every number in this system is mono and the figure is the tab's own
+business — a tab saying `Waiting` while a count sat elsewhere would make him look twice.
 
 Under `joined` the two sizes are the two devices, as everywhere else in this system: `md` is
 the laptop's 40px row at 13px, `lg` the 48px phone door at 14px. **Do not use the track's

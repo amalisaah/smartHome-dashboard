@@ -10,12 +10,25 @@ import { SText } from '@/components/atoms'
  * `--band`. Not a new colour: the risk hue at the lightness it needs to be a
  * ground rather than ink, already defined for the dark phone header.
  */
-defineProps<{ phone?: boolean }>()
+withDefaults(
+  defineProps<{
+    phone?: boolean
+    /**
+     * What the band says this screen is holding. The builder's is the cost on
+     * screen; the quote list's is `His view · owner only`, because it carries
+     * no cost at all — what makes it his is that it has other customers' names
+     * on it. The band is the same band either way, and neither screen offers a
+     * way to turn it off.
+     */
+    holding?: string
+  }>(),
+  { holding: 'cost on screen' },
+)
 </script>
 
 <template>
   <div class="band" :class="{ 'band--phone': phone }">
-    <SText type="micro" color="fg">His view · cost on screen</SText>
+    <SText type="micro" color="fg">His view · {{ holding }}</SText>
     <SText type="micro" color="fg">Owner</SText>
   </div>
 </template>

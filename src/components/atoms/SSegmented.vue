@@ -1,7 +1,13 @@
 <script setup lang="ts" generic="T extends string">
 defineProps<{
   modelValue: T
-  options: { label: string; value: T }[]
+  /**
+   * `count` is a figure the segment is reporting — how many rows the tab holds.
+   * It renders mono beside the label, because every number in this system is
+   * mono, and it is the segment's own business: a tab that said `Waiting` while
+   * a figure elsewhere said `7` would make him look in two places.
+   */
+  options: { label: string; value: T; count?: number }[]
   /**
    * `track` is a padded rail with a lifted tile riding in it — two or three
    * options, where the choice is a view of the same thing.
@@ -17,8 +23,13 @@ defineProps<{
    * On `track`, `lg` is the allocation-basis door: taller, and the selection
    * weighs 600. On `joined` the two sizes are the two devices, as everywhere
    * else in this system — `md` the laptop's 40px row, `lg` the 48px phone door.
+   *
+   * `phone` is the track at the phone's door — a full-width rail of equal
+   * segments that is the screen's navigation rather than a control inside it,
+   * so it stretches instead of sitting at its labels' width. Only on `track`:
+   * `joined` already has its phone size in `lg`.
    */
-  size?: 'md' | 'lg'
+  size?: 'md' | 'lg' | 'phone'
   disabled?: boolean
 }>()
 
@@ -43,7 +54,7 @@ defineEmits<{
       :class="{ 's-seg-option--active': modelValue === opt.value }"
       @click="$emit('update:modelValue', opt.value)"
     >
-      {{ opt.label }}
+      {{ opt.label }}<span v-if="opt.count !== undefined" class="s-seg-count">{{ opt.count }}</span>
     </button>
   </div>
 </template>
@@ -89,6 +100,41 @@ defineEmits<{
   padding: 9px 14px;
   border-radius: var(--radius-chip);
   color: var(--color-fg-2-soft);
+}
+
+/* The phone's tab rail. It is the screen's navigation rather than a control
+   sitting inside it, so it takes the full width and divides it three ways —
+   the one place a track stretches. */
+.s-seg--track.s-seg--phone {
+  display: flex;
+  width: 100%;
+  border-radius: var(--radius-md);
+  gap: 0;
+}
+
+.s-seg--track.s-seg--phone .s-seg-option {
+  height: auto;
+  /* The phone door the handoff draws for a tab. Padding, not a fixed height:
+     the label and its count set the rest. */
+  min-height: 44px;
+  padding: 0 8px;
+  font-size: 14px;
+  border-radius: var(--radius-chip);
+}
+
+.s-seg--track.s-seg--phone .s-seg-option--active {
+  font-weight: 600;
+  box-shadow: var(--shadow-elev-0);
+}
+
+/* The figure the segment is reporting. Mono at the label's own ink, so the
+   count reads as part of the tab and not as a badge stuck to it. */
+.s-seg-count {
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .s-seg-option:focus-visible {
