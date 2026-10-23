@@ -33,7 +33,10 @@
       <div style="display: flex; gap: 12px; font-size: 14px;"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; width: 26px; flex: none;">A</span><span><a href="#A">Building the quote</a> · phone + laptop · live · money, removal, her view</span></div>
       <div style="display: flex; gap: 12px; font-size: 14px;"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; width: 26px; flex: none;">B</span><span><a href="#B">Proposed vs agreed</a> · phone · record her answer</span></div>
       <div style="display: flex; gap: 12px; font-size: 14px;"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; width: 26px; flex: none;">C</span><span><a href="#C">Recording the job</a> · laptop · live · correct, don't enter</span></div>
-      <div style="display: flex; gap: 12px; font-size: 14px; color: oklch(0.58 0.01 260);"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; width: 26px; flex: none;">D–G</span><span>Quote list · quick cost · job without a quote · payments detail. Not yet designed.</span></div>
+      <div style="display: flex; gap: 12px; font-size: 14px;"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; width: 26px; flex: none;">D</span><span><a href="#D">Quote list</a> · phone + laptop · live · who to chase</span></div>
+      <div style="display: flex; gap: 12px; font-size: 14px;"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; width: 26px; flex: none;">E</span><span><a href="#E">Job list</a> · phone + laptop · live · what's on, who owes</span></div>
+      <div style="display: flex; gap: 12px; font-size: 14px;"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; width: 26px; flex: none;">G</span><span><a href="#G">Starting a quote</a> · phone + laptop · live · customer, house, draft</span></div>
+      <div style="display: flex; gap: 12px; font-size: 14px; color: oklch(0.58 0.01 260);"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; width: 26px; flex: none;">F H I</span><span>Quick cost · job without a quote · payments detail. Not yet designed.</span></div>
     </div>
   </div>
 
@@ -803,6 +806,424 @@
     </div>
   </div>
 
+  <!-- D -->
+  <div id="D" style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; gap: 14px; padding-bottom: 10px; border-bottom: 2px solid oklch(0.21 0.01 260); width: 100%;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; padding: 4px 9px; background: oklch(0.55 0.13 255); color: oklch(0.99 0.002 250); border-radius: 6px;">D</span>
+      <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 24px; font-weight: 600;">Quote list</span>
+      <span style="font-size: 14px; color: oklch(0.45 0.01 260);">Which quote is which, and which one to chase. Owner only. No amounts on the list (B1). Try the tabs and the search.</span>
+    </div>
+    <div style="display: flex; gap: 32px; align-items: flex-start;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.5 0.01 260);">D1 · phone 390 · live</div>
+        <div style="width: 390px; height: 844px; overflow: hidden; border-radius: 10px; border: 1px solid oklch(0.9 0.004 250); box-shadow: 0 10px 30px oklch(0.21 0.01 260 / 0.16); display: flex; flex-direction: column; background: oklch(0.99 0.002 250); color: oklch(0.21 0.01 260);">
+          <div style="display: flex; align-items: center; justify-content: space-between; height: 32px; padding: 0 16px; background: oklch(0.7 0.13 45); font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; flex: none;"><span>His view · owner only</span><span>Owner</span></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px 12px; flex: none;">
+            <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 24px; font-weight: 600;">Quotes</span>
+            <a href="#G" style="display: flex; align-items: center; min-height: 44px; padding: 0 16px; font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 15px; font-weight: 600; color: oklch(0.99 0.002 250); background: oklch(0.55 0.13 255); border-radius: 8px; text-decoration: none;">+ New quote</a>
+          </div>
+          <div style="padding: 0 16px 12px; flex: none;">
+            <input value="{{ pq }}" onChange="{{ onPq }}" placeholder="Name, area or number" style="width: 100%; box-sizing: border-box; min-height: 48px; font-size: 16px; color: oklch(0.21 0.01 260); background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; padding: 0 14px;" style-focus="outline: 2px solid oklch(0.55 0.13 255); outline-offset: -1px" />
+          </div>
+          <div style="display: flex; padding: 3px; margin: 0 16px; background: oklch(0.96 0.003 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; flex: none;">
+            <sc-for list="{{ pqTabs }}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.pick }}" style="flex: 1; min-height: 44px; font-size: 14px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; background: {{ t.bg }}; color: {{ t.fg }};">{{ t.label }} <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500;">{{ t.n }}</span></button>
+            </sc-for>
+          </div>
+          <div style="padding: 10px 16px 12px; font-size: 13px; line-height: 1.45; color: oklch(0.4 0.01 260); flex: none;">{{ pqHint }}</div>
+          <div style="flex: 1; min-height: 0; overflow-y: auto; border-top: 1px solid oklch(0.9 0.004 250); scrollbar-width: thin;">
+            <sc-for list="{{ pqRows }}" as="r" hint-placeholder-count="4">
+              <a href="{{ r.href }}" style="display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; min-height: 64px; box-sizing: border-box; border-bottom: 1px solid oklch(0.94 0.003 250); color: inherit; text-decoration: none;" style-active="background: oklch(0.96 0.003 250)">
+                <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+                  <span style="font-size: 16px; font-weight: 600;">{{ r.name }}</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.4 0.01 260);">{{ r.sub }}</span>
+                  <sc-if value="{{ r.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; font-style: italic; color: oklch(0.4 0.01 260);">“{{ r.note }}”</span></sc-if>
+                  <sc-if value="{{ r.hasAct }}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; font-weight: 500; color: oklch(0.55 0.13 255); padding-top: 2px;">{{ r.act }}</span></sc-if>
+                </span>
+                <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none;">
+                  <sc-if value="{{ r.hasDays }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums;">{{ r.days }}</span>
+                    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.4 0.01 260);">{{ r.daysLbl }}</span>
+                  </sc-if>
+                  <sc-if value="{{ r.hasWhen }}" hint-placeholder-val="{{ false }}"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ r.when }}</span></sc-if>
+                  <sc-if value="{{ r.hasChip }}" hint-placeholder-val="{{ false }}"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 3px 7px; border-radius: 6px; white-space: nowrap; color: {{ r.chipFg }}; border: 1px solid {{ r.chipBd }};">{{ r.chip }}</span></sc-if>
+                </span>
+              </a>
+            </sc-for>
+            <sc-if value="{{ pqEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding: 24px 16px; font-size: 14px; color: oklch(0.4 0.01 260);">{{ pqEmptyTxt }}</div></sc-if>
+          </div>
+        </div>
+      </div>
+      <div style="width: 390px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 20px; margin-top: 23px; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; font-size: 13px; line-height: 1.65; color: oklch(0.4 0.01 260);">
+        <div><b style="color: oklch(0.21 0.01 260);">It opens on "Waiting", oldest first.</b> He opens the list to find out who to chase, so the top row answers that. Days since sending is the largest thing on each row. There's no colour cut-off for "late". When to chase is his call, not the app's.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">He chases on WhatsApp, not in the app.</b> Tapping a waiting quote opens <a href="#B">B</a>, "What did she agree to?", so once she replies he's one tap from recording it.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">Rows are told apart by name, area, number and level.</b> The amount is one tap in (B1). Two quotes for the same family are told apart by area, or by title when he's set one.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">"Answered" covers the last 30 days.</b> An accepted quote links to its job. A declined one shows her reason if he wrote it down. If he didn't, nothing is shown.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">The amber band stays on.</b> This screen has no cost on it, but it does have other customers' names. It's still his screen, and there's no "show her" option here.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.5 0.01 260);">D2 · laptop 1440 · live · the same three states as columns, left to right in the order he acts on them</div>
+      <div style="width: 1440px; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px oklch(0.21 0.01 260 / 0.08);">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; background: oklch(0.21 0.01 260); color: oklch(0.98 0.002 250);">
+          <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 15px; font-weight: 600;">Smart Home Ops</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.8 0.006 250);">17 Oct</span>
+        </div>
+        <div style="display: flex; gap: 4px; padding: 8px 20px 0; background: oklch(0.96 0.003 250); border-bottom: 1px solid oklch(0.9 0.004 250);">
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; border-bottom: 2px solid transparent; color: oklch(0.45 0.01 260);">Catalogue</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; border-bottom: 2px solid transparent; color: oklch(0.45 0.01 260);">Packages</span>
+          <span style="font-size: 13px; font-weight: 600; padding: 10px 14px; border-bottom: 2px solid oklch(0.55 0.13 255);">Quotes</span>
+          <a href="#E" style="font-size: 13px; font-weight: 500; padding: 10px 14px; border-bottom: 2px solid transparent; color: oklch(0.45 0.01 260); text-decoration: none;">Jobs</a>
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; border-bottom: 2px solid transparent; color: oklch(0.45 0.01 260);">Customers</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; border-bottom: 2px solid transparent; color: oklch(0.45 0.01 260);">Money</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 20px; padding: 24px 32px 32px;">
+          <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;">
+            <span style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 22px; font-weight: 600;">Quotes</span>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ lqSummary }}</span>
+            </span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input value="{{ lqq }}" onChange="{{ onLqq }}" placeholder="Name, area or number" style="width: 300px; font-size: 14px; color: oklch(0.21 0.01 260); background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; padding: 9px 12px;" style-focus="outline: 2px solid oklch(0.55 0.13 255); outline-offset: -1px" />
+              <a href="#G" style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 14px; font-weight: 600; color: oklch(0.99 0.002 250); background: oklch(0.55 0.13 255); border-radius: 8px; padding: 9px 16px; text-decoration: none;">+ New quote</a>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: start;">
+            <sc-for list="{{ lqCols }}" as="col" hint-placeholder-count="3">
+              <div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; background: oklch(0.96 0.003 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; min-width: 0;">
+                <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 2px 6px;">
+                  <span style="display: flex; align-items: baseline; gap: 8px;"><span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 17px; font-weight: 600;">{{ col.label }}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ col.n }}</span></span>
+                  <span style="font-size: 12px; color: oklch(0.4 0.01 260);">{{ col.hint }}</span>
+                </div>
+                <sc-for list="{{ col.rows }}" as="r" hint-placeholder-count="3">
+                  <a href="{{ r.href }}" style="display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; color: inherit; text-decoration: none;" style-hover="border-color: oklch(0.55 0.13 255)">
+                    <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+                      <span style="font-size: 15px; font-weight: 600;">{{ r.name }}</span>
+                      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.4 0.01 260);">{{ r.sub }}</span>
+                      <sc-if value="{{ r.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; font-style: italic; color: oklch(0.4 0.01 260);">“{{ r.note }}”</span></sc-if>
+                      <sc-if value="{{ r.hasAct }}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; font-weight: 500; color: oklch(0.55 0.13 255); padding-top: 2px;">{{ r.act }}</span></sc-if>
+                    </span>
+                    <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none;">
+                      <sc-if value="{{ r.hasDays }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums;">{{ r.days }}</span>
+                        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.4 0.01 260);">{{ r.daysLbl }}</span>
+                      </sc-if>
+                      <sc-if value="{{ r.hasWhen }}" hint-placeholder-val="{{ false }}"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ r.when }}</span></sc-if>
+                      <sc-if value="{{ r.hasChip }}" hint-placeholder-val="{{ false }}"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 3px 7px; border-radius: 6px; white-space: nowrap; color: {{ r.chipFg }}; border: 1px solid {{ r.chipBd }};">{{ r.chip }}</span></sc-if>
+                    </span>
+                  </a>
+                </sc-for>
+                <sc-if value="{{ col.empty }}" hint-placeholder-val="{{ false }}"><div style="padding: 14px 2px; font-size: 13px; color: oklch(0.4 0.01 260);">{{ col.emptyTxt }}</div></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- E -->
+  <div id="E" style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; gap: 14px; padding-bottom: 10px; border-bottom: 2px solid oklch(0.21 0.01 260); width: 100%;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; padding: 4px 9px; background: oklch(0.55 0.13 255); color: oklch(0.99 0.002 250); border-radius: 6px;">E</span>
+      <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 24px; font-weight: 600;">Job list</span>
+      <span style="font-size: 14px; color: oklch(0.45 0.01 260);">What's booked, what's on site and who still owes. "Owes you" is a filter, not a separate screen. Job 0098 opens <a href="#C">C</a>.</span>
+    </div>
+    <div style="display: flex; gap: 32px; align-items: flex-start;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.5 0.01 260);">E1 · phone 390 · live</div>
+        <div style="width: 390px; height: 844px; overflow: hidden; border-radius: 10px; border: 1px solid oklch(0.9 0.004 250); box-shadow: 0 10px 30px oklch(0.21 0.01 260 / 0.16); display: flex; flex-direction: column; background: oklch(0.99 0.002 250); color: oklch(0.21 0.01 260);">
+          <div style="display: flex; align-items: center; justify-content: space-between; height: 32px; padding: 0 16px; background: oklch(0.7 0.13 45); font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; flex: none;"><span>His view · owner only</span><span>Owner</span></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px 12px; flex: none;">
+            <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 24px; font-weight: 600;">Jobs</span>
+            <button style="min-height: 44px; padding: 0 16px; font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 15px; font-weight: 600; color: oklch(0.21 0.01 260); background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; cursor: pointer;">+ Job, no quote</button>
+          </div>
+          <div style="padding: 0 16px 12px; flex: none;">
+            <input value="{{ pj }}" onChange="{{ onPj }}" placeholder="Name, area or job number" style="width: 100%; box-sizing: border-box; min-height: 48px; font-size: 16px; color: oklch(0.21 0.01 260); background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; padding: 0 14px;" style-focus="outline: 2px solid oklch(0.55 0.13 255); outline-offset: -1px" />
+          </div>
+          <div style="display: flex; padding: 3px; margin: 0 16px; background: oklch(0.96 0.003 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; flex: none;">
+            <sc-for list="{{ pjTabs }}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.pick }}" style="flex: 1; min-height: 44px; font-size: 14px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; background: {{ t.bg }}; color: {{ t.fg }};">{{ t.label }} <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500;">{{ t.n }}</span></button>
+            </sc-for>
+          </div>
+          <div style="padding: 10px 16px 12px; font-size: 13px; line-height: 1.45; color: oklch(0.4 0.01 260); flex: none;">{{ pjHint }}</div>
+          <div style="flex: 1; min-height: 0; overflow-y: auto; border-top: 1px solid oklch(0.9 0.004 250); scrollbar-width: thin;">
+            <sc-for list="{{ pjGroups }}" as="g" hint-placeholder-count="2">
+              <div>
+                <div style="padding: 8px 16px; background: oklch(0.96 0.003 250); border-bottom: 1px solid oklch(0.9 0.004 250); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: oklch(0.4 0.01 260); position: sticky; top: 0;">{{ g.label }}</div>
+                <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="2">
+                  <a href="{{ r.href }}" style="display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; min-height: 64px; box-sizing: border-box; border-bottom: 1px solid oklch(0.94 0.003 250); color: inherit; text-decoration: none;" style-active="background: oklch(0.96 0.003 250)">
+                    <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+                      <span style="font-size: 16px; font-weight: 600; text-decoration: {{ r.deco }}; color: {{ r.ink }};">{{ r.name }}</span>
+                      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.4 0.01 260);">{{ r.sub }}</span>
+                    </span>
+                    <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none;">
+                      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ r.date }}</span>
+                      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: {{ r.moneyW }}; font-variant-numeric: tabular-nums; color: {{ r.moneyFg }};">{{ r.money }}</span>
+                    </span>
+                  </a>
+                </sc-for>
+              </div>
+            </sc-for>
+            <sc-if value="{{ pjEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding: 24px 16px; font-size: 14px; color: oklch(0.4 0.01 260);">{{ pjEmptyTxt }}</div></sc-if>
+          </div>
+        </div>
+      </div>
+      <div style="width: 390px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 20px; margin-top: 23px; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; font-size: 13px; line-height: 1.65; color: oklch(0.4 0.01 260);">
+        <div><b style="color: oklch(0.21 0.01 260);">"Open" splits into "On site" and "Booked".</b> On-site jobs come first because each one is waiting to be recorded in <a href="#C">C</a>. Booked jobs follow, soonest first.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">"Owes you" cuts across every status.</b> This is the API's <code style="font-size: 12px;">outstanding=true</code> filter. Jobs are sorted with the biggest balance first. An overpaid job sits in its own group, in amber, because there he owes her.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">Each row shows one amount: what's still owed.</b> Agreed and received are on the laptop and on the job itself. A settled job just says "settled", so nothing looks unfinished.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">A cancelled job stays in the list, struck through.</b> It's recorded and never deleted. It never counts as owing, whatever the API returns (C11).</div>
+        <div><b style="color: oklch(0.21 0.01 260);">"+ Job, no quote"</b> is the entry point to G, which isn't designed yet.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.5 0.01 260);">E2 · laptop 1440 · live · status tabs + "owes you" toggle, combinable</div>
+      <div style="width: 1440px; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px oklch(0.21 0.01 260 / 0.08);">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; background: oklch(0.21 0.01 260); color: oklch(0.98 0.002 250);">
+          <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 15px; font-weight: 600;">Smart Home Ops</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.8 0.006 250);">17 Oct</span>
+        </div>
+        <div style="display: flex; gap: 4px; padding: 8px 20px 0; background: oklch(0.96 0.003 250); border-bottom: 1px solid oklch(0.9 0.004 250);">
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; border-bottom: 2px solid transparent; color: oklch(0.45 0.01 260);">Catalogue</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; border-bottom: 2px solid transparent; color: oklch(0.45 0.01 260);">Packages</span>
+          <a href="#D" style="font-size: 13px; font-weight: 500; padding: 10px 14px; border-bottom: 2px solid transparent; color: oklch(0.45 0.01 260); text-decoration: none;">Quotes</a>
+          <span style="font-size: 13px; font-weight: 600; padding: 10px 14px; border-bottom: 2px solid oklch(0.55 0.13 255);">Jobs</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; border-bottom: 2px solid transparent; color: oklch(0.45 0.01 260);">Customers</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; border-bottom: 2px solid transparent; color: oklch(0.45 0.01 260);">Money</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 16px; padding: 24px 32px 32px;">
+          <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;">
+            <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 22px; font-weight: 600;">Jobs</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input value="{{ ljq }}" onChange="{{ onLjq }}" placeholder="Name, area or job number" style="width: 300px; font-size: 14px; color: oklch(0.21 0.01 260); background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; padding: 9px 12px;" style-focus="outline: 2px solid oklch(0.55 0.13 255); outline-offset: -1px" />
+              <button style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 14px; font-weight: 600; color: oklch(0.21 0.01 260); background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; padding: 9px 14px; cursor: pointer; box-shadow: 0 1px 3px oklch(0.21 0.01 260 / 0.08);">+ Job, no quote</button>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <div style="display: flex; padding: 3px; background: oklch(0.96 0.003 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px;">
+              <sc-for list="{{ ljTabs }}" as="t" hint-placeholder-count="5">
+                <button onClick="{{ t.pick }}" style="flex: none; white-space: nowrap; font-size: 13px; font-weight: 600; padding: 7px 12px; border: none; border-radius: 6px; cursor: pointer; background: {{ t.bg }}; color: {{ t.fg }};">{{ t.label }} · {{ t.n }}</button>
+              </sc-for>
+            </div>
+            <button onClick="{{ toggleLjOwes }}" style="flex: none; white-space: nowrap; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 8px; cursor: pointer; background: {{ ljOwesBg }}; color: {{ ljOwesFg }}; border: 1px solid {{ ljOwesBd }};"><span style="width: 14px; height: 14px; box-sizing: border-box; border-radius: 4px; border: 1.5px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 10px; line-height: 1;">{{ ljOwesTick }}</span>Owes you only · {{ ljOwesN }}</button>
+          </div>
+          <div style="border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; overflow: hidden;">
+            <div style="display: grid; grid-template-columns: 0.6fr minmax(0, 2fr) 0.9fr 0.9fr 1fr 1.1fr 0.8fr 0.8fr 1fr; gap: 12px; padding: 10px 16px; background: oklch(0.96 0.003 250); border-bottom: 1px solid oklch(0.9 0.004 250); font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: oklch(0.5 0.01 260);">
+              <span>Job</span><span>Customer · house</span><span>Type</span><span>From</span><span>Status</span><span>When</span><span style="text-align: right;">Agreed</span><span style="text-align: right;">Received</span><span style="text-align: right;">Owes</span>
+            </div>
+            <sc-for list="{{ ljRows }}" as="r" hint-placeholder-count="6">
+              <a href="{{ r.href }}" style="display: grid; grid-template-columns: 0.6fr minmax(0, 2fr) 0.9fr 0.9fr 1fr 1.1fr 0.8fr 0.8fr 1fr; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid oklch(0.94 0.003 250); color: inherit; text-decoration: none;" style-hover="background: oklch(0.985 0.008 255)">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: oklch(0.4 0.01 260);">{{ r.id }}</span>
+                <span style="font-size: 14px; font-weight: 500; text-decoration: {{ r.deco }}; color: {{ r.ink }};">{{ r.name }}</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ r.type }}</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: {{ r.fromFg }};">{{ r.from }}</span>
+                <span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 3px 7px; border-radius: 6px; white-space: nowrap; color: {{ r.stFg }}; border: 1px solid {{ r.stBd }};">{{ r.st }}</span></span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ r.date }}</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; color: oklch(0.4 0.01 260);">{{ r.agreed }}</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; color: oklch(0.4 0.01 260);">{{ r.received }}</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; font-weight: {{ r.moneyW }}; color: {{ r.moneyFg }};">{{ r.owes }}</span>
+              </a>
+            </sc-for>
+            <sc-if value="{{ ljEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding: 20px 16px; font-size: 14px; color: oklch(0.4 0.01 260);">{{ ljEmptyTxt }}</div></sc-if>
+            <div style="padding: 10px 16px; background: oklch(0.985 0.002 250); font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.4 0.01 260);">{{ ljCount }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; width: 1440px;">
+      <div style="padding: 16px 20px; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; font-size: 13px; line-height: 1.65; color: oklch(0.4 0.01 260);"><b style="color: oklch(0.21 0.01 260);">The status tabs and "owes you" combine.</b> "Completed" with "owes you" ticked shows finished work that hasn't been paid for, which is the real chase list for money.</div>
+      <div style="padding: 16px 20px; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; font-size: 13px; line-height: 1.65; color: oklch(0.4 0.01 260);"><b style="color: oklch(0.21 0.01 260);">The "Owes" column is the loud one.</b> Agreed and received are muted. What's owed is darker and heavier. Settled shows as a quiet word, and overpaid shows in amber.</div>
+      <div style="padding: 16px 20px; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; font-size: 13px; line-height: 1.65; color: oklch(0.4 0.01 260);"><b style="color: oklch(0.21 0.01 260);">"From" makes a callout obvious.</b> A job with no quote behind it says "no quote" in a muted colour. A job from a quote shows the quote number.</div>
+      <div style="padding: 16px 20px; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; font-size: 13px; line-height: 1.65; color: oklch(0.4 0.01 260);"><b style="color: oklch(0.21 0.01 260);">There's no total row.</b> The list doesn't add up money. Totals belong to the Money tab, and summing them here would mean the screen deciding what counts.</div>
+    </div>
+  </div>
+
+  <!-- G -->
+  <div id="G" style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; gap: 14px; padding-bottom: 10px; border-bottom: 2px solid oklch(0.21 0.01 260); width: 100%;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; padding: 4px 9px; background: oklch(0.55 0.13 255); color: oklch(0.99 0.002 250); border-radius: 6px;">G</span>
+      <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 24px; font-weight: 600;">Starting a quote</span>
+      <span style="font-size: 14px; color: oklch(0.45 0.01 260);">"+ New quote" on <a href="#D">D</a> → who's it for → which house → <a href="#A">A</a>. Owner only. Picking the house creates the draft. Try Mensah (two houses), Owusu (one) and Appiah (none).</span>
+    </div>
+    <div style="display: flex; gap: 32px; align-items: flex-start;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.5 0.01 260);">G1 · phone 390 · live · one sheet over the quote list, content swaps in place</div>
+        <div style="width: 390px; height: 844px; position: relative; overflow: hidden; border-radius: 10px; border: 1px solid oklch(0.9 0.004 250); box-shadow: 0 10px 30px oklch(0.21 0.01 260 / 0.16); display: flex; flex-direction: column; background: oklch(0.99 0.002 250); color: oklch(0.21 0.01 260);">
+          <div style="display: flex; align-items: center; justify-content: space-between; height: 32px; padding: 0 16px; background: oklch(0.7 0.13 45); font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; flex: none;"><span>His view · owner only</span><span>Owner</span></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px 12px; flex: none;">
+            <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 24px; font-weight: 600;">Quotes</span>
+            <span style="display: flex; align-items: center; min-height: 44px; padding: 0 16px; font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 15px; font-weight: 600; color: oklch(0.99 0.002 250); background: oklch(0.55 0.13 255); border-radius: 8px;">+ New quote</span>
+          </div>
+          <div style="margin: 0 16px 12px; min-height: 48px; border: 1px solid oklch(0.9 0.004 250); border-radius: 8px;"></div>
+          <div style="display: flex; flex-direction: column; border-top: 1px solid oklch(0.9 0.004 250);">
+            <div style="display: flex; justify-content: space-between; padding: 14px 16px; min-height: 64px; box-sizing: border-box; border-bottom: 1px solid oklch(0.94 0.003 250);"><span style="font-size: 16px; font-weight: 600;">Mensah — Airport Residential</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 24px;">19</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 14px 16px; min-height: 64px; box-sizing: border-box; border-bottom: 1px solid oklch(0.94 0.003 250);"><span style="font-size: 16px; font-weight: 600;">Boateng — Spintex</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 24px;">9</span></div>
+          </div>
+          <div onClick="{{ gReset }}" style="position: absolute; inset: 0; background: oklch(0.21 0.01 260 / 0.25);"></div>
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; max-height: 640px; display: flex; flex-direction: column; background: oklch(0.99 0.002 250); border-top: 1px solid oklch(0.9 0.004 250); border-radius: 10px 10px 0 0; padding: 8px 0 20px; box-sizing: border-box;">
+            <div style="width: 36px; height: 4px; border-radius: 2px; background: oklch(0.9 0.004 250); align-self: center; margin-bottom: 10px; flex: none;"></div>
+            <sc-if value="{{ gIsCust }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px; flex: none;">
+                <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 20px; font-weight: 600;">Who's it for?</span>
+                <button onClick="{{ gReset }}" style="min-height: 44px; padding: 0 12px; font-size: 14px; font-weight: 500; color: oklch(0.4 0.01 260); background: transparent; border: none; cursor: pointer;">Cancel</button>
+              </div>
+              <div style="padding: 10px 16px 14px; flex: none;">
+                <input value="{{ gq }}" onChange="{{ onGq }}" placeholder="Name, phone or area" style="width: 100%; box-sizing: border-box; min-height: 48px; font-size: 16px; color: oklch(0.21 0.01 260); background: oklch(0.99 0.002 250); border: 1px solid oklch(0.55 0.13 255); outline: 2px solid oklch(0.55 0.13 255); outline-offset: -1px; border-radius: 8px; padding: 0 14px;" />
+              </div>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.4 0.01 260); padding: 0 16px 6px;">{{ gListLbl }}</span>
+              <div style="flex: 1; min-height: 0; overflow-y: auto; border-top: 1px solid oklch(0.9 0.004 250); scrollbar-width: thin;">
+              <sc-for list="{{ gCusts }}" as="c" hint-placeholder-count="4">
+                <button onClick="{{ c.pick }}" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 16px; text-align: left; background: transparent; color: oklch(0.21 0.01 260); border: none; border-bottom: 1px solid oklch(0.94 0.003 250); cursor: pointer;" style-active="background: oklch(0.96 0.003 250)">
+                  <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 16px; font-weight: {{ c.w }};">{{ c.name }}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ c.phone }}</span></span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.4 0.01 260); white-space: nowrap;">{{ c.meta }}</span>
+                </button>
+              </sc-for>
+                <sc-if value="{{ gNoMatch }}" hint-placeholder-val="{{ false }}"><div style="padding: 20px 16px; font-size: 14px; color: oklch(0.4 0.01 260);">No customer matches “{{ gqTrim }}”. Add her below.</div></sc-if>
+              </div>
+              <div style="padding: 14px 16px 0; flex: none;">
+                <a href="Customers%20Screens.dc.html#D" style="display: flex; align-items: center; justify-content: center; min-height: 48px; font-size: 15px; font-weight: 500; color: oklch(0.55 0.13 255); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; text-decoration: none;">+ New customer</a>
+              </div>
+            </sc-if>
+            <sc-if value="{{ gIsHouse }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 0 8px; flex: none;"><button onClick="{{ gBack }}" style="min-height: 44px; padding: 0 8px; font-size: 14px; font-weight: 500; color: oklch(0.55 0.13 255); background: transparent; border: none; cursor: pointer;">‹ {{ gCustName }}</button></div>
+              <div style="display: flex; flex-direction: column; gap: 4px; padding: 0 16px 14px; flex: none;">
+                <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 20px; font-weight: 600;">Which house?</span>
+                <span style="font-size: 14px; color: oklch(0.4 0.01 260);">The quote's rooms come from the house.</span>
+              </div>
+              <div style="border-top: 1px solid oklch(0.9 0.004 250);">
+              <sc-for list="{{ gHouses }}" as="hh" hint-placeholder-count="2">
+                <sc-if value="{{ hh.ok }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ hh.pick }}" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 16px; text-align: left; background: transparent; color: oklch(0.21 0.01 260); border: none; border-bottom: 1px solid oklch(0.94 0.003 250); cursor: pointer;" style-active="background: oklch(0.96 0.003 250)" style-hover="background: oklch(0.96 0.003 250)">
+                    <span style="font-size: 16px; font-weight: 600;">{{ hh.area }}</span>
+                    <span style="display: flex; align-items: center; gap: 10px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ hh.rooms }}</span><span style="font-size: 18px; color: oklch(0.55 0.13 255);">›</span></span>
+                  </button>
+                </sc-if>
+                <sc-if value="{{ hh.no }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; box-sizing: border-box; border-bottom: 1px solid oklch(0.94 0.003 250);">
+                    <span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 16px; font-weight: 600; color: oklch(0.4 0.01 260);">{{ hh.area }}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">no rooms yet · can't quote</span></span>
+                    <a href="Customers%20Screens.dc.html#A" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; font-size: 14px; font-weight: 500; color: oklch(0.55 0.13 255); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; text-decoration: none; white-space: nowrap;">Add rooms ›</a>
+                  </div>
+                </sc-if>
+              </sc-for>
+                <sc-if value="{{ gNoHouse }}" hint-placeholder-val="{{ false }}"><div style="padding: 20px 16px; font-size: 14px; line-height: 1.5; color: oklch(0.4 0.01 260);">{{ gCustName }} has no house yet. Add it and walk the rooms first.</div></sc-if>
+              </div>
+              <div style="padding: 14px 16px 0;">
+                <a href="Customers%20Screens.dc.html#A" style="display: flex; align-items: center; justify-content: center; min-height: 48px; font-size: 15px; font-weight: 500; color: oklch(0.55 0.13 255); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; text-decoration: none;">+ New house</a>
+              </div>
+            </sc-if>
+            <sc-if value="{{ gIsDone }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 12px; padding: 4px 16px 0;">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.4 0.01 260);">Prototype only · in the build this is the jump to A</span>
+                <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 20px; font-weight: 600;">{{ gDoneTitle }}</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ gDoneSub }}</span>
+                <a href="#A" style="display: flex; align-items: center; justify-content: center; min-height: 52px; font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 16px; font-weight: 600; color: oklch(0.99 0.002 250); background: oklch(0.55 0.13 255); border-radius: 10px; text-decoration: none;">Open the builder ›</a>
+                <button onClick="{{ gReset }}" style="min-height: 44px; font-size: 14px; font-weight: 500; color: oklch(0.4 0.01 260); background: transparent; border: none; cursor: pointer;">Start again</button>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+      <div style="width: 390px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 20px; margin-top: 23px; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; font-size: 13px; line-height: 1.65; color: oklch(0.4 0.01 260);">
+        <div><b style="color: oklch(0.21 0.01 260);">It's a sheet, not a page.</b> It slides up over the quote list. Cancel or a tap on the dimmed list closes it, and nothing is saved until he picks a house.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">Search has focus on open.</b> Recent customers show first, so the one he's standing with is usually the top row. Search matches name, phone or area.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">One house skips the second step.</b> If she has one house with rooms, tapping her name starts the quote.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">No rooms, no quote.</b> A house without rooms can't be picked; "Add rooms ›" goes to the visit screen (Customers A). <i>Assumed. Your call is still open.</i></div>
+        <div><b style="color: oklch(0.21 0.01 260);">Picking the house creates the draft</b> and opens <a href="#A">A</a> on its first room. The level is left as custom.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">From a customer's page</b> it opens on "Which house?" with her already picked.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.5 0.01 260);">G2 · laptop 1440 · live · both choices in one dialog over the quote list</div>
+      <div style="width: 1440px; height: 760px; position: relative; overflow: hidden; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; box-shadow: 0 1px 3px oklch(0.21 0.01 260 / 0.08); color: oklch(0.21 0.01 260);">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; background: oklch(0.21 0.01 260); color: oklch(0.98 0.002 250);">
+          <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 15px; font-weight: 600;">Smart Home Ops</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.8 0.006 250);">17 Oct</span>
+        </div>
+        <div style="display: flex; gap: 4px; padding: 8px 20px 0; background: oklch(0.96 0.003 250); border-bottom: 1px solid oklch(0.9 0.004 250);">
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; color: oklch(0.45 0.01 260);">Catalogue</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; color: oklch(0.45 0.01 260);">Packages</span>
+          <span style="font-size: 13px; font-weight: 600; padding: 10px 14px; border-bottom: 2px solid oklch(0.55 0.13 255);">Quotes</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; color: oklch(0.45 0.01 260);">Jobs</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; color: oklch(0.45 0.01 260);">Customers</span>
+          <span style="font-size: 13px; font-weight: 500; padding: 10px 14px; color: oklch(0.45 0.01 260);">Money</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 20px; padding: 24px 32px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 22px; font-weight: 600;">Quotes</span><span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 14px; font-weight: 600; color: oklch(0.99 0.002 250); background: oklch(0.55 0.13 255); border-radius: 8px; padding: 9px 16px;">+ New quote</span></div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;"><div style="height: 520px; background: oklch(0.96 0.003 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px;"></div><div style="height: 520px; background: oklch(0.96 0.003 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px;"></div><div style="height: 520px; background: oklch(0.96 0.003 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px;"></div></div>
+        </div>
+        <div onClick="{{ lgReset }}" style="position: absolute; inset: 0; background: oklch(0.21 0.01 260 / 0.25);"></div>
+        <div style="position: absolute; left: 50%; top: 96px; transform: translateX(-50%); width: 800px; height: 560px; display: flex; flex-direction: column; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; box-shadow: 0 10px 30px oklch(0.21 0.01 260 / 0.16); overflow: hidden;">
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 12px 14px 24px; border-bottom: 1px solid oklch(0.9 0.004 250); flex: none;">
+            <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 20px; font-weight: 600;">New quote</span>
+            <button onClick="{{ lgReset }}" style="display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; font-size: 14px; font-weight: 500; color: oklch(0.4 0.01 260); background: transparent; border: none; cursor: pointer;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 6px; border: 1px solid oklch(0.9 0.004 250); border-radius: 4px;">Esc</span>Cancel</button>
+          </div>
+          <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);">
+            <div style="display: flex; flex-direction: column; min-height: 0; border-right: 1px solid oklch(0.9 0.004 250);">
+              <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px 24px 14px; flex: none;">
+                <span style="font-size: 14px; font-weight: 600;">1 · Who's it for?</span>
+                <input value="{{ lgq }}" onChange="{{ onLgq }}" placeholder="Name, phone or area" style="width: 100%; box-sizing: border-box; font-size: 14px; color: oklch(0.21 0.01 260); background: oklch(0.99 0.002 250); border: 1px solid oklch(0.55 0.13 255); outline: 2px solid oklch(0.55 0.13 255); outline-offset: -1px; border-radius: 8px; padding: 9px 12px;" />
+              </div>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.4 0.01 260); padding: 0 24px 6px;">{{ lgListLbl }}</span>
+              <div style="flex: 1; min-height: 0; overflow-y: auto; border-top: 1px solid oklch(0.9 0.004 250); padding: 0 8px; scrollbar-width: thin;">
+              <sc-for list="{{ lgCusts }}" as="c" hint-placeholder-count="4">
+                <button onClick="{{ c.pick }}" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 16px; text-align: left; background: {{ c.bg }}; color: oklch(0.21 0.01 260); border: none; border-bottom: 1px solid oklch(0.94 0.003 250); cursor: pointer;" style-active="background: oklch(0.96 0.003 250)">
+                  <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span style="font-size: 16px; font-weight: {{ c.w }};">{{ c.name }}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ c.phone }}</span></span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.4 0.01 260); white-space: nowrap;">{{ c.meta }}</span>
+                </button>
+              </sc-for>
+                <sc-if value="{{ lgNoMatch }}" hint-placeholder-val="{{ false }}"><div style="padding: 20px 16px; font-size: 14px; color: oklch(0.4 0.01 260);">No customer matches “{{ lgqTrim }}”.</div></sc-if>
+              </div>
+              <div style="padding: 12px 24px; border-top: 1px solid oklch(0.9 0.004 250); flex: none;"><a href="Customers%20Screens.dc.html#D" style="font-size: 14px; font-weight: 500; color: oklch(0.55 0.13 255); text-decoration: none;">+ New customer</a></div>
+            </div>
+            <div style="display: flex; flex-direction: column; min-height: 0; background: {{ lgRightBg }};">
+              <div style="display: flex; flex-direction: column; gap: 4px; padding: 18px 24px 14px; flex: none;">
+                <span style="font-size: 14px; font-weight: 600; color: {{ lgRightInk }};">2 · Which house?</span>
+                <span style="font-size: 13px; color: oklch(0.4 0.01 260);">{{ lgRightSub }}</span>
+              </div>
+              <sc-if value="{{ lgShowHouses }}" hint-placeholder-val="{{ false }}">
+                <div style="border-top: 1px solid oklch(0.9 0.004 250); padding: 0 8px;">
+                <sc-for list="{{ lgHouses }}" as="hh" hint-placeholder-count="2">
+                <sc-if value="{{ hh.ok }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ hh.pick }}" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 16px; text-align: left; background: transparent; color: oklch(0.21 0.01 260); border: none; border-bottom: 1px solid oklch(0.94 0.003 250); cursor: pointer;" style-active="background: oklch(0.96 0.003 250)" style-hover="background: oklch(0.96 0.003 250)">
+                    <span style="font-size: 16px; font-weight: 600;">{{ hh.area }}</span>
+                    <span style="display: flex; align-items: center; gap: 10px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ hh.rooms }}</span><span style="font-size: 18px; color: oklch(0.55 0.13 255);">›</span></span>
+                  </button>
+                </sc-if>
+                <sc-if value="{{ hh.no }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; box-sizing: border-box; border-bottom: 1px solid oklch(0.94 0.003 250);">
+                    <span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 16px; font-weight: 600; color: oklch(0.4 0.01 260);">{{ hh.area }}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">no rooms yet · can't quote</span></span>
+                    <a href="Customers%20Screens.dc.html#A" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; font-size: 14px; font-weight: 500; color: oklch(0.55 0.13 255); border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; text-decoration: none; white-space: nowrap;">Add rooms ›</a>
+                  </div>
+                </sc-if>
+              </sc-for>
+                  <sc-if value="{{ lgNoHouse }}" hint-placeholder-val="{{ false }}"><div style="padding: 20px 16px; font-size: 14px; line-height: 1.5; color: oklch(0.4 0.01 260);">No house yet. Add it and walk the rooms first.</div></sc-if>
+                </div>
+                <div style="padding: 12px 24px;"><a href="Customers%20Screens.dc.html#A" style="font-size: 14px; font-weight: 500; color: oklch(0.55 0.13 255); text-decoration: none;">+ New house</a></div>
+              </sc-if>
+              <sc-if value="{{ lgIsDone }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: 12px; padding: 4px 24px 0;">
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.4 0.01 260);">Prototype only · in the build this is the jump to A</span>
+                  <span style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 20px; font-weight: 600;">{{ lgDoneTitle }}</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: oklch(0.4 0.01 260);">{{ lgDoneSub }}</span>
+                  <div style="display: flex; gap: 8px;"><a href="#A" style="font-family: 'Space Grotesk', Helvetica, sans-serif; font-size: 14px; font-weight: 600; color: oklch(0.99 0.002 250); background: oklch(0.55 0.13 255); border-radius: 8px; padding: 9px 16px; text-decoration: none;">Open the builder ›</a><button onClick="{{ lgReset }}" style="font-size: 14px; font-weight: 500; color: oklch(0.4 0.01 260); background: transparent; border: 1px solid oklch(0.9 0.004 250); border-radius: 8px; padding: 9px 14px; cursor: pointer;">Start again</button></div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="width: 1440px; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding: 16px 20px; background: oklch(0.99 0.002 250); border: 1px solid oklch(0.9 0.004 250); border-radius: 10px; font-size: 13px; line-height: 1.65; color: oklch(0.4 0.01 260);">
+        <div><b style="color: oklch(0.21 0.01 260);">A dialog, not a page.</b> It opens over the quote list. Esc, Cancel or a click outside closes it. Nothing is saved until he picks a house.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">Both steps side by side.</b> The width allows it, so the houses appear on the right as soon as a customer is picked, and changing customer is one click. Keyboard: type, ↑ ↓, Enter, Enter.</div>
+        <div><b style="color: oklch(0.21 0.01 260);">Same rules as phone.</b> Recent first, no-rooms houses can't be picked, and picking a house creates the draft and opens <a href="#A">A2</a>.</div>
+      </div>
+    </div>
+  </div>
+
 </section>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;offline&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Quote (A1)&quot;},&quot;startInHerView&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Quote (A1)&quot;}}">
@@ -848,8 +1269,53 @@ const COSTS = [
   { label: 'Screws & connectors', src: 'desk', rcpt: false, amt: 45 }
 ];
 
+const QUOTES = [
+  { id: '0139', name: 'Mensah', area: 'Airport Residential', level: 'premium', st: 'sent', days: 19 },
+  { id: '0144', name: 'Boateng', area: 'Spintex', level: 'comfortable', st: 'sent', days: 9 },
+  { id: '0146', name: 'Quaye', area: 'Dzorwulu', level: 'custom', title: 'Gate + two cameras', st: 'sent', days: 4 },
+  { id: '0147', name: 'Darko', area: 'Trasacco', level: 'luxury', st: 'sent', days: 1 },
+  { id: '0148', name: 'Ofori', area: 'Labone', level: 'comfortable', st: 'draft', when: 'edited 2 h ago' },
+  { id: '0145', name: 'Nkrumah', area: 'Achimota', level: 'basic', st: 'draft', when: 'edited 6 d ago' },
+  { id: '0143', name: 'Quarshie', area: 'Dansoman', level: 'basic', st: 'declined', when: '8 Oct' },
+  { id: '0141', name: 'Owusu', area: 'Cantonments', level: 'premium', st: 'accepted', when: '6 Oct', job: '0100' },
+  { id: '0142', name: 'Adjei', area: 'East Legon', level: 'comfortable', st: 'accepted', when: '2 Oct', job: '0098' },
+  { id: '0140', name: 'Asante', area: 'Tema Comm. 25', level: 'comfortable', st: 'declined', when: '26 Sep', reason: 'Went with someone cheaper.' }
+];
+const QTABS = [
+  ['waiting', 'Waiting', 'Waiting on her', q => q.st === 'sent', 'Sent, no answer yet. Oldest first, so the top one is the one to chase.'],
+  ['drafts', 'Drafts', 'Drafts', q => q.st === 'draft', 'Not sent yet. Last edited first.'],
+  ['answered', 'Answered', 'Answered', q => q.st === 'accepted' || q.st === 'declined', 'Last 30 days. Accepted quotes lead to their job.']
+];
+const JOBS = [
+  { id: '0098', name: 'Adjei', area: 'East Legon', type: 'install', q: '0142', st: 'in_progress', date: 'started 9 Oct', ag: 7500, rc: 4500 },
+  { id: '0100', name: 'Owusu', area: 'Cantonments', type: 'install', q: '0141', st: 'in_progress', date: 'started 14 Oct', ag: 11200, rc: 6720 },
+  { id: '0102', name: 'Tetteh', area: 'Osu', type: 'repair', q: null, st: 'scheduled', date: 'Tue 21 Oct', ag: 350, rc: 0 },
+  { id: '0103', name: 'Larbi', area: 'North Ridge', type: 'relocation', q: null, st: 'scheduled', date: 'Fri 24 Oct', ag: 600, rc: 0 },
+  { id: '0099', name: 'Sarpong', area: 'Adenta', type: 'repair', q: null, st: 'completed', date: 'done 10 Oct', ag: 100, rc: 0 },
+  { id: '0097', name: 'Amoah', area: 'Roman Ridge', type: 'install', q: '0136', st: 'completed', date: 'done 3 Oct', ag: 9800, rc: 9800 },
+  { id: '0096', name: 'Kuffour', area: 'Haatso', type: 'upgrade', q: '0133', st: 'completed', date: 'done 25 Sep', ag: 4200, rc: 4400 },
+  { id: '0095', name: 'Badu', area: 'Abelemkpe', type: 'install', q: '0131', st: 'completed', date: 'done 18 Sep', ag: 6300, rc: 5000 },
+  { id: '0094', name: 'Appiah', area: 'Kasoa', type: 'install', q: '0129', st: 'cancelled', date: 'cancelled 12 Sep', ag: 5100, rc: 0 }
+];
+const owedOf = j => j.st === 'cancelled' ? 0 : j.ag - j.rc;
+const JST = { in_progress: ['on site', 'oklch(0.55 0.13 255)', 'oklch(0.55 0.13 255)'], scheduled: ['booked', 'oklch(0.4 0.01 260)', 'oklch(0.9 0.004 250)'], completed: ['completed', 'oklch(0.4 0.01 260)', 'transparent'], cancelled: ['cancelled', 'oklch(0.58 0.01 260)', 'transparent'] };
+const JRANK = { in_progress: 0, scheduled: 1, completed: 2, cancelled: 3 };
+
+const CUSTS = [
+  { id: 'c1', name: 'Mensah', phone: '024 555 0182', houses: [{ area: 'East Legon', rooms: 7 }, { area: 'Aburi', rooms: 0 }] },
+  { id: 'c2', name: 'Owusu', phone: '020 555 7310', houses: [{ area: 'Cantonments', rooms: 6 }] },
+  { id: 'c3', name: 'Boateng', phone: '055 555 4421', houses: [{ area: 'Spintex', rooms: 5 }] },
+  { id: 'c4', name: 'Quaye', phone: '024 555 2276', houses: [{ area: 'Dzorwulu', rooms: 4 }, { area: 'Tema Comm. 25', rooms: 6 }] },
+  { id: 'c5', name: 'Darko', phone: '027 555 8813', houses: [{ area: 'Cantonments', rooms: 5 }] },
+  { id: 'c6', name: 'Appiah', phone: '020 555 1902', houses: [] }
+];
+const custMatch = q => CUSTS.filter(c => !q.trim() || (c.name + ' ' + c.phone + ' ' + c.houses.map(x => x.area).join(' ')).toLowerCase().includes(q.trim().toLowerCase()));
+const houseMeta = c => c.houses.length === 0 ? 'no house yet' : c.houses.length === 1 ? c.houses[0].area : c.houses.length + ' houses';
+
 class Component extends DCLogic {
   state = {
+    gStep: 'cust', gq: '', gCust: null, gHouse: null, lgq: '', lgCust: null, lgHouse: null,
+    pqTab: 'waiting', pq: '', lqq: '', pjTab: 'open', pj: '', ljTab: 'all', ljOwes: false, ljq: '',
     mode: this.props.startInHerView ? 'customer' : 'owner',
     room: 'living', groupBy: 'room', open: null, showOff: false, picker: false, money: false, q: '', added: 0, toast: '',
     labour: '1500', misc: '300', materials: '', itemised: false, hold: false, nextId: 50, lmode: 'owner', lhold: false, lq: '',
@@ -987,7 +1453,98 @@ class Component extends DCLogic {
     const segOn = (on, dk) => dk ? { bg: on ? D.surf2 : 'transparent', fg: on ? D.fg : D.fg2 } : { bg: on ? L.bg : 'transparent', fg: on ? L.fg : L.fg2 };
     const sr = segOn(s.groupBy === 'room', 1), sn = segOn(s.groupBy === 'need', 1), sd = segOn(s.diffOnly, 0), sa = segOn(!s.diffOnly, 0);
 
+    // quote list
+    const match = (x, t) => { const k = t.trim().toLowerCase(); return !k || (x.name + ' ' + x.area + ' ' + x.id).toLowerCase().includes(k); };
+    const qRow = q => {
+      const sent = q.st === 'sent', acc = q.st === 'accepted', dec = q.st === 'declined';
+      return { name: q.name + ' — ' + q.area, sub: 'Quote ' + q.id + ' · ' + q.level + (q.title ? ' · ' + q.title : ''),
+        href: sent ? '#B' : q.st === 'draft' ? '#A' : acc ? (q.job === '0098' ? '#C' : '#E') : '#D',
+        hasDays: sent, days: String(q.days || ''), daysLbl: q.days === 1 ? 'day waiting' : 'days waiting',
+        hasWhen: q.st === 'draft', when: q.when,
+        hasChip: acc || dec, chip: (acc ? 'accepted ' : 'declined ') + q.when, chipFg: acc ? L.act : L.fg2, chipBd: acc ? L.act : L.line,
+        hasNote: !!q.reason, note: q.reason || '',
+        hasAct: sent || acc, act: sent ? 'Record her answer ›' : 'Job ' + q.job + ' ›' };
+    };
+    const pqT = QTABS.find(t => t[0] === s.pqTab);
+    const pqRows = QUOTES.filter(pqT[3]).filter(q => match(q, s.pq)).map(qRow);
+    const lqCols = QTABS.map(t => { const rows = QUOTES.filter(t[3]).filter(q => match(q, s.lqq)).map(qRow);
+      return { label: t[2], n: String(QUOTES.filter(t[3]).length), hint: t[4], rows, empty: !rows.length, emptyTxt: 'Nothing matches “' + s.lqq.trim() + '”.' }; });
+    // job list
+    const jRow = j => {
+      const o = owedOf(j), cx = j.st === 'cancelled', st = JST[j.st];
+      const money = cx ? '—' : o > 0 ? fm(o, 0) : o < 0 ? 'overpaid ' + fm(-o, 0) : 'settled';
+      return { id: j.id, name: j.name + ' — ' + j.area, type: j.type, date: j.date,
+        sub: j.id + ' · ' + j.type + ' · ' + (j.q ? 'quote ' + j.q : 'no quote'),
+        href: j.id === '0098' ? '#C' : '#E', deco: cx ? 'line-through' : 'none', ink: cx ? L.fg3 : L.fg,
+        from: j.q ? 'quote ' + j.q : 'no quote', fromFg: j.q ? L.fg2 : L.fg3,
+        st: st[0], stFg: st[1], stBd: st[2],
+        agreed: fm(j.ag, 0), received: j.rc ? fm(j.rc, 0) : '0', owes: money,
+        money: o > 0 ? 'owes ' + fm(o, 0) : money,
+        moneyFg: o < 0 ? L.risk : o > 0 ? L.fg : L.fg3, moneyW: o > 0 ? 600 : 400 };
+    };
+    const jm = JOBS.filter(j => match(j, s.pj));
+    const byOwed = (a, b) => owedOf(b) - owedOf(a);
+    const pjDefs = {
+      open: [['On site · record these', jm.filter(j => j.st === 'in_progress')], ['Booked · soonest first', jm.filter(j => j.st === 'scheduled')]],
+      owes: [['Owes you · biggest first', jm.filter(j => owedOf(j) > 0).sort(byOwed)], ['You owe her', jm.filter(j => owedOf(j) < 0)]],
+      done: [['Completed', jm.filter(j => j.st === 'completed')], ['Cancelled', jm.filter(j => j.st === 'cancelled')]]
+    };
+    const pjGroups = pjDefs[s.pjTab].filter(g => g[1].length).map(g => ({ label: g[0], rows: g[1].map(jRow) }));
+    const pjCount = { open: JOBS.filter(j => JRANK[j.st] < 2).length, owes: JOBS.filter(j => owedOf(j) !== 0).length, done: JOBS.filter(j => JRANK[j.st] >= 2).length };
+    const pjHints = { open: 'Booked and on site. Tap a job on site to record what was fitted.', owes: 'Anything with money still to come in, whatever its status.', done: 'Completed and cancelled. Recorded, not editable.' };
+    const ljTabs = [['all', 'All'], ['scheduled', 'Booked'], ['in_progress', 'On site'], ['completed', 'Completed'], ['cancelled', 'Cancelled']];
+    let lj = JOBS.filter(j => (s.ljTab === 'all' || j.st === s.ljTab) && match(j, s.ljq));
+    if (s.ljOwes) lj = lj.filter(j => owedOf(j) !== 0).sort(byOwed);
+    else lj = [...lj].sort((a, b) => JRANK[a.st] - JRANK[b.st]);
+    const owesN = JOBS.filter(j => owedOf(j) !== 0).length;
+    const tabSeg = (on) => ({ bg: on ? L.bg : 'transparent', fg: on ? L.fg : L.fg2 });
+
+    // G · starting a quote
+    const gc = CUSTS.find(c => c.id === s.gCust), lc = CUSTS.find(c => c.id === s.lgCust);
+    const gList = custMatch(s.gq), lList = custMatch(s.lgq);
+    const houses = (c, set) => c ? c.houses.map((x, i) => ({ area: x.area, rooms: x.rooms + ' rooms', ok: x.rooms > 0, no: x.rooms === 0, pick: () => set(i) })) : [];
+    const doneTitle = (c, i) => c && i != null ? c.name + ' — ' + c.houses[i].area : '';
+    const doneSub = (c, i) => c && i != null ? 'Quote 0145 · draft · ' + c.houses[i].rooms + ' rooms · opens on the first room' : '';
+    const gV = {
+      gIsCust: s.gStep === 'cust', gIsHouse: s.gStep === 'house', gIsDone: s.gStep === 'done',
+      gq: s.gq, gqTrim: s.gq.trim(), onGq: e => this.setState({ gq: e.target.value }),
+      gListLbl: s.gq.trim() ? 'Matches' : 'Recent', gNoMatch: !gList.length,
+      gCusts: gList.map(c => ({ name: c.name, phone: c.phone, meta: houseMeta(c), w: 600, pick: () => {
+        if (c.houses.length === 1 && c.houses[0].rooms > 0) this.setState({ gCust: c.id, gHouse: 0, gStep: 'done' });
+        else this.setState({ gCust: c.id, gHouse: null, gStep: 'house' }); } })),
+      gCustName: gc ? gc.name : '', gNoHouse: !!gc && !gc.houses.length,
+      gHouses: houses(gc, i => this.setState({ gHouse: i, gStep: 'done' })),
+      gBack: () => this.setState({ gStep: 'cust', gCust: null }),
+      gReset: () => this.setState({ gStep: 'cust', gq: '', gCust: null, gHouse: null }),
+      gDoneTitle: doneTitle(gc, s.gHouse), gDoneSub: doneSub(gc, s.gHouse),
+      lgq: s.lgq, lgqTrim: s.lgq.trim(), onLgq: e => this.setState({ lgq: e.target.value }),
+      lgListLbl: s.lgq.trim() ? 'Matches' : 'Recent', lgNoMatch: !lList.length,
+      lgCusts: lList.map(c => { const on = c.id === s.lgCust; return { name: c.name, phone: c.phone, meta: houseMeta(c), w: on ? 600 : 500, bg: on ? 'oklch(0.96 0.003 250)' : 'transparent', pick: () => this.setState({ lgCust: c.id, lgHouse: null }) }; }),
+      lgShowHouses: !!lc && s.lgHouse == null, lgIsDone: !!lc && s.lgHouse != null, lgNoHouse: !!lc && !lc.houses.length,
+      lgHouses: houses(lc, i => this.setState({ lgHouse: i })),
+      lgRightBg: lc ? 'oklch(0.99 0.002 250)' : 'oklch(0.96 0.003 250)', lgRightInk: lc ? 'oklch(0.21 0.01 260)' : 'oklch(0.58 0.01 260)',
+      lgRightSub: lc ? lc.name + ". The quote's rooms come from the house." : 'Pick a customer on the left first.',
+      lgReset: () => this.setState({ lgq: '', lgCust: null, lgHouse: null }),
+      lgDoneTitle: doneTitle(lc, s.lgHouse), lgDoneSub: doneSub(lc, s.lgHouse)
+    };
+
     return {
+      ...gV,
+      pq: s.pq, onPq: e => this.setState({ pq: e.target.value }), pqRows, pqHint: pqT[4],
+      pqEmpty: !pqRows.length, pqEmptyTxt: s.pq.trim() ? 'No ' + pqT[1].toLowerCase() + ' quote matches “' + s.pq.trim() + '”.' : 'Nothing here.',
+      pqTabs: QTABS.map(t => ({ label: t[1], n: String(QUOTES.filter(t[3]).length), ...tabSeg(t[0] === s.pqTab), pick: () => this.setState({ pqTab: t[0] }) })),
+      lqq: s.lqq, onLqq: e => this.setState({ lqq: e.target.value }), lqCols,
+      lqSummary: QUOTES.filter(QTABS[0][3]).length + ' waiting on her · oldest sent ' + QUOTES.filter(q => q.st === 'sent').reduce((a, q) => Math.max(a, q.days), 0) + ' days ago',
+      pj: s.pj, onPj: e => this.setState({ pj: e.target.value }), pjGroups, pjHint: pjHints[s.pjTab],
+      pjEmpty: !pjGroups.length, pjEmptyTxt: s.pj.trim() ? 'No job matches “' + s.pj.trim() + '”.' : 'Nothing here.',
+      pjTabs: [['open', 'Open'], ['owes', 'Owes you'], ['done', 'Done']].map(([id, label]) => ({ label, n: String(pjCount[id]), ...tabSeg(id === s.pjTab), pick: () => this.setState({ pjTab: id }) })),
+      ljq: s.ljq, onLjq: e => this.setState({ ljq: e.target.value }), ljRows: lj.map(jRow),
+      ljEmpty: !lj.length, ljEmptyTxt: 'No jobs match these filters.',
+      ljCount: lj.length + (lj.length === 1 ? ' job' : ' jobs') + (s.ljOwes ? ' with a balance · biggest first' : ' · on site, booked, completed, cancelled'),
+      ljTabs: ljTabs.map(([id, label]) => ({ label, n: String(id === 'all' ? JOBS.length : JOBS.filter(j => j.st === id).length), ...tabSeg(id === s.ljTab), pick: () => this.setState({ ljTab: id }) })),
+      toggleLjOwes: () => this.setState({ ljOwes: !s.ljOwes }), ljOwesN: String(owesN), ljOwesTick: s.ljOwes ? '✓' : '',
+      ljOwesBg: s.ljOwes ? L.act : L.bg, ljOwesFg: s.ljOwes ? L.bg : L.fg, ljOwesBd: s.ljOwes ? L.act : L.line,
+
       isOwner: s.mode === 'owner', isCustomer: s.mode === 'customer',
       online: !this.props.offline, offline: !!this.props.offline,
       isByRoom: s.groupBy === 'room', isByNeed: s.groupBy === 'need',
