@@ -3,7 +3,7 @@ import { RouterLink } from 'vue-router'
 import { SSegmented, SText } from '@/components/atoms'
 import { formatMoney } from '@/utils/format'
 import type { GroupBy } from '@/composables/useQuoteBuilder'
-import type { QuoteHeader, QuoteRoomSummary } from '@/types/quote'
+import { quoteHeaderLine, type QuoteHeader, type QuoteRoomSummary } from '@/types/quote'
 
 /**
  * The left rail: whose quote this is, which way to read it, and the rooms.
@@ -38,9 +38,7 @@ const GROUP_OPTIONS = [
       <SText type="frame-title" as="h1">
         {{ surname }}<template v-if="area"> — {{ area }}</template>
       </SText>
-      <SText type="cell-meta" color="fg-2">
-        Quote {{ String(header.id).padStart(4, '0') }} · {{ header.status }} · {{ header.level }}
-      </SText>
+      <SText type="cell-meta" color="fg-2">{{ quoteHeaderLine(header) }}</SText>
     </div>
 
     <div class="seg">

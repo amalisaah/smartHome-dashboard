@@ -13,7 +13,10 @@
 
 import type { CustomerQuote, QuoteHeader, QuoteOwnerView, QuoteRoom } from '@/types/quote'
 import type {
+  ApiQuoteAccept,
+  ApiQuoteAccepted,
   ApiQuoteCustomerView,
+  ApiQuoteDecline,
   ApiQuoteLine,
   ApiQuoteLineCreate,
   ApiQuoteOwnerView,
@@ -151,5 +154,43 @@ export const updateQuoteCharges = async (
     `/quotes/${quoteId}/charges`,
     toChargesPatch(fields),
   )
+  return toQuoteOwnerView(view)
+}
+
+// --- her answer -------------------------------------------------------------
+
+/** The accepted quote, and the job the acceptance created in the same breath. */
+export interface AcceptedQuote {
+  view: QuoteOwnerView
+  jobId: number
+}
+
+/**
+ * `POST /quotes/{id}/accept` — what she agreed to, and the job it creates.
+ *
+ * One request for both, because the API does both in one transaction: there is
+ * no window where the quote is accepted and the deposit has nowhere to land.
+ * The figure is always sent, never defaulted — see `ApiQuoteAccept`.
+ */
+export const acceptQuote = async (
+  quoteId: number,
+  agreedTotalPesewas: number,
+): Promise<AcceptedQuote> => {
+  const body: ApiQuoteAccept = { agreed_total_pesewas: agreedTotalPesewas }
+  const answer = await apiSend<ApiQuoteAccepted>('POST', `/quotes/${quoteId}/accept`, body)
+  return { view: toQuoteOwnerView(answer), jobId: answer.job_id }
+}
+
+/**
+ * `POST /quotes/{id}/decline`. The reason is optional and usually absent; an
+ * empty box is sent as `null` rather than as `""`, because he left it blank
+ * and a blank string would read back as a reason he recorded.
+ */
+export const declineQuote = async (
+  quoteId: number,
+  reason: string | null,
+): Promise<QuoteOwnerView> => {
+  const body: ApiQuoteDecline = { declined_reason: reason?.trim() || null }
+  const view = await apiSend<ApiQuoteOwnerView>('POST', `/quotes/${quoteId}/decline`, body)
   return toQuoteOwnerView(view)
 }

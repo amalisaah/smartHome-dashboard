@@ -6,8 +6,8 @@ import AppLayout from '@/components/app/AppLayout.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 
 /**
- * The three places a quote can lead that are designed elsewhere: starting one,
- * recording her answer, and the job an accepted quote became.
+ * The two places a quote can lead that are designed elsewhere: starting one,
+ * and the job an accepted quote became.
  *
  * They exist so that **nothing on this surface is a dead tap**. A button whose
  * destination does not exist yet is worse than one that is greyed out: he
@@ -19,7 +19,7 @@ const props = withDefaults(
   defineProps<{
     /** The quote's id, or the job number for `job`. A new quote has neither. */
     reference?: number
-    destination: 'new' | 'answer' | 'job'
+    destination: 'new' | 'job'
   }>(),
   { reference: 0 },
 )
@@ -31,15 +31,12 @@ const ref4 = computed(() => String(props.reference).padStart(4, '0'))
 
 const TITLE: Record<typeof props.destination, (ref: string) => string> = {
   new: () => 'A new quote',
-  answer: (id) => `Quote ${id} · what did she agree to?`,
   job: (id) => `Job ${id}`,
 }
 
 const DETAIL: Record<typeof props.destination, string> = {
   new: 'Starting a quote picks the customer and the house first, then opens the builder on a quote the server has numbered. That picker is block G and is not designed yet — so there is no blank quote to open, and no id to open it at.',
-  answer:
-    'Block B — the quote line by line beside what she agreed to, and accepting or declining it. This is what a waiting quote is for: once she replies on WhatsApp, recording it is one press from the quote’s own page.',
-  job: 'Block C — recording the job: what was actually fitted, what it cost and what she has paid. An accepted quote leads here.',
+  job: 'Block C — recording the job: what was actually fitted, what it cost and what she has paid. Accepting a quote creates this job and lands here, so a deposit has somewhere to go.',
 }
 
 const title = computed(() => TITLE[props.destination](ref4.value))

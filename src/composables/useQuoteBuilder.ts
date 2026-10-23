@@ -10,6 +10,7 @@ import {
   emptyDraft,
   fromPesewas,
   needGroups,
+  quoteIsLocked,
   roomIdToApi,
   roomSummaries,
   toPesewas,
@@ -104,15 +105,39 @@ export function useQuoteBuilder({ quoteId, ownerView, rooms, catalogue, online }
 
   const dirty = computed(() => !draftIsEmpty(draft.value))
   const changeCount = computed(() => draftChangeCount(draft.value))
+
+  /**
+   * A quote that has been sent is a **record**, not a document being written.
+   *
+   * It opens exactly as a draft does — the same rooms, the same lines, the same
+   * money — because what he came for is the same thing: the numbers. What is
+   * gone is every way to change them. A sent quote's prices are frozen and she
+   * has been given them; an answered one is what she answered.
+   *
+   * It is read off the quote the server sent rather than off the list row that
+   * led here, so an address typed straight in is locked too, and a quote sent
+   * from another device locks the moment this one reads it.
+   */
+  const locked = computed(() => {
+    const status = ownerView.value?.header.status
+    return status !== undefined && quoteIsLocked(status)
+  })
+
   /**
    * Live only while he is editing *and* nothing is being sent. Rows stay put
    * during a submit: the draft is being consumed piece by piece as each request
    * lands, and an edit landing in the middle of that would be dropped with the
    * piece it arrived in.
+   *
+   * A locked quote is never live, whatever mode it was left in. The gate is here
+   * rather than on each control, so a control added later cannot miss it.
    */
-  const editable = computed(() => mode.value === 'editing' && !submitting.value)
+  const editable = computed(
+    () => mode.value === 'editing' && !submitting.value && !locked.value,
+  )
 
   function startEditing() {
+    if (locked.value) return
     mode.value = 'editing'
   }
 
@@ -137,6 +162,16 @@ export function useQuoteBuilder({ quoteId, ownerView, rooms, catalogue, online }
   const showOff = ref(false)
   const pickerOpen = ref(false)
   const moneyOpen = ref(false)
+  /**
+   * The answer sheet — block B.
+   *
+   * It is opened by `Record her answer` and by nothing else. The handoff has it
+   * open itself on every sent quote, on the grounds that recording her answer is
+   * the only reason to open one; but he also opens a sent quote to read a number
+   * out loud to her on the phone, and a sheet covering the lines he is reading
+   * from is a sheet he dismisses before he can do the thing he came for.
+   */
+  const answerOpen = ref(false)
   const itemised = ref(false)
   const addedCount = ref(0)
   const toast = ref('')
@@ -173,6 +208,7 @@ export function useQuoteBuilder({ quoteId, ownerView, rooms, catalogue, online }
       showOff.value = false
       pickerOpen.value = false
       moneyOpen.value = false
+      answerOpen.value = false
       submitError.value = null
       audience.value = 'owner'
       mode.value = draftIsEmpty(found) ? 'reading' : 'editing'
@@ -677,6 +713,7 @@ export function useQuoteBuilder({ quoteId, ownerView, rooms, catalogue, online }
     // mode
     mode,
     editable,
+    locked,
     dirty,
     changeCount,
     submitting,
@@ -695,6 +732,7 @@ export function useQuoteBuilder({ quoteId, ownerView, rooms, catalogue, online }
     showOff,
     pickerOpen,
     moneyOpen,
+    answerOpen,
     itemised,
     addedCount,
     toast,

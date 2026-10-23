@@ -33,8 +33,22 @@ const props = defineProps<{
    * which iOS zooms the page on focus, in a box that is 48px including its
    * border. `note` is the field that opens inside a table row once a contact has
    * been logged — a cell's width, a cell's text size, and no door of its own.
+   *
+   * `commit` is the one field a sheet is about — the figure the sheet's button
+   * then commits, at 26px so it is the largest thing on the sheet and reads
+   * across a room. Its prefix is the 16px one, not the quiet 12px a strip takes.
    */
-  size?: 'md' | 'lg' | 'field' | 'row' | 'row-figure' | 'split' | 'cell' | 'phone' | 'note'
+  size?:
+    | 'md'
+    | 'lg'
+    | 'field'
+    | 'row'
+    | 'row-figure'
+    | 'split'
+    | 'cell'
+    | 'phone'
+    | 'note'
+    | 'commit'
   /** Every figure is mono and tabular — these tables are read by column. */
   mono?: boolean
   align?: 'left' | 'right'
@@ -49,8 +63,13 @@ const props = defineProps<{
    * naming something the record needs. An optional field's label is a sentence
    * asking for something, stays at `sm`, and under `size="phone"` takes the
    * quieter ink to say so.
+   *
+   * `lg` (14px, full ink) is the label on a sheet's one field. It is not a word
+   * naming a value among others — it is the sheet's question, asked directly
+   * above the box that answers it, so it reads at the size of the prose around
+   * it rather than at a form label's.
    */
-  labelSize?: 'sm' | 'md'
+  labelSize?: 'sm' | 'md' | 'lg'
   /** Use when the field has no visible label. */
   ariaLabel?: string
   /**
@@ -60,6 +79,13 @@ const props = defineProps<{
    * promises a close that never comes.
    */
   enterKeyHint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send'
+  /**
+   * Which keyboard the phone raises. `decimal` for money and `numeric` for a
+   * count, rather than `type="number"`: a number input brings spinners, swallows
+   * what a half-typed figure looks like, and on some phones reports an empty
+   * string for anything it dislikes — which would lose what he typed.
+   */
+  inputMode?: 'text' | 'numeric' | 'decimal' | 'tel' | 'search' | 'email' | 'url'
 }>()
 
 defineEmits<{
@@ -71,9 +97,22 @@ const showDashes = computed(() => props.dashed === true && !props.modelValue)
 /** The visible label has to name the field to the screen reader too. */
 const fieldId = useId()
 
-/** So a screen can put the caret where the flow says it belongs. */
+/**
+ * So a screen can put the caret where the flow says it belongs.
+ *
+ * `select` is for a field that opens **already holding a figure he may replace**
+ * — the sheet's agreed total, seeded with the proposed one. Focus alone leaves
+ * the caret at one end, so his first digit would join the figure rather than
+ * replace it, and on a phone there is no comfortable way back from that.
+ */
 const inputEl = ref<HTMLInputElement | null>(null)
-defineExpose({ focus: () => inputEl.value?.focus() })
+defineExpose({
+  focus: () => inputEl.value?.focus(),
+  select: () => {
+    inputEl.value?.focus()
+    inputEl.value?.select()
+  },
+})
 </script>
 
 <template>
@@ -111,6 +150,7 @@ defineExpose({ focus: () => inputEl.value?.focus() })
         :readonly="derived"
         :aria-label="ariaLabel"
         :enterkeyhint="enterKeyHint"
+        :inputmode="inputMode"
         class="s-input"
         :class="[
           `s-input--${size ?? 'md'}`,
@@ -147,6 +187,14 @@ defineExpose({ focus: () => inputEl.value?.focus() })
 /* The phone form's principal fields. */
 .s-input-label--md {
   font-size: 13px;
+}
+
+/* A sheet's one question. Full ink and no tracking: it is a line of the sheet's
+   prose that happens to label the box under it, not a form label. */
+.s-input-label--lg {
+  font-size: 14px;
+  color: var(--color-fg);
+  letter-spacing: normal;
 }
 
 /* Above a 16px field, the tracking a 12px laptop label needs only makes it
@@ -385,6 +433,19 @@ defineExpose({ focus: () => inputEl.value?.focus() })
 .s-input--note {
   padding: 8px 10px;
   font-size: 14px;
+}
+
+/* The figure a sheet commits. The prefix keeps the 16px it is drawn at and its
+   own taller padding, so the two sides of the box end up the same height
+   without either being told what that height is. */
+.s-input--commit {
+  padding: 8px 14px;
+  font-size: 26px;
+}
+
+.s-input-wrap--size-commit .s-input-prefix {
+  font-size: 16px;
+  padding: 14px 12px;
 }
 
 /* A figure sitting in a table row, borderless until reached for. */

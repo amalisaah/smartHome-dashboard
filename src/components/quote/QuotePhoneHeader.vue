@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { SText } from '@/components/atoms'
 import { saveState } from '@/composables/useSaveState'
-import type { QuoteHeader } from '@/types/quote'
+import { quoteHeaderLine, type QuoteHeader } from '@/types/quote'
 
 /**
  * The phone's header: where he came from, whether the work is safe, and which
@@ -62,9 +62,7 @@ const alarmed = computed(
       {{ surname }}<template v-if="area"> — {{ area }}</template>
     </SText>
 
-    <SText type="cell-meta" color="fg-2">
-      Quote {{ String(header.id).padStart(4, '0') }} · {{ header.status }} · {{ header.level }}
-    </SText>
+    <SText type="cell-meta" color="fg-2">{{ quoteHeaderLine(header) }}</SText>
   </header>
 </template>
 

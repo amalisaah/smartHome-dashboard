@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { SButton, SText } from '@/components/atoms'
 import QuoteEditBar from './QuoteEditBar.vue'
+import QuoteLockedBar from './QuoteLockedBar.vue'
 import QuoteMoneyBoxes from './QuoteMoneyBoxes.vue'
 import { formatCurrency } from '@/utils/format'
-import type { ChargesDraft, QuoteMoney } from '@/types/quote'
+import type { ChargesDraft, QuoteHeader, QuoteMoney } from '@/types/quote'
 
 /**
  * The right rail: the two money boxes, and the card he acts from.
@@ -25,6 +26,10 @@ defineProps<{
   changeCount: number
   submitting: boolean
   submitError: string | null
+  /** The quote itself, for the states that are not a draft. */
+  header: QuoteHeader
+  /** Sent or answered: there is no way into editing, and no way to send again. */
+  locked: boolean
 }>()
 
 const emit = defineEmits<{
@@ -35,6 +40,7 @@ const emit = defineEmits<{
   edit: []
   reset: []
   submit: []
+  answer: []
 }>()
 </script>
 
@@ -51,7 +57,10 @@ const emit = defineEmits<{
     />
 
     <div class="send">
+      <QuoteLockedBar v-if="locked" :header="header" @answer="emit('answer')" />
+
       <QuoteEditBar
+        v-else
         :editing="editing"
         :dirty="dirty"
         :change-count="changeCount"
@@ -70,14 +79,19 @@ const emit = defineEmits<{
       </div>
 
       <!-- The refusal, stated as the consequence and in the row that has the
-           problem, rather than as a banner somewhere else. -->
-      <SText v-if="labourMissing" type="caption" color="risk">
+           problem, rather than as a banner somewhere else. Only a draft can be
+           sent, so only a draft can be refused. -->
+      <SText v-if="labourMissing && !locked" type="caption" color="risk">
         Labour not set. Sending will be refused until you type it.
       </SText>
 
       <div class="buttons">
-        <SButton variant="secondary" size="md" @click="emit('send')">Mark sent</SButton>
-        <button type="button" class="her" @click="emit('her')">
+        <!-- `Mark sent` is gone once it has been: the endpoint would refuse it,
+             and a button whose only outcome is a refusal is not an offer. -->
+        <SButton v-if="!locked" variant="secondary" size="md" @click="emit('send')">
+          Mark sent
+        </SButton>
+        <button type="button" class="her" :class="{ 'her--alone': locked }" @click="emit('her')">
           <SText type="app-title" class="her-label">Show her</SText>
         </button>
       </div>
@@ -142,6 +156,12 @@ const emit = defineEmits<{
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+/* With `Mark sent` gone it takes the whole row rather than leaving a gap where
+   a button used to be. */
+.her--alone {
+  grid-column: 1 / -1;
 }
 
 /* Dark, because it looks like the screen it opens. */

@@ -194,3 +194,30 @@ export interface ApiQuoteChargesUpdate {
   /** OWNER-ONLY. Cable, trunking, screws, fuel, ladder hire. */
   misc_cost_estimate_pesewas?: number
 }
+
+/**
+ * `POST /quotes/{id}/accept`.
+ *
+ * The field is optional on the wire and defaults to the proposed total, and the
+ * screen never leaves it out: the job measures its profit against this figure,
+ * so a default silently standing in for a number he was told would report
+ * profit that was never made.
+ */
+export interface ApiQuoteAccept {
+  agreed_total_pesewas: number
+}
+
+/** `POST /quotes/{id}/decline`. Null is normal — most declines are silence. */
+export interface ApiQuoteDecline {
+  declined_reason: string | null
+}
+
+/**
+ * What `accept` answers with: the quote, and the job it became in the same
+ * transaction. `job_id` is on this shape and on **no other quote read** — the
+ * job is independent from the moment it exists, so a quote opened cold cannot
+ * say which job it created.
+ */
+export interface ApiQuoteAccepted extends ApiQuoteOwnerView {
+  job_id: number
+}

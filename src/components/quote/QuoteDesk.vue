@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { SText } from '@/components/atoms'
 import AppBar from '@/components/app/AppBar.vue'
 import AppTabBar from '@/components/app/AppTabBar.vue'
+import QuoteAnswerSheet from './QuoteAnswerSheet.vue'
 import QuoteDeskByNeed from './QuoteDeskByNeed.vue'
 import QuoteDeskMoneyRail from './QuoteDeskMoneyRail.vue'
 import QuoteDeskRail from './QuoteDeskRail.vue'
@@ -26,9 +27,16 @@ const props = defineProps<{
   area: string | null
   online: boolean
   savedAt: string | null
+  /** Her answer is being written. */
+  answering?: boolean
+  answerError?: string | null
 }>()
 
-defineEmits<{ send: [] }>()
+defineEmits<{
+  send: []
+  accept: [agreedTotalPesewas: number]
+  decline: [reason: string | null]
+}>()
 
 const b = props.builder
 const query = ref('')
@@ -142,6 +150,8 @@ const alarmed = computed(() => !props.online || saveState.value === 'failed')
         :change-count="b.changeCount.value"
         :submitting="b.submitting.value"
         :submit-error="b.submitError.value"
+        :header="header"
+        :locked="b.locked.value"
         @edit="b.startEditing"
         @reset="b.reset"
         @submit="b.submit"
@@ -149,8 +159,21 @@ const alarmed = computed(() => !props.online || saveState.value === 'failed')
         @update:itemised="b.itemised.value = $event"
         @her="b.showHer"
         @send="$emit('send')"
+        @answer="b.answerOpen.value = true"
       />
     </div>
+
+    <!-- The same content as the phone's sheet, centred. -->
+    <QuoteAnswerSheet
+      v-if="b.answerOpen.value && b.money.value"
+      :proposed-pesewas="b.money.value.proposedPesewas"
+      :floor-pesewas="b.money.value.costPesewas"
+      :busy="answering"
+      :error="answerError"
+      @accept="$emit('accept', $event)"
+      @decline="$emit('decline', $event)"
+      @close="b.answerOpen.value = false"
+    />
   </div>
 </template>
 

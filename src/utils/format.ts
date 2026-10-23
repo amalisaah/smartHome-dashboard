@@ -42,6 +42,18 @@ export const formatMoneyWhole = (pesewas: number) => WHOLE.format(pesewas / 100)
 export const formatCurrency = (pesewas: number) => `GH₵ ${WHOLE.format(pesewas / 100)}`
 
 /**
+ * Grouped, and carrying its pesewas only when it has any — `23,531.10`, but
+ * `7,500` when that is what it is.
+ *
+ * It exists for figures that are **typed back in**, where `formatMoneyWhole`'s
+ * rounding would be a quiet lie: a proposed total of 23,531.10 shown as 23,531
+ * and accepted at face value records ten pesewas she never knocked off, and
+ * reports the gap between the two as `−0`.
+ */
+export const formatMoneyExact = (pesewas: number) =>
+  pesewas % 100 === 0 ? WHOLE.format(pesewas / 100) : TWO_DP.format(pesewas / 100)
+
+/**
  * A total, to the pesewa. `formatCurrency` rounds to whole cedis for a summary
  * figure; a shipment total is money he will reconcile against paper, so it keeps
  * its decimals.
@@ -93,6 +105,21 @@ export const formatAccuracy = (metres: number) => `±${WHOLE.format(metres)} m`
 export const formatShortDate = (iso: string) => {
   const date = new Date(iso)
   return `${SHORT_DAY.format(date)} ${SHORT_MONTH.format(date)}`
+}
+
+/**
+ * An ISO date-time as `3 days ago` — how long a quote has been sitting with her.
+ *
+ * The one age in this app counted on the device. The quote **list**'s
+ * days-waiting figures stay the server's, because a column of them compared
+ * against each other has to be read off one clock; this is a single quote's own
+ * header, where the only thing to hand is the timestamp the quote carries, and
+ * a date alone would make him do the subtraction.
+ */
+export function formatDaysAgo(iso: string): string {
+  const days = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000))
+  if (days === 0) return 'today'
+  return `${days} day${days === 1 ? '' : 's'} ago`
 }
 
 /** `Wed 30 Sep` — the app bar's date line, which is today's and nothing else. */

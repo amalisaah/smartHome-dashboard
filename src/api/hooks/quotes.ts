@@ -1,6 +1,8 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import {
+  acceptQuote,
+  declineQuote,
   fetchQuoteCustomerView,
   fetchQuoteOwnerView,
   fetchQuoteRooms,
@@ -124,5 +126,68 @@ export function useQuoteCustomerView(
     enabled: computed(() => known.value !== null),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
+  })
+}
+
+// --- her answer -------------------------------------------------------------
+
+/**
+ * Both answers come back as the whole quote, so the cache is **set** rather than
+ * invalidated: the screen behind the sheet is already showing the new status and
+ * the agreed figure by the time the sheet closes, with no second read.
+ *
+ * The list rows are invalidated because the quote has just left Waiting, and
+ * that list is the one screen whose whole job is saying who is still owed an
+ * answer. Her view goes too: her document quotes a status.
+ */
+function useAnswerLanded() {
+  const queryClient = useQueryClient()
+
+  return async (id: number, view: Awaited<ReturnType<typeof declineQuote>>) => {
+    queryClient.setQueryData(quoteKeys.ownerView(id), view)
+    await queryClient.invalidateQueries({ queryKey: quoteKeys.listRows() })
+    await queryClient.invalidateQueries({ queryKey: [...quoteKeys.all, 'customer-view', id] })
+  }
+}
+
+export interface AcceptVariables {
+  id: number
+  /** What she agreed to, in pesewas. Always sent; never defaulted on the wire. */
+  agreedTotalPesewas: number
+}
+
+/**
+ * `POST /quotes/{id}/accept`.
+ *
+ * It is deliberately **not** retried. Accepting creates a job, and a request
+ * that timed out on the way back may well have created one already — a silent
+ * second attempt would be a second job under the same quote. A failure comes
+ * back to the sheet, with the typed figure still in it, for him to press again.
+ */
+export function useAcceptQuote() {
+  const landed = useAnswerLanded()
+
+  return useMutation({
+    mutationFn: ({ id, agreedTotalPesewas }: AcceptVariables) =>
+      acceptQuote(id, agreedTotalPesewas),
+    retry: false,
+    onSuccess: async ({ view }, { id }) => landed(id, view),
+  })
+}
+
+export interface DeclineVariables {
+  id: number
+  /** Null is the normal case. */
+  reason: string | null
+}
+
+/** `POST /quotes/{id}/decline`. */
+export function useDeclineQuote() {
+  const landed = useAnswerLanded()
+
+  return useMutation({
+    mutationFn: ({ id, reason }: DeclineVariables) => declineQuote(id, reason),
+    retry: false,
+    onSuccess: async (view, { id }) => landed(id, view),
   })
 }

@@ -15,8 +15,8 @@ import HouseVisitView from '@/views/HouseVisitView.vue'
 import ItemDetailView from '@/views/ItemDetailView.vue'
 import ItemEditView from '@/views/ItemEditView.vue'
 import ItemNewView from '@/views/ItemNewView.vue'
+import QuoteBuilderView from '@/views/QuoteBuilderView.vue'
 import QuoteStubView from '@/views/QuoteStubView.vue'
-import QuoteView from '@/views/QuoteView.vue'
 import QuotesListView from '@/views/QuotesListView.vue'
 import ShipmentBuilderView from '@/views/ShipmentBuilderView.vue'
 import ShipmentsListView from '@/views/ShipmentsListView.vue'
@@ -195,22 +195,15 @@ export const router = createRouter({
     },
     {
       // One quote. **Every row on the list lands here**, whatever its state —
-      // one address per quote. `QuoteView` reads the state and renders the
-      // builder for a draft or the quote's own page for the rest, because what
-      // he can do to a quote depends on where it has got to.
+      // one address per quote, and one screen. The same rooms, lines and money
+      // either way; a quote that is no longer a draft simply opens with none of
+      // it live. Recording her answer is a sheet over this route, not a second
+      // address: it is something he does to the quote while looking at it, and
+      // a URL of its own would make the back gesture mean "leave the quote".
       path: '/quotes/:id(\\d+)',
       name: 'quote-detail',
-      component: QuoteView,
+      component: QuoteBuilderView,
       props: (route) => ({ quoteId: Number(route.params.id) }),
-    },
-    {
-      // Block B, "What did she agree to?" — the primary action on a sent
-      // quote's page. Its own address, so the back gesture returns to the
-      // quote rather than to the list.
-      path: '/quotes/:id(\\d+)/answer',
-      name: 'quote-answer',
-      component: QuoteStubView,
-      props: (route) => ({ reference: Number(route.params.id), destination: 'answer' }),
     },
     {
       // Block C, the job — the primary action on an accepted quote's page.

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { SButton, SText } from '@/components/atoms'
 import QuoteCustomerView from '@/components/quote/QuoteCustomerView.vue'
 import QuoteDesk from '@/components/quote/QuoteDesk.vue'
@@ -7,14 +8,27 @@ import QuotePhone from '@/components/quote/QuotePhone.vue'
 import { useCatalogueItems } from '@/api/hooks/catalogue'
 import { useCustomer } from '@/api/hooks/customers'
 import { useHouse } from '@/api/hooks/houses'
-import { useQuoteCustomerView, useQuoteOwnerView, useQuoteRooms } from '@/api/hooks/quotes'
+import {
+  useAcceptQuote,
+  useDeclineQuote,
+  useQuoteCustomerView,
+  useQuoteOwnerView,
+  useQuoteRooms,
+} from '@/api/hooks/quotes'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
 import { useQuoteBuilder } from '@/composables/useQuoteBuilder'
 import { saveState } from '@/composables/useSaveState'
 
 /**
- * Building a quote — modules 3+4, block A.
+ * One quote — modules 3+4, blocks A and B.
+ *
+ * **Every quote opens here, whatever state it is in**, and it opens the same
+ * way: the rooms, the lines and the money. What changes with the state is
+ * whether any of it can be typed into. A draft is a document being written; a
+ * sent quote is a record of what she was given, so it opens locked, and the
+ * only thing left to do to it is say what she answered — block B, which opens
+ * over this screen rather than anywhere else.
  *
  * The view owns the reads; `useQuoteBuilder` owns the editing. Five queries,
  * five fates: the lines, the rooms, the catalogue, the customer and the house
@@ -117,6 +131,58 @@ const loading = computed(() => ownerQuery.isPending.value)
 
 /** Sending is out of scope in this handoff. */
 const sendStub = ref(false)
+
+// --- her answer -----------------------------------------------------------
+
+const router = useRouter()
+const accept = useAcceptQuote()
+const decline = useDeclineQuote()
+
+const answering = computed(() => accept.isPending.value || decline.isPending.value)
+
+/**
+ * Stated as what happened to the thing he pressed, and shown inside the sheet
+ * with everything he typed still in it. Offline is told apart from a refusal
+ * because they call for different actions: one is "try again somewhere with
+ * signal", the other is "this did not go through".
+ */
+const answerError = computed(() => {
+  const failure = accept.error.value ?? decline.error.value
+  if (!failure) return null
+  if (!online.value) return 'No signal. Recording her answer needs a connection — try again when you have one.'
+  return 'That did not go through. Nothing has changed; try again.'
+})
+
+/**
+ * Accepting creates the job in the same request, so this lands on the job
+ * rather than back on the quote: a deposit has somewhere to go the moment she
+ * says yes, which is the point of doing both in one transaction.
+ */
+async function onAccept(agreedTotalPesewas: number) {
+  try {
+    const { jobId } = await accept.mutateAsync({ id: props.quoteId, agreedTotalPesewas })
+    builder.answerOpen.value = false
+    await router.push({ name: 'job-detail', params: { id: jobId } })
+  } catch {
+    // The sheet stays open with the figure in it; `answerError` says what
+    // happened. Swallowed here only because the mutation already holds it.
+  }
+}
+
+/**
+ * Declining leaves nothing to do here — it goes back to the list, where the
+ * quote is now under Answered. The sheet is closed first so the quote is not
+ * briefly visible with the sheet still over it.
+ */
+async function onDecline(reason: string | null) {
+  try {
+    await decline.mutateAsync({ id: props.quoteId, reason })
+    builder.answerOpen.value = false
+    await router.push({ name: 'quotes' })
+  } catch {
+    // As above: the reason he typed is still in the box.
+  }
+}
 </script>
 
 <template>
@@ -169,6 +235,10 @@ const sendStub = ref(false)
       :area="area"
       :online="online"
       :saved-at="savedAt"
+      :answering="answering"
+      :answer-error="answerError"
+      @accept="onAccept"
+      @decline="onDecline"
     />
 
     <QuoteDesk
@@ -179,7 +249,11 @@ const sendStub = ref(false)
       :area="area"
       :online="online"
       :saved-at="savedAt"
+      :answering="answering"
+      :answer-error="answerError"
       @send="sendStub = true"
+      @accept="onAccept"
+      @decline="onDecline"
     />
 
     <!-- `Mark sent` is a navigation stub: the endpoint exists, but sending

@@ -2,7 +2,9 @@
 import { computed, ref } from 'vue'
 import { SButton, SSegmented, SText } from '@/components/atoms'
 import QuoteAddedToast from './QuoteAddedToast.vue'
+import QuoteAnswerSheet from './QuoteAnswerSheet.vue'
 import QuoteEditBar from './QuoteEditBar.vue'
+import QuoteLockedBar from './QuoteLockedBar.vue'
 import QuoteModeBand from './QuoteModeBand.vue'
 import QuoteMoneySheet from './QuoteMoneySheet.vue'
 import QuoteOffRow from './QuoteOffRow.vue'
@@ -32,7 +34,12 @@ const props = defineProps<{
   area: string | null
   online: boolean
   savedAt: string | null
+  /** Her answer is being written. */
+  answering?: boolean
+  answerError?: string | null
 }>()
+
+defineEmits<{ accept: [agreedTotalPesewas: number]; decline: [reason: string | null] }>()
 
 const b = props.builder
 const query = ref('')
@@ -150,7 +157,17 @@ const results = computed(() => b.search(query.value))
       </div>
 
       <div class="edit">
+        <!-- A sent quote has no way into editing, so the bar says where it has
+             got to and offers the one thing it needs next instead. -->
+        <QuoteLockedBar
+          v-if="b.locked.value"
+          phone
+          :header="header"
+          @answer="b.answerOpen.value = true"
+        />
+
         <QuoteEditBar
+          v-else
           phone
           :editing="b.editable.value"
           :dirty="b.dirty.value"
@@ -195,6 +212,18 @@ const results = computed(() => b.search(query.value))
       @charge="b.setCharge"
       @update:itemised="b.itemised.value = $event"
       @close="b.moneyOpen.value = false"
+    />
+
+    <QuoteAnswerSheet
+      v-if="b.answerOpen.value && b.money.value"
+      phone
+      :proposed-pesewas="b.money.value.proposedPesewas"
+      :floor-pesewas="b.money.value.costPesewas"
+      :busy="answering"
+      :error="answerError"
+      @accept="$emit('accept', $event)"
+      @decline="$emit('decline', $event)"
+      @close="b.answerOpen.value = false"
     />
   </div>
 </template>

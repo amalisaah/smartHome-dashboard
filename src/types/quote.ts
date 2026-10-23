@@ -13,6 +13,7 @@
  * handed one.
  */
 
+import { formatDaysAgo } from '@/utils/format'
 import type { ApiQuoteLevel, ApiQuoteStatus } from '@/types/quoteApi'
 
 /**
@@ -115,6 +116,55 @@ export interface QuoteHeader {
   title: string | null
   /** When it was written — the date her view puts at the top. */
   createdAt: string
+  /**
+   * When it went out. Also when its prices froze, which the API stamps
+   * separately but has never set apart — both are read here so the header can
+   * say `sent 3 days ago · prices frozen` without inferring one from the other.
+   */
+  sentAt: string | null
+  pricesFrozenAt: string | null
+  acceptedAt: string | null
+  declinedAt: string | null
+  /**
+   * What she actually agreed to, set by `quote.accept`. Null on every quote
+   * that has not been accepted — and never filled in from the proposed total,
+   * because a figure nobody typed is not a figure she agreed to.
+   */
+  agreedTotalPesewas: number | null
+  /** Usually null: most declines are silence. */
+  declinedReason: string | null
+}
+
+/**
+ * `draft` is the only state the builder may write to. Everything else is a
+ * record of something that has already happened — sent to her, answered by her
+ * — and the screen opens locked.
+ */
+export const quoteIsLocked = (status: ApiQuoteStatus) => status !== 'draft'
+
+/** `0142` — the number as he says it out loud. */
+export const quoteNumber = (id: number) => String(id).padStart(4, '0')
+
+/**
+ * The line under the household name — `Quote 0142 · sent 3 days ago · prices
+ * frozen`.
+ *
+ * A sent quote leads with how long it has been sitting with her, because that
+ * is the one thing about it that changes while he does nothing. An answered one
+ * leads with the level, because the waiting is over and what is left is what
+ * kind of quote it was.
+ */
+export function quoteHeaderLine(header: QuoteHeader): string {
+  const parts = [`Quote ${quoteNumber(header.id)}`]
+
+  if (header.status === 'sent') {
+    parts.push(header.sentAt ? `sent ${formatDaysAgo(header.sentAt)}` : 'sent')
+    if (header.pricesFrozenAt) parts.push('prices frozen')
+    return parts.join(' · ')
+  }
+
+  parts.push(header.status, header.level)
+  return parts.join(' · ')
 }
 
 /** Everything his view reads. */
