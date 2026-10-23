@@ -9,7 +9,9 @@ import {
   useCustomer,
   useCustomerHouses,
   useDormancyRule,
+  useRemovalFigures,
 } from '@/api/hooks/customers'
+import { anonymousLabelFor } from '@/api/customerRemoval'
 import { SBanner, STextarea } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import CustomerAnonymiseDialog from '@/components/customers/CustomerAnonymiseDialog.vue'
@@ -21,7 +23,6 @@ import CustomerDetailSkeleton from '@/components/customers/CustomerDetailSkeleto
 import CustomerEditDialog from '@/components/customers/CustomerEditDialog.vue'
 import CustomerHouseList from '@/components/customers/CustomerHouseList.vue'
 import CustomerRemovalBand from '@/components/customers/CustomerRemovalBand.vue'
-import { removalFiguresMock } from '@/data/customerRemovalMock'
 import { HEADING_ID, type ContactHistoryEntry } from '@/types/customerDetail'
 import {
   blankContactLogDraft,
@@ -41,8 +42,10 @@ import { lastContactPhrase, toCustomerRow } from '@/utils/mapper/customerMapper'
  * each other. The only thing he writes on the page itself is a contact; her
  * details, her notes among them, are corrected in the edit dialog.
  *
- * Everything on it is read from the API except what the two exits say they
- * would cost, which no endpoint can answer yet — see `removalFiguresMock`.
+ * Everything on it is read from the API, the two exits' cost included: her
+ * quotes and her jobs are counted by `useRemovalFigures`. The one value with no
+ * endpoint behind it is the name anonymising leaves her under, which only the
+ * act can mint — see `anonymousLabelFor`.
  */
 const props = defineProps<{ customerId: number }>()
 
@@ -57,6 +60,14 @@ const customerQuery = useCustomer(() => props.customerId)
 const historyQuery = useContactLogs(() => props.customerId)
 const housesQuery = useCustomerHouses(() => props.customerId)
 const dormancyQuery = useDormancyRule()
+const removalQuery = useRemovalFigures(() => props.customerId)
+
+/**
+ * What the two exits would cost. Null until it has answered, and the band and
+ * both dialogs stay off the screen while it is: an exit that cannot say what it
+ * destroys must not be offered.
+ */
+const removalFigures = computed(() => removalQuery.data.value ?? null)
 
 const record = computed(() => customerQuery.data.value ?? null)
 const rule = computed(() => dormancyQuery.data.value ?? null)
@@ -88,7 +99,7 @@ const anonymised = computed(
 const anonymousLabel = computed(() =>
   record.value?.anonymisedAt != null
     ? record.value.name
-    : removalFiguresMock.anonymousLabel,
+    : anonymousLabelFor(props.customerId),
 )
 
 /** Hers if she arrived anonymised; otherwise today, because it just happened. */
@@ -388,9 +399,9 @@ const newHouse = () => router.push({ name: 'house-new', params: { id: props.cust
       <!-- Always visible, both of them, at full contrast. Not once she has been
            anonymised: there is nothing left of her to remove. -->
       <CustomerRemovalBand
-        v-if="!anonymised"
+        v-if="!anonymised && removalFigures"
         :name="record?.name ?? ''"
-        :figures="removalFiguresMock"
+        :figures="removalFigures"
         @anonymise="openRemoval('anonymise', $event)"
         @delete="openRemoval('delete', $event)"
       />
@@ -418,17 +429,17 @@ const newHouse = () => router.push({ name: 'house-new', params: { id: props.cust
   />
 
   <CustomerAnonymiseDialog
-    v-if="removalDialog === 'anonymise' && record"
+    v-if="removalDialog === 'anonymise' && record && removalFigures"
     :name="record.name"
-    :figures="removalFiguresMock"
+    :figures="removalFigures"
     @confirm="runRemoval('anonymise')"
     @dismiss="closeRemoval"
   />
 
   <CustomerDeleteDialog
-    v-if="removalDialog === 'delete' && record"
+    v-if="removalDialog === 'delete' && record && removalFigures"
     :name="record.name"
-    :figures="removalFiguresMock"
+    :figures="removalFigures"
     @confirm="runRemoval('delete')"
     @swap="swapToAnonymise"
     @dismiss="closeRemoval"

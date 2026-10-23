@@ -7,6 +7,7 @@ import {
   fetchDormancyRule,
   fetchHouses,
 } from '@/api/customers'
+import { fetchRemovalFigures } from '@/api/customerRemoval'
 
 export const customerKeys = {
   all: ['customers'] as const,
@@ -14,6 +15,7 @@ export const customerKeys = {
   detail: (id: number) => [...customerKeys.all, 'detail', id] as const,
   contactLogs: (id: number) => [...customerKeys.all, 'contact-logs', id] as const,
   houses: (id: number) => [...customerKeys.all, 'houses', id] as const,
+  removalFigures: (id: number) => [...customerKeys.all, 'removal-figures', id] as const,
 }
 
 /** A setting rather than a customer, so it is keyed as one. */
@@ -72,6 +74,23 @@ export function useCustomerHouses(id: MaybeRefOrGetter<number>) {
   return useQuery({
     queryKey: computed(() => customerKeys.houses(customerId.value)),
     queryFn: ({ signal }) => fetchHouses(customerId.value, signal),
+  })
+}
+
+/**
+ * What her two exits would cost — her quotes and her jobs, counted.
+ *
+ * Its own query, and the one on this screen whose failure has to be visible:
+ * every other read losing costs a column, but a removal band showing nothing
+ * where `2 quotes, 1 job` belongs would understate an irreversible act. The
+ * view keeps both exits shut until this has answered.
+ */
+export function useRemovalFigures(id: MaybeRefOrGetter<number>) {
+  const customerId = computed(() => toValue(id))
+
+  return useQuery({
+    queryKey: computed(() => customerKeys.removalFigures(customerId.value)),
+    queryFn: ({ signal }) => fetchRemovalFigures(customerId.value, signal),
   })
 }
 

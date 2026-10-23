@@ -86,12 +86,24 @@ export interface RemovalFigures {
    * The same counts as a sentence says them aloud — `['2 quotes', '1 job']`, so
    * the delete dialog can bold each one and write "and" between them. One fact,
    * two readings; the UI joins them and counts nothing.
+   *
+   * A kind she has none of is **absent**, not `0 jobs`: the sentence is a list
+   * of what would be destroyed, and nothing is not an item on it. Empty when
+   * she has neither, which is a customer whose deletion costs only herself.
    */
   recordCounts: string[]
   /** `Customer #0141` — what she becomes. */
   anonymousLabel: string
-  /** `August` — the month a delete leaves a hole in. */
-  month: string
+  /**
+   * `August` — the month a delete leaves a hole in, which is the month of the
+   * job whose money would vanish.
+   *
+   * **Null when she has no job**, and then the line that names it is not
+   * rendered at all. There is no hole in a month's figures when there was never
+   * anything in them to lose, and a sentence saying there is would be the one
+   * place this screen overstated what an exit costs.
+   */
+  month: string | null
 }
 
 /** The delete dialog's cost block: three lines over the risk tint. */

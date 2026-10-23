@@ -90,7 +90,17 @@ export interface ApiQuoteMoney {
 }
 
 /** `GET /quotes/{id}/owner-view` */
-export interface ApiQuoteOwnerView {
+/**
+ * The quote record itself — what `GET /quotes` answers, one per row, with no
+ * money block and no lines on it.
+ *
+ * Every date a list needs is here: `sent_at` is what days-waiting is counted
+ * from, `updated_at` what "edited … ago" is counted from, and `accepted_at` /
+ * `declined_at` are the dates an answered quote shows. What is *not* here is
+ * the customer's name and the house's label — see gap C10 — so a list that
+ * names the household has to join them itself.
+ */
+export interface ApiQuoteRecord {
   id: number
   customer_id: number
   house_id: number
@@ -109,6 +119,10 @@ export interface ApiQuoteOwnerView {
   archived_at: string | null
   created_at: string
   updated_at: string
+}
+
+/** The record, plus the two blocks only `/owner-view` carries. */
+export interface ApiQuoteOwnerView extends ApiQuoteRecord {
   money: ApiQuoteMoney
   lines: ApiQuoteLine[]
 }

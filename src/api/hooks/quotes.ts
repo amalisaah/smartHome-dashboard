@@ -6,9 +6,8 @@ import {
   fetchQuoteCustomerView,
   fetchQuoteOwnerView,
   fetchQuoteRooms,
-  fetchQuotes,
 } from '@/api/quotes'
-import { fetchQuoteListRows } from '@/data/quoteListMock'
+import { fetchQuoteListRows } from '@/api/quoteList'
 
 /**
  * The owner view, her view and the rooms are three keys, because they are three
@@ -29,7 +28,6 @@ import { fetchQuoteListRows } from '@/data/quoteListMock'
  */
 export const quoteKeys = {
   all: ['quotes'] as const,
-  list: () => [...quoteKeys.all, 'list'] as const,
   listRows: () => [...quoteKeys.all, 'list-rows'] as const,
   ownerView: (id: number) => [...quoteKeys.all, 'owner-view', id] as const,
   customerView: (id: number, itemised: boolean) =>
@@ -37,31 +35,25 @@ export const quoteKeys = {
   rooms: (id: number) => [...quoteKeys.all, 'rooms', id] as const,
 }
 
-/** `GET /quotes` — the stub list's way to a real quote. */
-export function useQuotes() {
-  return useQuery({
-    queryKey: quoteKeys.list(),
-    queryFn: ({ signal }) => fetchQuotes(signal),
-  })
-}
-
 /**
  * The quote list's rows — block D.
  *
  * A separate key from `list()` because it is a different read: that one is the
- * quote records, this one is the list screen's rows with the household names,
- * the days-waiting counts and the job links on them. It is served from a
- * fixture today (gap C10); see `@/data/quoteListMock`.
+ * quote records on their own, this one is quotes joined with the customers, the
+ * houses and the jobs, which is what a row needs to name a household and point
+ * at a job. See `@/api/quoteList` for why that join is four requests and not
+ * 1 + 3N.
  *
  * Left on the default policy rather than the builder's `staleTime: Infinity`.
  * The builder is one document nothing else moves, so it caches hard; this is a
- * list whose days-waiting counts age by the day and whose rows change whenever
- * he answers one. Coming back to this tab should show what is true now.
+ * list whose days-waiting figures age by the day and whose rows move states
+ * whenever he answers one. Coming back to this tab should show what is true
+ * now.
  */
 export function useQuoteListRows() {
   return useQuery({
     queryKey: quoteKeys.listRows(),
-    queryFn: () => fetchQuoteListRows(),
+    queryFn: ({ signal }) => fetchQuoteListRows(signal),
   })
 }
 

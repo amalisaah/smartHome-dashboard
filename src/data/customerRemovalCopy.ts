@@ -8,7 +8,12 @@
  * difference between the exits is read across a row.
  *
  * The figures inside the sentences — `2 quotes, 1 job`, `Customer #0141`,
- * `August` — are supplied, so every string below is built from them.
+ * `August` — are counted from her own records by `@/api/customerRemoval`, so
+ * every string below is built from them and none of them is written down here.
+ *
+ * Two of them can be empty, and the sentences bend rather than break: a
+ * customer with no job names no month, and one with neither quote nor job is
+ * described as her record rather than as `0 quotes, 0 jobs`.
  */
 
 import { firstName } from '@/types/customerDetail'
@@ -61,7 +66,12 @@ export const deleteExit = (figures: RemovalFigures): RemovalExit => ({
   ],
   stays: [
     strong('Nothing.'),
-    quiet(`${figures.month}'s job vanishes from your accounts. No undo.`),
+    // Only when there is a job to vanish. A customer with none loses nothing
+    // from his accounts, and saying otherwise would overstate the one act on
+    // this screen that cannot be undone.
+    ...(figures.month
+      ? [quiet(`${figures.month}'s job vanishes from your accounts. No undo.`)]
+      : [quiet('No undo.')]),
   ],
   button: 'Delete everything…',
 })
@@ -79,9 +89,13 @@ export const anonymiseBody = (figures: RemovalFigures): AnonymiseCopy => ({
  */
 export const deleteCost = (figures: RemovalFigures): DeleteCost => ({
   lines: [
-    [...sentenceCounts(figures.recordCounts), { text: ' will be destroyed,' }],
+    figures.recordCounts.length
+      ? [...sentenceCounts(figures.recordCounts), { text: ' will be destroyed,' }]
+      : plain('Her record will be destroyed,'),
     plain('with the payments recorded against them.'),
-    quiet(`Your ${figures.month} figures will be missing this job.`),
+    // The month is only named when a job's money would actually leave his
+    // books. See `RemovalFigures.month`.
+    ...(figures.month ? [quiet(`Your ${figures.month} figures will be missing this job.`)] : []),
   ],
 })
 

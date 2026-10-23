@@ -11,7 +11,7 @@
  * screen, because there is no cost in what comes back.
  */
 
-import type { CustomerQuote, QuoteHeader, QuoteOwnerView, QuoteRoom } from '@/types/quote'
+import type { CustomerQuote, QuoteOwnerView, QuoteRoom } from '@/types/quote'
 import type {
   ApiQuoteAccept,
   ApiQuoteAccepted,
@@ -32,34 +32,10 @@ import {
 import { apiGet, apiSend } from './http'
 
 /**
- * `GET /quotes` — enough of each quote to name it and open it.
- *
- * The list screen is block A's neighbour and not in this handoff; this exists so
- * the stub standing in for it can offer a real quote rather than a guessed id.
+ * `GET /quotes` as a list is read in `@/api/quoteList`, not here: the list
+ * screen needs the customers, the houses and the jobs joined onto it, and that
+ * join is the read rather than the quotes alone.
  */
-export async function fetchQuotes(signal?: AbortSignal): Promise<QuoteHeader[]> {
-  const rows = await apiGet<ApiQuoteOwnerView[]>('/quotes', undefined, signal)
-  return rows.map((row) => toQuoteOwnerView({ ...row, money: EMPTY_MONEY, lines: [] }).header)
-}
-
-/**
- * `GET /quotes` answers quote records without the `money` block the owner view
- * carries, and the header mapper does not read it. Zeroes rather than a second
- * mapper for a shape only the stub uses.
- */
-const EMPTY_MONEY = {
-  device_total_pesewas: 0,
-  labour_charge_pesewas: 0,
-  labour_charge_is_derived: true,
-  materials_charge_pesewas: 0,
-  materials_charge_is_derived: true,
-  room_count: 0,
-  proposed_total_pesewas: 0,
-  misc_cost_estimate_pesewas: 0,
-  cost_total_pesewas: 0,
-  expected_profit_pesewas: 0,
-  measured_against_pesewas: 0,
-}
 
 /** `GET /quotes/{id}/owner-view` — lines, totals and expected profit. */
 export async function fetchQuoteOwnerView(

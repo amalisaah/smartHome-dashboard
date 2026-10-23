@@ -136,6 +136,13 @@ export const formatLongDate = (iso: string) => {
   return `${SHORT_DAY.format(date)} ${LONG_MONTH.format(date)} ${date.getFullYear()}`
 }
 
+/**
+ * An ISO date-time as `August` — the month named inside a sentence, where
+ * `Aug` would read as an abbreviation he has to expand mid-read. No year: the
+ * sentence is about his books this year.
+ */
+export const formatMonthName = (iso: string) => LONG_MONTH.format(new Date(iso))
+
 /** An ISO date-time as `Aug 2026` — a month is as precise as "since" gets. */
 export const formatMonthYear = (iso: string) => {
   const date = new Date(iso)
