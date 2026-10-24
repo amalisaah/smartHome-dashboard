@@ -111,7 +111,7 @@ function meta(item: CatalogueItem) {
 /* Below the band, never over it. */
 .scrim {
   position: absolute;
-  inset: 32px 0 0;
+  inset: var(--band-h) 0 0;
   z-index: 40;
   background: var(--color-scrim);
 }

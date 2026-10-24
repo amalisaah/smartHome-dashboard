@@ -6,20 +6,20 @@ import AppLayout from '@/components/app/AppLayout.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 
 /**
- * The two places a quote can lead that are designed elsewhere: starting one,
- * and the job an accepted quote became.
+ * The one place a quote still leads that is designed elsewhere: the job an
+ * accepted quote became.
  *
- * They exist so that **nothing on this surface is a dead tap**. A button whose
+ * It exists so that **nothing on this surface is a dead tap**. A button whose
  * destination does not exist yet is worse than one that is greyed out: he
  * presses it, nothing happens, and he has no way to tell a missing screen from
- * a missing record. Each of these says which block it is waiting on and leaves
- * the way back.
+ * a missing record. It says which block it is waiting on and leaves the way
+ * back.
  */
 const props = withDefaults(
   defineProps<{
-    /** The quote's id, or the job number for `job`. A new quote has neither. */
+    /** The job's number. */
     reference?: number
-    destination: 'new' | 'job'
+    destination: 'job'
   }>(),
   { reference: 0 },
 )
@@ -30,12 +30,10 @@ const router = useRouter()
 const ref4 = computed(() => String(props.reference).padStart(4, '0'))
 
 const TITLE: Record<typeof props.destination, (ref: string) => string> = {
-  new: () => 'A new quote',
   job: (id) => `Job ${id}`,
 }
 
 const DETAIL: Record<typeof props.destination, string> = {
-  new: 'Starting a quote picks the customer and the house first, then opens the builder on a quote the server has numbered. That picker is block G and is not designed yet — so there is no blank quote to open, and no id to open it at.',
   job: 'Block C — recording the job: what was actually fitted, what it cost and what she has paid. Accepting a quote creates this job and lands here, so a deposit has somewhere to go.',
 }
 

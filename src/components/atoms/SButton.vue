@@ -4,6 +4,8 @@ defineProps<{
    * `create` is the inline-create chip beside a combobox: mono, action text.
    * `secondary-risk` is the secondary door carrying risk ink — a removal that
    * is reversible, and so must not read as a red destructive button.
+   * `secondary-action` is the same door carrying action ink — a way out of the
+   * surface you are on to the screen that makes the thing you are missing.
    * `chrome` is a button that belongs to a frame rather than to an action bar —
    * a toolbar's secondary, a table row's one-tap action. It rests on
    * `--surface` instead of `--bg` and answers a reach with the action border.
@@ -17,6 +19,7 @@ defineProps<{
     | 'primary'
     | 'secondary'
     | 'secondary-risk'
+    | 'secondary-action'
     | 'ghost'
     | 'destructive'
     | 'create'
@@ -210,6 +213,27 @@ defineProps<{
 
 .s-btn--secondary-risk:hover:not([disabled]) {
   background: var(--color-surface);
+}
+
+/* `+ New customer`, `+ New house`, `Add rooms ›` — the secondary door with
+   action ink. It is the third of the set: `secondary` is the other thing to do
+   here, `secondary-risk` what it costs, and this the way out to the screen that
+   makes what is missing. The ink is action because it leads somewhere, and the
+   box is `secondary`'s because leaving is not the main thing on offer.
+
+   No lift. These stand inside a sheet or a dialog, which is already the raised
+   surface; a second elevation on a button sitting on it would say the button
+   had opened over the thing it belongs to. */
+.s-btn--secondary-action {
+  background: var(--color-bg);
+  color: var(--color-action);
+  border-color: var(--color-line);
+}
+
+.s-btn--secondary-action:hover:not([disabled]) {
+  background: var(--color-surface);
+  border-color: var(--color-action);
+  color: var(--color-action-hover);
 }
 
 .s-btn--ghost {

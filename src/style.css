@@ -78,6 +78,12 @@
   /* === Hit target === */
   --hit-min: 48px;
 
+  /* === The owner band ===
+     A rule across the top, not a box that grows. Named because more than the
+     band depends on it: every sheet on an owner-side screen starts below it,
+     and a band that changed height without them would open over itself. */
+  --band-h: 32px;
+
   /* === Shadows === */
   /* The faintest lift there is: a selected segment, a secondary button in an
      action bar. Present enough to say "this one is raised", nothing more. */

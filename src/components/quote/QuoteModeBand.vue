@@ -39,8 +39,9 @@ withDefaults(
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  /* --band-h. A fixed 32px: it is a rule across the top, not a box that grows. */
-  height: 32px;
+  /* A rule across the top, not a box that grows. The sheets that open below it
+     measure from the same token. */
+  height: var(--band-h);
   padding: 0 24px;
   background: var(--color-risk-on-dark);
   flex: none;

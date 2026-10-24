@@ -182,16 +182,13 @@ export const router = createRouter({
       component: QuotesListView,
     },
     {
-      // A quote he has just started has no id: `POST /quotes` gives it a number
-      // when it is created, not the click that asked for a blank one. Declared
-      // above `:id` so it wins — though the `\d+` there would not match it.
-      //
-      // A stub, because starting a quote picks the customer and the house
-      // first and that picker is block G.
+      // Starting a quote is **not an address**. It picks a customer and a house
+      // first — block G — and until a house is picked there is no record and
+      // nothing to point a URL at; G is a sheet over the list on the phone and
+      // a dialog over it on the laptop. The path stays as a redirect only
+      // because it was one for a while and a bookmark should land somewhere.
       path: '/quotes/new',
-      name: 'quote-new',
-      component: QuoteStubView,
-      props: { destination: 'new' },
+      redirect: { name: 'quotes' },
     },
     {
       // One quote. **Every row on the list lands here**, whatever its state —

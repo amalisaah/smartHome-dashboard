@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { SButton, SInput, SSegmented, SText } from '@/components/atoms'
 import QuoteListRow from './QuoteListRow.vue'
 import QuoteListSkeleton from './QuoteListSkeleton.vue'
@@ -27,7 +26,7 @@ const props = defineProps<{
   online: boolean
 }>()
 
-const router = useRouter()
+const emit = defineEmits<{ start: [] }>()
 
 const tabOptions = computed(() =>
   QUOTE_LIST_TABS.map((def) => ({
@@ -68,9 +67,9 @@ const query = computed({
           </span>
         </div>
 
-        <SButton size="phone-bar" @click="router.push({ name: 'quote-new' })">
-          + New quote
-        </SButton>
+        <!-- G1 opens over this list rather than replacing it: nothing is saved
+             until he picks a house, so there is nothing to address. -->
+        <SButton size="phone-bar" @click="emit('start')">+ New quote</SButton>
       </header>
 
       <div class="search">
@@ -106,11 +105,16 @@ const query = computed({
         </template>
       </div>
     </div>
+
+    <!-- G1, outside the scroll: it is pinned to the screen, not to the list. -->
+    <slot />
   </div>
 </template>
 
 <style scoped>
 .phone {
+  /* What G1's scrim measures from, so it can stop below the mode band. */
+  position: relative;
   display: flex;
   flex-direction: column;
   /* The frame is the device: the scroll is inside it, so the band stays put

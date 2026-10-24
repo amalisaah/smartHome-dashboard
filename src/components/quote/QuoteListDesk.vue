@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { SButton, SInput, SText } from '@/components/atoms'
 import QuoteListColumn from './QuoteListColumn.vue'
 import type { useQuoteList } from '@/composables/useQuoteList'
@@ -21,7 +20,7 @@ const props = defineProps<{
   loading: boolean
 }>()
 
-const router = useRouter()
+const emit = defineEmits<{ start: [] }>()
 
 const query = computed({
   get: () => props.list.query.value,
@@ -45,7 +44,9 @@ const query = computed({
             aria-label="Search quotes by name, area or number"
           />
         </div>
-        <SButton size="toolbar" @click="router.push({ name: 'quote-new' })">+ New quote</SButton>
+        <!-- G2 opens over this list rather than replacing it: nothing is saved
+             until he picks a house, so there is nothing to address. -->
+        <SButton size="toolbar" @click="emit('start')">+ New quote</SButton>
       </div>
     </div>
 

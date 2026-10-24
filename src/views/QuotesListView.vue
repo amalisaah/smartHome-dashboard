@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { SButton, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
+import NewQuoteDialog from '@/components/quote/NewQuoteDialog.vue'
+import NewQuoteSheet from '@/components/quote/NewQuoteSheet.vue'
 import QuoteListDesk from '@/components/quote/QuoteListDesk.vue'
 import QuoteListPhone from '@/components/quote/QuoteListPhone.vue'
 import QuoteModeBand from '@/components/quote/QuoteModeBand.vue'
@@ -45,6 +47,16 @@ const loading = computed(() => rowsQuery.isPending.value)
  * on the phone that is the stated offline behaviour.
  */
 const failed = computed(() => rowsQuery.isError.value && !rows.value.length)
+
+/**
+ * Block G, open over this list — a sheet on the phone, a dialog on the laptop.
+ *
+ * It is state on this view rather than a route of its own, which is the whole
+ * design: nothing is saved until he picks a house, so there is no record to
+ * address and nothing for a back gesture to mean. Closing it leaves the list on
+ * the tab and the search it already had, because the list never went anywhere.
+ */
+const starting = ref(false)
 </script>
 
 <template>
@@ -69,16 +81,35 @@ const failed = computed(() => rowsQuery.isError.value && !rows.value.length)
       </div>
     </template>
 
-    <QuoteListPhone v-else-if="isPhone" :list="list" :loading="loading" :online="online" />
+    <template v-else-if="isPhone">
+      <QuoteListPhone
+        :list="list"
+        :loading="loading"
+        :online="online"
+        @start="starting = true"
+      >
+        <NewQuoteSheet v-if="starting" @close="starting = false" />
+      </QuoteListPhone>
+    </template>
 
     <template v-else>
       <QuoteModeBand holding="owner only" />
-      <QuoteListDesk :list="list" :loading="loading" />
+      <div class="desk">
+        <QuoteListDesk :list="list" :loading="loading" @start="starting = true" />
+        <NewQuoteDialog v-if="starting" @close="starting = false" />
+      </div>
     </template>
   </AppLayout>
 </template>
 
 <style scoped>
+/* The positioned ancestor G2's scrim covers. It is this wrapper rather than the
+   layout's frame so the scrim stops at the mode band, which stays legible over
+   it — the band is on every owner-side screen, including behind an open one. */
+.desk {
+  position: relative;
+}
+
 .failed {
   display: flex;
   flex-direction: column;
