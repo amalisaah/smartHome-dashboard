@@ -13,6 +13,7 @@ import QuotePhoneByNeed from './QuotePhoneByNeed.vue'
 import QuotePhoneHeader from './QuotePhoneHeader.vue'
 import QuotePhoneLineRow from './QuotePhoneLineRow.vue'
 import QuotePhoneMoneyBar from './QuotePhoneMoneyBar.vue'
+import QuotePhoneSendRow from './QuotePhoneSendRow.vue'
 import QuotePickerSheet from './QuotePickerSheet.vue'
 import QuoteRoomChips from './QuoteRoomChips.vue'
 import { formatMoney } from '@/utils/format'
@@ -37,9 +38,13 @@ const props = defineProps<{
   /** Her answer is being written. */
   answering?: boolean
   answerError?: string | null
+  /** `Mark sent` is in flight, and what came back if it was refused. */
+  sending?: boolean
+  sendError?: string | null
 }>()
 
 defineEmits<{
+  send: []
   accept: [agreedTotalPesewas: number]
   decline: [reason: string | null]
   later: []
@@ -170,18 +175,28 @@ const results = computed(() => b.search(query.value))
           @answer="b.answerOpen.value = true"
         />
 
-        <QuoteEditBar
-          v-else
-          phone
-          :editing="b.editable.value"
-          :dirty="b.dirty.value"
-          :change-count="b.changeCount.value"
-          :submitting="b.submitting.value"
-          :error="b.submitError.value"
-          @edit="b.startEditing"
-          @reset="b.reset"
-          @submit="b.submit"
-        />
+        <template v-else>
+          <QuoteEditBar
+            phone
+            :editing="b.editable.value"
+            :dirty="b.dirty.value"
+            :change-count="b.changeCount.value"
+            :submitting="b.submitting.value"
+            :error="b.submitError.value"
+            @edit="b.startEditing"
+            @reset="b.reset"
+            @submit="b.submit"
+          />
+
+          <!-- Under the edit bar, as it is on the laptop: the last thing he does
+               to a draft, below the ways of changing one. -->
+          <QuotePhoneSendRow
+            :labour-missing="b.labourMissing.value"
+            :sending="sending"
+            :error="sendError"
+            @send="$emit('send')"
+          />
+        </template>
       </div>
 
       <QuotePhoneMoneyBar
@@ -273,6 +288,9 @@ const results = computed(() => b.search(query.value))
 }
 
 .edit {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   padding: 10px 12px 0;
   background: var(--color-surface);
   border-top: 1px solid var(--color-line);

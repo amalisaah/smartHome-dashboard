@@ -157,6 +157,21 @@ const sendError = computed(() => {
  * list says it went, on the tab it went to.
  */
 async function onSend() {
+  /**
+   * **Unsubmitted work goes first, or it never goes at all.**
+   *
+   * Sending freezes the server's prices, and the server has not been told about
+   * the draft sitting on this device — so sending over one would freeze figures
+   * that are not the ones on his screen, and the quote would then be locked
+   * with a draft against it that can never be submitted. `Show her` resolves
+   * the same race the same way, and for the same reason: what leaves this
+   * device has to be what he is looking at.
+   */
+  if (builder.dirty.value) {
+    const ok = await builder.submit()
+    if (!ok) return
+  }
+
   try {
     await send.mutateAsync({ id: props.quoteId })
     showQuoteTab('waiting')
@@ -285,6 +300,9 @@ async function onLater() {
       :saved-at="savedAt"
       :answering="answering"
       :answer-error="answerError"
+      :sending="send.isPending.value"
+      :send-error="sendError"
+      @send="onSend"
       @accept="onAccept"
       @decline="onDecline"
       @later="onLater"
