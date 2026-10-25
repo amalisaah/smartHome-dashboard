@@ -1,4 +1,4 @@
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { formatMoneyExact, formatMoneyWhole } from '@/utils/format'
 import { toPesewas } from '@/types/quote'
 
@@ -15,15 +15,27 @@ import { toPesewas } from '@/types/quote'
  * subtraction. They are said twice because they answer two different questions
  * ("what do I get out of this?" and "how close am I to the edge?"), and
  * computed once so the two can never disagree.
+ *
+ * **A figure under the floor is accepted on one press.** It was two for a
+ * while, on the reasoning that a dropped digit and a concession look identical
+ * at this size. The lifecycle handoff draws that state and settles it the other
+ * way: a 2px risk border, the loss said in words, and the button still live —
+ * it is his call, and the screen's job is to make sure he cannot make it
+ * without having read what it costs.
  */
 
-export type AnswerStep = 'agreed' | 'confirm-loss' | 'declined'
+export type AnswerStep = 'agreed' | 'declined'
 
 interface Options {
   /** Supplied — the quote's own total. */
   proposedPesewas: Ref<number>
   /** Supplied — `money.cost_total_pesewas`. Below it, the job loses money. */
   floorPesewas: Ref<number>
+  /**
+   * Both doors write, so both need a connection. The typed figure and the
+   * reason survive it: going offline must never cost him what he has entered.
+   */
+  online: Ref<boolean>
 }
 
 /** The typographic minus, not a hyphen: these sit in mono beside each other. */
@@ -45,10 +57,6 @@ const MINUS = '−'
  */
 const cedis = (pesewas: number) => Math.round(pesewas / 100)
 
-/** A difference, read as a direction: `−2,531`, `+1,469`. */
-const difference = (value: number) =>
-  `${value < 0 ? MINUS : '+'}${formatMoneyWhole(Math.abs(value) * 100)}`
-
 /**
  * A figure that can go negative — profit. A minus when it is one, and nothing
  * when it is not: `+3,405` would read as a gain over something, and profit is
@@ -57,11 +65,11 @@ const difference = (value: number) =>
 const amount = (value: number) =>
   `${value < 0 ? MINUS : ''}${formatMoneyWhole(Math.abs(value) * 100)}`
 
-export function useQuoteAnswer({ proposedPesewas, floorPesewas }: Options) {
+export function useQuoteAnswer({ proposedPesewas, floorPesewas, online }: Options) {
   /**
-   * B1, the loss confirmation, and B2 — one sheet, three contents. Going to B2
-   * and back keeps the typed figure, which is why the figure lives out here and
-   * not inside whichever content is on screen.
+   * B1 and B2 — one sheet, two contents. Going to B2 and back keeps the typed
+   * figure, which is why the figure lives out here and not inside whichever
+   * content is on screen.
    */
   const step = ref<AnswerStep>('agreed')
 
@@ -83,6 +91,14 @@ export function useQuoteAnswer({ proposedPesewas, floorPesewas }: Options) {
   /** Null while the box is empty or holds something that is not yet a number. */
   const agreedPesewas = computed(() => toPesewas(typed.value))
 
+  /**
+   * Nothing to measure yet. It is its own state rather than a consequence of
+   * the figures being null, because every part of the box answers to it: the
+   * border goes dashed, the first line goes, the floor line asks for a figure
+   * and the button names what it is waiting for.
+   */
+  const empty = computed(() => agreedPesewas.value === null)
+
   /** In cedis, like everything else the gap box says. */
   const gap = computed(() =>
     agreedPesewas.value === null
@@ -96,56 +112,59 @@ export function useQuoteAnswer({ proposedPesewas, floorPesewas }: Options) {
   )
 
   /**
-   * Under water by a cedi or more. Rounding dust does not count: the
-   * confirmation exists for a dropped digit, not for a pesewa.
+   * Under water by a cedi or more. Rounding dust does not count: the warning
+   * exists for a dropped digit, not for a pesewa.
    */
   const belowFloor = computed(() => profit.value !== null && profit.value < 0)
-
-  /**
-   * Fixing the figure answers the question the confirmation was asking, so the
-   * confirmation goes — he should not have to press `Let me fix it` after
-   * already having fixed it.
-   */
-  watch(belowFloor, (under) => {
-    if (!under && step.value === 'confirm-loss') step.value = 'agreed'
-  })
 
   /**
    * The gap box's first line. Nothing while the box is empty: there is no
    * figure to be a gap from, and `−7,952 from proposed` would be a loss he has
    * not typed.
+   *
+   * **Below reads `from proposed`, above reads `above proposed`.** They are not
+   * one phrase with a sign in front, because they are two different pieces of
+   * news: coming down off his number is a discount, and going over it is not a
+   * smaller discount — it is her agreeing to more than he asked for, which he
+   * should read as such rather than as a positive subtraction.
    */
   const gapLine = computed(() => {
-    if (gap.value === null) return null
-    return {
-      from: gap.value === 0 ? 'same as proposed' : `${difference(gap.value)} from proposed`,
-      profit: `profit ${amount(profit.value as number)}`,
-    }
+    const value = gap.value
+    if (value === null) return null
+    const from =
+      value === 0
+        ? 'same as proposed'
+        : value < 0
+          ? `${MINUS}${formatMoneyWhole(-value * 100)} from proposed`
+          : `+${formatMoneyWhole(value * 100)} above proposed`
+    return { from, profit: `profit ${amount(profit.value as number)}` }
   })
 
   /**
-   * The second line — and with the box empty it is the only one, because the
-   * floor is the one thing still true when he has typed nothing.
+   * The second line — and with the box empty it is the only one, because with
+   * nothing typed there is no gap and no profit, and the honest thing to say is
+   * what will appear once there is.
    */
   const floorLine = computed(() => {
     const clear = profit.value
     const floor = formatMoneyWhole(floorPesewas.value)
-    if (clear === null) return `Your floor is ${floor}.`
+    if (clear === null) return 'Type the figure she agreed to. The difference and your profit show here.'
     if (clear < 0) {
-      return `Below your floor of ${floor} — you lose ${amount(-clear)} on this job.`
+      return `${amount(-clear)} below your floor of ${floor}. You can still accept, but the job loses money.`
     }
     return `Still ${amount(clear)} above your floor of ${floor}.`
   })
 
   /**
    * The primary's label follows the figure, so the button says what pressing it
-   * will record. With nothing typed it names the act without a figure rather
-   * than reading `Accept at  · creates the job`.
+   * will record. With nothing typed it asks for the figure rather than reading
+   * `Accept at  · creates the job` — the button is the prompt, since it is the
+   * thing he is reaching for when there is nothing in the box.
    */
   const acceptLabel = computed(() =>
-    agreedPesewas.value === null
-      ? 'Accept · creates the job'
-      : `Accept at ${formatMoneyExact(agreedPesewas.value)} · creates the job`,
+    empty.value
+      ? 'Type what she agreed to'
+      : `Accept at ${formatMoneyExact(agreedPesewas.value as number)} · creates the job`,
   )
 
   /**
@@ -153,30 +172,19 @@ export function useQuoteAnswer({ proposedPesewas, floorPesewas }: Options) {
    * two are read against each other, and a dashed `GH₵ 23,531` above a live
    * `23,531.10` looks like a discrepancy rather than like a rounding.
    */
-  const proposedText = computed(() => `GH₵ ${formatMoneyExact(proposedPesewas.value)}`)
-
-  /** Nothing typed is nothing to accept. A loss is his call, and is not blocked. */
-  const canAccept = computed(() => agreedPesewas.value !== null)
+  const proposedFigure = computed(() => formatMoneyExact(proposedPesewas.value))
+  const proposedText = computed(() => `GH₵ ${proposedFigure.value}`)
 
   /**
-   * What pressing Accept does. Below the floor it asks once — not because the
-   * figure is wrong, but because at this size a mistyped digit and a concession
-   * look identical, and only one of them is worth a second press.
+   * Nothing typed is nothing to accept, and a loss is his call and is not
+   * blocked. Offline stops both doors because both of them write, and a quote
+   * that looks accepted on this device and is still `sent` on the server is the
+   * one outcome worse than being told to wait.
    */
-  function pressAccept(): 'accept' | 'confirm' | 'nothing' {
-    if (!canAccept.value) return 'nothing'
-    if (belowFloor.value && step.value !== 'confirm-loss') {
-      step.value = 'confirm-loss'
-      return 'confirm'
-    }
-    return 'accept'
-  }
+  const canAccept = computed(() => !empty.value && online.value)
+  const canDecline = computed(() => online.value)
 
-  const lossText = computed(() =>
-    profit.value !== null && profit.value < 0 ? amount(-profit.value) : '0',
-  )
-
-  /** Back from B2 or from the loss confirmation. The figure survives both. */
+  /** Back from B2. The figure survives it. */
   const backToAgreed = () => (step.value = 'agreed')
   const toDeclined = () => (step.value = 'declined')
 
@@ -185,14 +193,15 @@ export function useQuoteAnswer({ proposedPesewas, floorPesewas }: Options) {
     typed,
     reason,
     agreedPesewas,
+    empty,
     belowFloor,
     canAccept,
+    canDecline,
     gapLine,
     floorLine,
     acceptLabel,
+    proposedFigure,
     proposedText,
-    lossText,
-    pressAccept,
     backToAgreed,
     toDeclined,
   }

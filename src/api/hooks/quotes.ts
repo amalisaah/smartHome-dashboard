@@ -6,6 +6,7 @@ import {
   fetchQuoteCustomerView,
   fetchQuoteOwnerView,
   fetchQuoteRooms,
+  sendQuote,
 } from '@/api/quotes'
 import { fetchQuoteListRows } from '@/api/quoteList'
 
@@ -118,6 +119,34 @@ export function useQuoteCustomerView(
     enabled: computed(() => known.value !== null),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
+  })
+}
+
+// --- sending ----------------------------------------------------------------
+
+/**
+ * `POST /quotes/{id}/send`.
+ *
+ * Not retried, for the same reason accepting is not: it freezes the quote's
+ * prices and logs a contact, and a silent second attempt on a request that
+ * timed out on the way back is a write he did not ask for. A failure comes back
+ * to the rail with the quote still a draft.
+ *
+ * It answers with the whole quote, so the cache is set rather than invalidated
+ * and the screen is already the sent one before the navigation happens.
+ */
+export function useSendQuote() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id }: { id: number }) => sendQuote(id),
+    retry: false,
+    onSuccess: async (view, { id }) => {
+      queryClient.setQueryData(quoteKeys.ownerView(id), view)
+      // It has just moved from Drafts to Waiting, which is the one list whose
+      // whole job is saying who is owed an answer.
+      await queryClient.invalidateQueries({ queryKey: quoteKeys.listRows() })
+    },
   })
 }
 

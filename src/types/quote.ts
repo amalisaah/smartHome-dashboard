@@ -167,6 +167,20 @@ export function quoteHeaderLine(header: QuoteHeader): string {
   return parts.join(' · ')
 }
 
+/**
+ * `Quote 0142 · sent 3 days ago` — block B's second line.
+ *
+ * The header line's first two parts and not its third. "Prices frozen" is a
+ * fact about the screen behind the dialog, and it is already said there; over
+ * the question "what did she agree to?" it would read as a warning about the
+ * figure he is being asked to type, which is the one figure on this quote that
+ * is not frozen.
+ */
+export function quoteSentLine(header: QuoteHeader): string {
+  const when = header.sentAt ? `sent ${formatDaysAgo(header.sentAt)}` : 'sent'
+  return `Quote ${quoteNumber(header.id)} · ${when}`
+}
+
 /** Everything his view reads. */
 export interface QuoteOwnerView {
   header: QuoteHeader

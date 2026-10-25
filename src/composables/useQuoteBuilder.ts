@@ -163,13 +163,15 @@ export function useQuoteBuilder({ quoteId, ownerView, rooms, catalogue, online }
   const pickerOpen = ref(false)
   const moneyOpen = ref(false)
   /**
-   * The answer sheet — block B.
+   * Block B — the answer. It opens **by itself on every sent quote**.
    *
-   * It is opened by `Record her answer` and by nothing else. The handoff has it
-   * open itself on every sent quote, on the grounds that recording her answer is
-   * the only reason to open one; but he also opens a sent quote to read a number
-   * out loud to her on the phone, and a sheet covering the lines he is reading
-   * from is a sheet he dismisses before he can do the thing he came for.
+   * A quote that has gone out has exactly one thing left to do to it, and a
+   * quote he never comes back to reconcile leaves the money view wrong — so the
+   * question is asked rather than offered. The objection to this was that he
+   * also opens a sent quote to read a line back to her over the phone, and the
+   * answer to that is where the quote sits while the question is asked: behind
+   * a scrim, not behind a screen. Every line is legible, and the dialog says
+   * `Not yet` in the corner.
    */
   const answerOpen = ref(false)
   const itemised = ref(false)
@@ -208,10 +210,29 @@ export function useQuoteBuilder({ quoteId, ownerView, rooms, catalogue, online }
       showOff.value = false
       pickerOpen.value = false
       moneyOpen.value = false
-      answerOpen.value = false
       submitError.value = null
       audience.value = 'owner'
       mode.value = draftIsEmpty(found) ? 'reading' : 'editing'
+    },
+    { immediate: true },
+  )
+
+  /**
+   * B follows the quote's state, rather than being opened and left open.
+   *
+   * It is keyed on the quote as well as the status so that moving between two
+   * sent quotes re-asks the question — the status alone does not change, so a
+   * watcher on it would not fire. And because it is derived rather than set
+   * once, accepting or declining closes it: the status moves off `sent` and the
+   * question has been answered.
+   *
+   * While the first read is in flight the status is undefined, so it opens with
+   * the quote rather than over an empty screen.
+   */
+  watch(
+    [quoteId, () => ownerView.value?.header.status],
+    ([, status]) => {
+      answerOpen.value = status === 'sent'
     },
     { immediate: true },
   )

@@ -1,34 +1,38 @@
 <script setup lang="ts">
 import { computed, ref, toRef, useId, watch } from 'vue'
 import { SButton, SInput, SText, STextarea } from '@/components/atoms'
+import QuoteAnswerGap from './QuoteAnswerGap.vue'
 import { useDialogKeys } from '@/composables/useDialogKeys'
 import { useQuoteAnswer } from '@/composables/useQuoteAnswer'
 
 /**
- * "What did she agree to?" — modules 3+4, block B.
+ * B1 and B2 — "What did she agree to?", the phone.
  *
  * He sends the number to her on WhatsApp himself; this is where he comes back
- * and records what she actually said. One sheet with three contents — the
- * figure, the loss confirmation, and the decline — because they are three
- * moments of one answer, and a second sheet opening over the first would make
- * going back look like going somewhere.
+ * and records what she actually said. One sheet with two contents — the figure
+ * and the decline — because they are two moments of one answer, and a second
+ * sheet opening over the first would make going back look like going somewhere.
  *
  * **The agreed figure is the only live field on the quote once it is sent.**
  * Everything behind the scrim is locked, which is what makes a bare numeric box
  * safe to put focus in the moment this opens.
  *
- * On the phone it is pinned to the bottom, where his thumb is. On the laptop the
- * same content is a centred modal: the sheet form exists because a phone's
- * reachable area is the bottom third of the screen, and a 1440px display has no
- * such constraint — pinning it there would put the one field he has to type in
- * as far from his eyes as the screen allows.
+ * The scrim is inert, as the laptop's is. Dismissing now means leaving the
+ * quote — the sheet opens by itself on every sent quote, so closing it in place
+ * would only reopen it — and a mis-tap on the lines behind it must not be the
+ * thing that takes him off the screen. The way out is `‹ Quotes` in the header,
+ * which B1 draws standing clear of the scrim for exactly this reason.
+ *
+ * The laptop is not this component. At ≥900px the same question is a centred
+ * dialog with the two figures side by side — see `QuoteAnswerDialog`.
  */
 const props = defineProps<{
   /** Supplied. */
   proposedPesewas: number
   /** Supplied — `money.cost_total_pesewas`. */
   floorPesewas: number
-  phone?: boolean
+  /** Both doors write. Offline they are inert and everything typed is kept. */
+  online: boolean
   /** A write is in flight. Both doors go inert so it goes exactly once. */
   busy?: boolean
   /** What came back when one did not land. The sheet keeps everything typed. */
@@ -38,12 +42,14 @@ const props = defineProps<{
 const emit = defineEmits<{
   accept: [agreedTotalPesewas: number]
   decline: [reason: string | null]
-  close: []
+  /** Not yet — the quote stays `sent` and he goes back to the list. */
+  later: []
 }>()
 
 const a = useQuoteAnswer({
   proposedPesewas: toRef(props, 'proposedPesewas'),
   floorPesewas: toRef(props, 'floorPesewas'),
+  online: toRef(props, 'online'),
 })
 
 const panel = ref<HTMLElement | null>(null)
@@ -56,7 +62,7 @@ const titleId = useId()
  * than joining it.
  */
 useDialogKeys(panel, {
-  onDismiss: () => emit('close'),
+  onDismiss: () => emit('later'),
   initialFocus: () => field.value?.select(),
 })
 
@@ -75,31 +81,31 @@ watch(
     if (busy) stale.value = false
   },
 )
-const shownError = computed(() => (stale.value ? null : props.error))
 
-function onAccept() {
-  const outcome = a.pressAccept()
-  if (outcome === 'accept') emit('accept', a.agreedPesewas.value as number)
-}
+/**
+ * One line, one slot. Offline outranks a failed write, because it is the reason
+ * the next press would fail too — and it says the typed figure is kept, which
+ * is the only question worth answering while the signal is gone.
+ */
+const notice = computed(() => {
+  if (!props.online) {
+    return a.step.value === 'declined'
+      ? 'no signal · declining needs a connection. What you’ve typed is kept.'
+      : 'no signal · accepting and declining need a connection. What you’ve typed is kept.'
+  }
+  return stale.value ? null : props.error
+})
 </script>
 
 <template>
-  <div class="scrim" @mousedown.self="emit('close')">
+  <div class="scrim">
     <div
       ref="panel"
       class="panel"
-      :class="phone ? 'panel--sheet' : 'panel--modal'"
       role="dialog"
       aria-modal="true"
       :aria-labelledby="titleId"
     >
-      <!--
-        B1, and the loss confirmation, which is B1 with its buttons changed and
-        nothing else. The title and the field stay exactly where they were,
-        because the likeliest reason a figure is under the floor is a dropped
-        digit — and the fix for that is the box he is already looking at, not a
-        screen that has replaced it.
-      -->
       <template v-if="a.step.value !== 'declined'">
         <SText :id="titleId" type="frame-title" as="h2">What did she agree to?</SText>
 
@@ -127,74 +133,38 @@ function onAccept() {
           :disabled="busy"
         />
 
-        <!-- The one box that moves as he types. Amber because what it holds is
-             his cost and his profit — owner-only figures — not because anything
-             is wrong; it goes risk-inked only when the figure is under water. -->
-        <div class="gap" :class="{ 'gap--quiet': !a.gapLine.value, 'gap--loss': a.belowFloor.value }">
-          <div v-if="a.gapLine.value" class="gap-line">
-            <SText type="money" :color="a.belowFloor.value ? 'risk' : 'fg-2'">
-              {{ a.gapLine.value.from }}
-            </SText>
-            <SText type="money" :color="a.belowFloor.value ? 'risk' : 'fg'">
-              {{ a.gapLine.value.profit }}
-            </SText>
-          </div>
-          <SText type="caption" :color="a.belowFloor.value ? 'risk' : 'fg-2'">
-            {{ a.floorLine.value }}
-          </SText>
-        </div>
+        <QuoteAnswerGap
+          phone
+          :gap-line="a.gapLine.value"
+          :floor-line="a.floorLine.value"
+          :below-floor="a.belowFloor.value"
+          :empty="a.empty.value"
+        />
 
         <!-- Said here, where the thing that failed is, rather than in a banner. -->
-        <SText v-if="shownError" type="caption" color="risk" class="error" role="alert">
-          {{ shownError }}
+        <SText v-if="notice" type="list-meta" color="risk" class="notice" role="status">
+          {{ notice }}
         </SText>
 
-        <template v-if="a.step.value === 'confirm-loss'">
-          <SText type="cell" color="fg-2">
-            This job would lose you {{ a.lossText.value }}. If that is what she agreed to,
-            record it — the money view has to be true. If it is a typo, the figure is
-            still up there.
-          </SText>
-          <SButton
-            variant="destructive"
-            :size="phone ? 'phone-cta' : 'md'"
-            :loading="busy"
-            class="wide"
-            @click="onAccept"
-          >
-            Accept anyway · creates the job
-          </SButton>
-          <SButton
-            variant="ghost"
-            :size="phone ? 'lg' : 'md'"
-            :disabled="busy"
-            class="wide"
-            @click="a.backToAgreed"
-          >
-            Let me fix it
-          </SButton>
-        </template>
+        <SButton
+          size="phone-cta"
+          :disabled="!a.canAccept.value"
+          :loading="busy"
+          class="wide"
+          @click="emit('accept', a.agreedPesewas.value as number)"
+        >
+          {{ a.acceptLabel.value }}
+        </SButton>
 
-        <template v-else>
-          <SButton
-            :size="phone ? 'phone-cta' : 'md'"
-            :disabled="!a.canAccept.value"
-            :loading="busy"
-            class="wide"
-            @click="onAccept"
-          >
-            {{ a.acceptLabel.value }}
-          </SButton>
-          <SButton
-            variant="secondary"
-            :size="phone ? 'lg' : 'md'"
-            :disabled="busy"
-            class="wide"
-            @click="a.toDeclined"
-          >
-            She declined
-          </SButton>
-        </template>
+        <SButton
+          variant="secondary"
+          size="lg"
+          :disabled="busy || !a.canDecline.value"
+          class="wide"
+          @click="a.toDeclined"
+        >
+          She declined
+        </SButton>
       </template>
 
       <!-- B2. The same sheet, swapped in place — the figure above is kept. -->
@@ -203,32 +173,29 @@ function onAccept() {
 
         <STextarea
           v-model="a.reason.value"
+          label="Reason · optional"
+          label-size="md"
           :rows="3"
-          :size="phone ? 'phone' : 'md'"
-          aria-label="Why she declined"
+          size="phone"
           placeholder="Why, if she said. Most declines are silence; leave it empty."
           :disabled="busy"
         />
 
-        <SText v-if="shownError" type="caption" color="risk" class="error" role="alert">
-          {{ shownError }}
+        <SText v-if="notice" type="list-meta" color="risk" class="notice" role="status">
+          {{ notice }}
         </SText>
 
         <div class="declined-buttons">
           <SButton
             variant="destructive"
-            :size="phone ? 'phone-wide' : 'md'"
+            size="phone-wide"
+            :disabled="!a.canDecline.value"
             :loading="busy"
             @click="emit('decline', a.reason.value.trim() || null)"
           >
             Declined
           </SButton>
-          <SButton
-            variant="ghost"
-            :size="phone ? 'lg' : 'md'"
-            :disabled="busy"
-            @click="a.backToAgreed"
-          >
+          <SButton variant="ghost" size="lg" :disabled="busy" @click="a.backToAgreed">
             Back
           </SButton>
         </div>
@@ -241,7 +208,8 @@ function onAccept() {
 /*
  * Below the band, as every other sheet on this surface is: the band says whose
  * view this is and that is true of the sheet too — her name and his cost are
- * both on it.
+ * both on it. The header above the lines is lifted clear of it by `QuotePhone`,
+ * so `‹ Quotes` stays reachable.
  */
 .scrim {
   position: absolute;
@@ -251,38 +219,23 @@ function onAccept() {
   display: flex;
 }
 
+/* Pinned to the bottom, full width, under his thumb. */
 .panel {
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 18px 16px 20px;
-  background: var(--color-bg);
+  margin-top: auto;
+  width: 100%;
   max-height: 100%;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--color-line) transparent;
-}
-
-/* The phone: pinned to the bottom, full width, under his thumb. */
-.panel--sheet {
-  margin-top: auto;
-  width: 100%;
+  background: var(--color-bg);
   border-top: 1px solid var(--color-line);
   border-radius: var(--radius-card) var(--radius-card) 0 0;
   box-shadow: var(--shadow-elev-sheet);
   animation: sheet-up 200ms ease-out;
-}
-
-/* The laptop: the same content, centred, at the width the content was drawn. */
-.panel--modal {
-  margin: auto;
-  width: 420px;
-  max-width: calc(100% - 48px);
-  padding: 20px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-elev-2);
-  animation: modal-in 200ms ease-out;
 }
 
 @keyframes sheet-up {
@@ -291,16 +244,8 @@ function onAccept() {
   }
 }
 
-@keyframes modal-in {
-  from {
-    transform: translateY(8px);
-    opacity: 0;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .panel--sheet,
-  .panel--modal {
+  .panel {
     animation: none;
   }
 }
@@ -318,44 +263,13 @@ function onAccept() {
   border-radius: var(--radius-md);
 }
 
-.gap {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
-  border: 1px solid var(--color-risk);
-  border-radius: var(--radius-md);
-  transition: border-color 120ms ease-out;
-}
-
-/*
- * Nothing typed, so there is no gap and no profit — only the floor, which is a
- * fact about the quote rather than about a figure he has entered. The amber
- * comes off with the figures it belonged to: an empty box ringed in warning
- * reads as a problem, and having typed nothing yet is not one.
- */
-.gap--quiet {
-  border-color: var(--color-line);
-}
-
-/* Under water. The border is already amber; what changes is the ink inside. */
-.gap--loss {
-  background: var(--color-row-risk-tint);
-}
-
-.gap-line {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .wide {
   width: 100%;
 }
 
 .declined-buttons {
   display: flex;
+  align-items: stretch;
   gap: 8px;
 }
 
@@ -363,7 +277,7 @@ function onAccept() {
   flex: 1;
 }
 
-.error {
+.notice {
   line-height: 1.4;
 }
 </style>

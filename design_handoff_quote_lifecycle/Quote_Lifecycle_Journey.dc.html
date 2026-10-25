@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:oklch(0.96 0.003 250);color:oklch(0.21 0.01 260);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:oklch(0.55 0.13 255);text-decoration:none}a:hover{color:oklch(0.48 0.13 255);text-decoration:underline}</style>
+</helmet>
+<div data-screen-label="Quote lifecycle journey" style="padding: 48px 56px 64px; display: flex; flex-direction: column; gap: 32px; width: max-content;">
+
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 48px;">
+    <div style="display: flex; flex-direction: column; gap: 8px; max-width: 820px;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.40 0.01 260);">Quotes &amp; jobs · quote lifecycle · phone</span>
+      <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 600; letter-spacing: -0.02em;">Draft → Waiting → Answered</h1>
+      <p style="margin: 0; font-size: 15px; line-height: 1.5; color: oklch(0.40 0.01 260); text-wrap: pretty;">Read left to right. The band on top shows which tab of the quote list the quote sits in. Each arrow is one tap, labelled with what he taps. A marker on an arrow means the status changes there. The dashed step after "Mark sent" is the gap: nothing is drawn for what he sees once he's marked it sent.</p>
+    </div>
+    <div style="display: flex; gap: 20px; align-items: center; font-size: 13px; color: oklch(0.40 0.01 260);">
+      <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 28px; height: 20px; border: 1px solid oklch(0.21 0.01 260); border-radius: 5px; background: oklch(0.99 0.002 250);"></div>Drawn already</div>
+      <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 28px; height: 20px; border: 1.5px dashed oklch(0.55 0.13 255); border-radius: 5px; background: oklch(0.99 0.002 250);"></div>Not drawn yet</div>
+      <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: oklch(0.21 0.01 260); outline: 3px solid oklch(0.96 0.003 250); box-shadow: 0 0 0 4px oklch(0.21 0.01 260);"></div>Status changes</div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 210px 130px 210px 130px 210px 150px 210px 130px 210px 130px 210px 130px 230px; row-gap: 0; align-items: start;">
+
+    <!-- row 1: status bands -->
+    <div style="grid-row: 1; grid-column: 1 / 6; display: flex; flex-direction: column; gap: 6px; padding: 0 0 18px;">
+      <div style="height: 6px; border-radius: 3px; background: oklch(0.58 0.01 260);"></div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600;">Draft</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.40 0.01 260);">status draft · Drafts tab · prices live</span></div>
+    </div>
+    <div style="grid-row: 1; grid-column: 7 / 12; display: flex; flex-direction: column; gap: 6px; padding: 0 0 18px;">
+      <div style="height: 6px; border-radius: 3px; background: oklch(0.70 0.13 45);"></div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600;">Waiting</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.40 0.01 260);">status sent · Waiting tab · prices frozen</span></div>
+    </div>
+    <div style="grid-row: 1; grid-column: 13; display: flex; flex-direction: column; gap: 6px; padding: 0 0 18px;">
+      <div style="height: 6px; border-radius: 3px; background: oklch(0.55 0.13 255);"></div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600;">Answered</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.40 0.01 260);">30 days</span></div>
+    </div>
+
+    <!-- 01 drafts tab -->
+    <div style="grid-row: 2; grid-column: 1; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: oklch(0.40 0.01 260);">01 · DRAFTS TAB</span><a href="Quotes_Jobs_Screens.dc.html#D" style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">D1 ›</a></div>
+      <div style="height: 380px; border: 1px solid oklch(0.21 0.01 260); border-radius: 18px; background: oklch(0.99 0.002 250); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="height: 16px; background: oklch(0.70 0.13 45); font-family: 'IBM Plex Mono', monospace; font-size: 8px; padding: 0 10px; display: flex; align-items: center;">His view</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 12px 10px;"><span style="font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 600;">Quotes</span><span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: oklch(0.99 0.002 250); background: oklch(0.55 0.13 255); padding: 6px 9px; border-radius: 7px;">+ New quote</span></div>
+        <div style="margin: 0 12px 10px; padding: 3px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; background: oklch(0.94 0.003 250); border-radius: 7px; font-size: 10px; font-weight: 600; text-align: center;">
+          <span style="padding: 6px 0; color: oklch(0.40 0.01 260);">Waiting 3</span>
+          <span style="padding: 6px 0; background: oklch(0.99 0.002 250); border-radius: 5px;">Drafts 2</span>
+          <span style="padding: 6px 0; color: oklch(0.40 0.01 260);">Answered 4</span>
+        </div>
+        <div style="display: flex; flex-direction: column; font-size: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-top: 1px solid oklch(0.94 0.003 250); background: oklch(0.985 0.008 255);"><div style="display: flex; flex-direction: column; gap: 2px;"><span>Mensah — East Legon</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: oklch(0.40 0.01 260);">0142 · custom</span></div><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: oklch(0.40 0.01 260);">edited 2 h ago</span></div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-top: 1px solid oklch(0.94 0.003 250);"><div style="display: flex; flex-direction: column; gap: 2px;"><span>Addo — Tema</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: oklch(0.40 0.01 260);">0139 · basic</span></div><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: oklch(0.40 0.01 260);">edited 3 d ago</span></div>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.45; color: oklch(0.40 0.01 260);">Not sent yet, last edited first. A brand-new quote arrives here from the <a href="New%20Quote%20Journey.dc.html">new quote journey</a>.</p>
+    </div>
+
+    <div style="grid-row: 2; grid-column: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 200px 10px 0;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-align: center;">taps the draft</span>
+      <div style="display: flex; align-items: center; width: 100%;"><div style="flex: 1; height: 2px; background: oklch(0.21 0.01 260);"></div><div style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid oklch(0.21 0.01 260);"></div></div>
+      <span style="font-size: 11px; text-align: center; color: oklch(0.40 0.01 260);">opens the builder</span>
+    </div>
+
+    <!-- 02 builder -->
+    <div style="grid-row: 2; grid-column: 3; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: oklch(0.40 0.01 260);">02 · BUILD IT</span><a href="Quotes_Jobs_Screens.dc.html#A" style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">A1 ›</a></div>
+      <div style="height: 380px; border: 1px solid oklch(0.21 0.01 260); border-radius: 18px; background: oklch(0.99 0.002 250); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="height: 16px; background: oklch(0.70 0.13 45); font-family: 'IBM Plex Mono', monospace; font-size: 8px; padding: 0 10px; display: flex; align-items: center;">His view · cost on screen</div>
+        <div style="padding: 10px 12px 8px; display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 10px; color: oklch(0.40 0.01 260);">‹ Quotes</span><span style="font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600;">Mensah — East Legon</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: oklch(0.40 0.01 260);">Quote 0142 · draft</span></div>
+        <div style="display: flex; gap: 5px; padding: 0 12px 8px; font-size: 10px;"><span style="padding: 5px 7px; border-radius: 6px; background: oklch(0.55 0.13 255); color: oklch(0.99 0.002 250);">Living</span><span style="padding: 5px 7px; border-radius: 6px; border: 1px solid oklch(0.90 0.004 250); color: oklch(0.40 0.01 260);">Kitchen</span><span style="padding: 5px 7px; border-radius: 6px; border: 1px solid oklch(0.90 0.004 250); color: oklch(0.40 0.01 260);">Bed 1</span></div>
+        <div style="flex: 1; border-top: 1px solid oklch(0.90 0.004 250); display: flex; flex-direction: column; font-size: 11px;">
+          <div style="display: flex; justify-content: space-between; padding: 9px 12px; border-bottom: 1px solid oklch(0.94 0.003 250);"><span>Smart switch ×3</span><span style="font-family: 'IBM Plex Mono', monospace;">1,350</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 9px 12px; border-bottom: 1px solid oklch(0.94 0.003 250);"><span>Motion sensor ×1</span><span style="font-family: 'IBM Plex Mono', monospace;">420</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 9px 12px; border-bottom: 1px solid oklch(0.94 0.003 250);"><span>Labour</span><span style="font-family: 'IBM Plex Mono', monospace;">2,400</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: oklch(0.40 0.01 260); border-top: 1px solid oklch(0.90 0.004 250);"><span>profit 1,960</span><span>floor 5,540</span></div>
+        <div style="display: flex; gap: 6px; padding: 8px; background: oklch(0.96 0.003 250); border-top: 1px solid oklch(0.90 0.004 250);"><div style="flex: 1; font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 6px;">GH₵ 7,500</div><div style="padding: 8px 10px; border-radius: 6px; background: oklch(0.19 0.012 260); color: oklch(0.95 0.004 260); font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; outline: 3px solid oklch(0.55 0.13 255 / 0.3); outline-offset: 2px;">Show her</div></div>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.45; color: oklch(0.40 0.01 260);">His view, with cost and profit on screen. He builds it room by room, often with her standing next to him.</p>
+    </div>
+
+    <div style="grid-row: 2; grid-column: 4; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 200px 10px 0;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-align: center;">taps Show her</span>
+      <div style="display: flex; align-items: center; width: 100%;"><div style="flex: 1; height: 2px; background: oklch(0.21 0.01 260);"></div><div style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid oklch(0.21 0.01 260);"></div></div>
+      <div style="display: flex; align-items: center; width: 100%;"><div style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 9px solid oklch(0.40 0.01 260);"></div><div style="flex: 1; height: 2px; background: oklch(0.40 0.01 260);"></div></div>
+      <span style="font-size: 11px; text-align: center; color: oklch(0.40 0.01 260);">holds 900 ms to get his view back</span>
+    </div>
+
+    <!-- 03 her view -->
+    <div style="grid-row: 2; grid-column: 5; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: oklch(0.40 0.01 260);">03 · HER VIEW</span><a href="Smart%20Home%20Ops%20Design%20System.dc.html" style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">DS turn 4 ›</a></div>
+      <div style="height: 380px; border: 1px solid oklch(0.21 0.01 260); border-radius: 18px; background: oklch(0.19 0.012 260); color: oklch(0.95 0.004 260); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 26px 14px 10px; display: flex; flex-direction: column; gap: 2px;"><span style="font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600;">Mensah — East Legon</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: oklch(0.70 0.01 260);">Quote 0142</span></div>
+        <div style="flex: 1; display: flex; flex-direction: column; font-size: 11px; border-top: 1px solid oklch(0.30 0.01 260);">
+          <div style="display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid oklch(0.26 0.01 260);"><span>Living room</span><span style="font-family: 'IBM Plex Mono', monospace;">2,950</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid oklch(0.26 0.01 260);"><span>Kitchen</span><span style="font-family: 'IBM Plex Mono', monospace;">1,780</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid oklch(0.26 0.01 260);"><span>Bed 1</span><span style="font-family: 'IBM Plex Mono', monospace;">2,770</span></div>
+        </div>
+        <div style="padding: 14px; display: flex; flex-direction: column; gap: 2px; border-top: 1px solid oklch(0.30 0.01 260);"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: oklch(0.70 0.01 260);">Total</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 500;">GH₵ 7,500</span></div>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.45; color: oklch(0.40 0.01 260);">Dark, with no cost and no amber band. Then he sends the total to her on WhatsApp himself. The app doesn't send it.</p>
+    </div>
+
+    <!-- transition: mark sent -->
+    <div style="grid-row: 2; grid-column: 6; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 186px 10px 0;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-align: center;">back in A, taps<br>Mark sent</span>
+      <div style="display: flex; align-items: center; width: 100%; position: relative;"><div style="flex: 1; height: 2px; background: repeating-linear-gradient(90deg, oklch(0.55 0.13 255) 0 6px, transparent 6px 10px);"></div><div style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid oklch(0.55 0.13 255);"></div><div style="position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -10px; border-radius: 50%; background: oklch(0.70 0.13 45); box-shadow: 0 0 0 3px oklch(0.96 0.003 250), 0 0 0 4px oklch(0.21 0.01 260);"></div></div>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-align: center; color: oklch(0.21 0.01 260);">draft → sent</span>
+      <span style="font-size: 11px; text-align: center; color: oklch(0.40 0.01 260);">prices freeze · stubbed in the A handoff</span>
+    </div>
+
+    <!-- 04 marked sent (not drawn) -->
+    <div style="grid-row: 2; grid-column: 7; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: oklch(0.55 0.13 255);">04 · MARKED SENT</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.55 0.13 255);">not drawn</span></div>
+      <div style="height: 380px; border: 1.5px dashed oklch(0.55 0.13 255); border-radius: 18px; background: oklch(0.99 0.002 250); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="height: 16px; background: oklch(0.70 0.13 45); font-family: 'IBM Plex Mono', monospace; font-size: 8px; padding: 0 10px; display: flex; align-items: center;">His view</div>
+        <div style="padding: 10px 12px 8px; display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 10px; color: oklch(0.40 0.01 260);">‹ Quotes</span><span style="font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600;">Mensah — East Legon</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: oklch(0.40 0.01 260);">Quote 0142 · sent just now · prices frozen</span></div>
+        <div style="flex: 1; margin: 4px 12px 12px; border: 1px dashed oklch(0.58 0.01 260); border-radius: 10px; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 14px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: oklch(0.55 0.13 255);">Pick one</span>
+          <span style="font-size: 12px; line-height: 1.4;">a · Toast "Sent · waiting on her", then back to Quotes on the Waiting tab</span>
+          <span style="font-size: 12px; line-height: 1.4;">b · Stays on the quote, read-only, with "Record her answer" on it</span>
+          <span style="font-size: 12px; line-height: 1.4;">c · Opens B1 straight away, for when she answers on the spot</span>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.45; color: oklch(0.40 0.01 260);"><b style="font-weight: 600; color: oklch(0.21 0.01 260);">The gap.</b> Right now nothing confirms the send and nothing says where he ends up.</p>
+    </div>
+
+    <div style="grid-row: 2; grid-column: 8; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 200px 10px 0;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-align: center;">days pass</span>
+      <div style="display: flex; align-items: center; width: 100%;"><div style="flex: 1; height: 2px; background: repeating-linear-gradient(90deg, oklch(0.21 0.01 260) 0 6px, transparent 6px 10px);"></div><div style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid oklch(0.21 0.01 260);"></div></div>
+      <span style="font-size: 11px; text-align: center; color: oklch(0.40 0.01 260);">he opens Quotes; it opens on Waiting</span>
+    </div>
+
+    <!-- 05 waiting tab -->
+    <div style="grid-row: 2; grid-column: 9; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: oklch(0.40 0.01 260);">05 · WAITING TAB</span><a href="Quotes_Jobs_Screens.dc.html#D" style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">D1 ›</a></div>
+      <div style="height: 380px; border: 1px solid oklch(0.21 0.01 260); border-radius: 18px; background: oklch(0.99 0.002 250); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="height: 16px; background: oklch(0.70 0.13 45); font-family: 'IBM Plex Mono', monospace; font-size: 8px; padding: 0 10px; display: flex; align-items: center;">His view</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 12px 10px;"><span style="font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 600;">Quotes</span><span style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: oklch(0.99 0.002 250); background: oklch(0.55 0.13 255); padding: 6px 9px; border-radius: 7px;">+ New quote</span></div>
+        <div style="margin: 0 12px 10px; padding: 3px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; background: oklch(0.94 0.003 250); border-radius: 7px; font-size: 10px; font-weight: 600; text-align: center;">
+          <span style="padding: 6px 0; background: oklch(0.99 0.002 250); border-radius: 5px;">Waiting 4</span>
+          <span style="padding: 6px 0; color: oklch(0.40 0.01 260);">Drafts 1</span>
+          <span style="padding: 6px 0; color: oklch(0.40 0.01 260);">Answered 4</span>
+        </div>
+        <div style="display: flex; flex-direction: column; font-size: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-top: 1px solid oklch(0.94 0.003 250);"><div style="display: flex; flex-direction: column; gap: 2px;"><span>Quaye — Dzorwulu</span><span style="font-size: 10px; color: oklch(0.55 0.13 255);">Record her answer ›</span></div><div style="display: flex; flex-direction: column; align-items: flex-end;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 500; line-height: 1;">12</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 7px; letter-spacing: 0.08em; color: oklch(0.40 0.01 260);">DAYS WAITING</span></div></div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-top: 1px solid oklch(0.94 0.003 250);"><div style="display: flex; flex-direction: column; gap: 2px;"><span>Darko — Cantonments</span><span style="font-size: 10px; color: oklch(0.55 0.13 255);">Record her answer ›</span></div><div style="display: flex; flex-direction: column; align-items: flex-end;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 500; line-height: 1;">9</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 7px; letter-spacing: 0.08em; color: oklch(0.40 0.01 260);">DAYS WAITING</span></div></div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-top: 1px solid oklch(0.94 0.003 250); background: oklch(0.985 0.008 255);"><div style="display: flex; flex-direction: column; gap: 2px;"><span>Mensah — East Legon</span><span style="font-size: 10px; color: oklch(0.55 0.13 255);">Record her answer ›</span></div><div style="display: flex; flex-direction: column; align-items: flex-end;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 500; line-height: 1;">3</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 7px; letter-spacing: 0.08em; color: oklch(0.40 0.01 260);">DAYS WAITING</span></div></div>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.45; color: oklch(0.40 0.01 260);">Oldest first, so the top one is the one to chase. No amounts on the list.</p>
+    </div>
+
+    <div style="grid-row: 2; grid-column: 10; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 200px 10px 0;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-align: center;">taps Record her answer</span>
+      <div style="display: flex; align-items: center; width: 100%;"><div style="flex: 1; height: 2px; background: oklch(0.21 0.01 260);"></div><div style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid oklch(0.21 0.01 260);"></div></div>
+      <span style="font-size: 11px; text-align: center; color: oklch(0.40 0.01 260);">sheet opens by itself over the quote</span>
+    </div>
+
+    <!-- 06 B1 -->
+    <div style="grid-row: 2; grid-column: 11; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: oklch(0.40 0.01 260);">06 · HER ANSWER</span><a href="Quotes_Jobs_Screens.dc.html#B" style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">B1 ›</a></div>
+      <div style="height: 380px; border: 1px solid oklch(0.21 0.01 260); border-radius: 18px; background: oklch(0.21 0.01 260 / 0.25); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;">
+        <div style="background: oklch(0.99 0.002 250); border-radius: 12px 12px 0 0; padding: 14px 12px; display: flex; flex-direction: column; gap: 9px;">
+          <span style="font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600;">What did she agree to?</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: oklch(0.40 0.01 260);"><span>You proposed</span><span style="font-family: 'IBM Plex Mono', monospace; padding: 4px 6px; border: 1px dashed oklch(0.58 0.01 260); border-radius: 5px; color: oklch(0.21 0.01 260);">7,500</span></div>
+          <div style="height: 36px; border: 2px solid oklch(0.55 0.13 255); border-radius: 7px; display: flex; align-items: center; justify-content: flex-end; padding: 0 10px; font-family: 'IBM Plex Mono', monospace; font-size: 16px;">7,000</div>
+          <div style="display: flex; flex-direction: column; gap: 2px; padding: 8px; border: 1px dashed oklch(0.58 0.01 260); border-radius: 7px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: oklch(0.40 0.01 260);"><span>−500 from proposed · profit 1,460</span><span>Still 1,460 above your floor</span></div>
+          <div style="height: 32px; border-radius: 8px; background: oklch(0.55 0.13 255); color: oklch(0.99 0.002 250); font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center;">Accept at 7,000 · creates the job</div>
+          <div style="height: 28px; border-radius: 7px; border: 1px solid oklch(0.90 0.004 250); font-size: 11px; color: oklch(0.40 0.01 260); display: flex; align-items: center; justify-content: center;">She declined</div>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.45; color: oklch(0.40 0.01 260);">He types what she actually agreed to. Opening any sent quote opens this sheet first.</p>
+    </div>
+
+    <!-- branch arrows -->
+    <div style="grid-row: 2; grid-column: 12; display: flex; flex-direction: column; justify-content: space-between; height: 380px; margin-top: 26px; padding: 50px 10px 40px;">
+      <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">Accept</span><div style="display: flex; align-items: center; width: 100%; position: relative;"><div style="flex: 1; height: 2px; background: oklch(0.21 0.01 260);"></div><div style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid oklch(0.21 0.01 260);"></div><div style="position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -10px; border-radius: 50%; background: oklch(0.55 0.13 255); box-shadow: 0 0 0 3px oklch(0.96 0.003 250), 0 0 0 4px oklch(0.21 0.01 260);"></div></div><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px;">sent → accepted</span></div>
+      <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-align: center;">She declined → B2 → Declined</span><div style="display: flex; align-items: center; width: 100%; position: relative;"><div style="flex: 1; height: 2px; background: oklch(0.21 0.01 260);"></div><div style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid oklch(0.21 0.01 260);"></div><div style="position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -10px; border-radius: 50%; background: oklch(0.58 0.01 260); box-shadow: 0 0 0 3px oklch(0.96 0.003 250), 0 0 0 4px oklch(0.21 0.01 260);"></div></div><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px;">sent → declined</span><span style="font-size: 11px; color: oklch(0.40 0.01 260);">reason optional</span></div>
+    </div>
+
+    <!-- 07 ends -->
+    <div style="grid-row: 2; grid-column: 13; display: flex; flex-direction: column; justify-content: space-between; height: 380px; margin-top: 26px; padding: 14px 0;">
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid oklch(0.21 0.01 260); border-radius: 10px; background: oklch(0.99 0.002 250);">
+        <a href="Quotes_Jobs_Screens.dc.html#C" style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">07a · C ›</a>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600;">The job opens</span>
+        <span style="font-size: 12px; line-height: 1.4; color: oklch(0.40 0.01 260);">So a deposit has somewhere to land. In Answered, the quote's row reads:</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11px;"><span>Mensah — East Legon</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 3px 6px; border: 1px solid oklch(0.55 0.13 255); border-radius: 6px; color: oklch(0.55 0.13 255); white-space: nowrap;">accepted 24 Oct</span></div>
+        <span style="font-size: 11px; color: oklch(0.55 0.13 255);">Job 0087 ›</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid oklch(0.21 0.01 260); border-radius: 10px; background: oklch(0.99 0.002 250);">
+        <a href="Quotes_Jobs_Screens.dc.html#D" style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">07b · D ›</a>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600;">Back to Quotes</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11px;"><span>Mensah — East Legon</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 3px 6px; border: 1px solid oklch(0.90 0.004 250); border-radius: 6px; color: oklch(0.40 0.01 260); white-space: nowrap;">declined 24 Oct</span></div>
+        <span style="font-size: 11px; line-height: 1.4; color: oklch(0.40 0.01 260);">"Went with a cheaper installer". Tapping it opens the quote read-only, which isn't drawn yet.</span>
+      </div>
+    </div>
+
+    <!-- row 3: detours -->
+    <div style="grid-row: 3; grid-column: 3; display: flex; flex-direction: column; padding-top: 14px;">
+      <div style="display: flex; justify-content: center; height: 48px;"><div style="display: flex; flex-direction: column; align-items: center;"><div style="flex: 1; width: 2px; background: oklch(0.40 0.01 260);"></div><div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid oklch(0.40 0.01 260);"></div></div></div>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-align: center; color: oklch(0.40 0.01 260); padding: 6px 0 8px;">labour is empty</span>
+      <div style="display: flex; flex-direction: column; gap: 4px; padding: 14px; border: 1px solid oklch(0.21 0.01 260); border-radius: 10px; background: oklch(0.99 0.002 250);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.40 0.01 260);">A · send card</span>
+        <span style="font-size: 12px; line-height: 1.4; color: oklch(0.55 0.13 45);">Labour not set. Sending will be refused until you type it.</span>
+        <span style="font-size: 12px; line-height: 1.4; color: oklch(0.40 0.01 260);">It's a prompt, not an error. He stays in Draft until he types it.</span>
+      </div>
+    </div>
+
+    <div style="grid-row: 3; grid-column: 9 / 14; display: flex; flex-direction: column; padding-top: 14px;">
+      <div style="display: flex; align-items: flex-end; height: 48px; padding: 0 98px 0 calc(40% + 30px);">
+        <div style="display: flex; flex-direction: column; align-items: center; height: 100%;"><div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 9px solid oklch(0.40 0.01 260);"></div><div style="flex: 1; width: 2px; background: repeating-linear-gradient(180deg, oklch(0.40 0.01 260) 0 5px, transparent 5px 9px);"></div></div>
+        <div style="flex: 1; height: 2px; background: repeating-linear-gradient(90deg, oklch(0.40 0.01 260) 0 6px, transparent 6px 10px);"></div>
+        <div style="width: 2px; height: 100%; background: repeating-linear-gradient(180deg, oklch(0.40 0.01 260) 0 5px, transparent 5px 9px);"></div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 20px; padding-top: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 14px; border: 1.5px dashed oklch(0.55 0.13 255); border-radius: 10px; background: oklch(0.99 0.002 250); width: 360px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: oklch(0.55 0.13 255);">The way back · in the API, not drawn</span>
+          <span style="font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600;">Job cancelled → quote back to Waiting</span>
+          <span style="font-size: 12px; line-height: 1.4; color: oklch(0.40 0.01 260);">Cancelling the job releases the quote (accepted → sent). The next time he opens it, B1 comes up again.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- row 4: open questions -->
+    <div style="grid-row: 4; grid-column: 1 / 14; display: flex; flex-direction: column; gap: 10px; padding: 18px 20px; border: 1px solid oklch(0.90 0.004 250); border-radius: 10px; background: oklch(0.99 0.002 250); margin-top: 40px; max-width: 1100px;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.40 0.01 260);">Not decided yet</span>
+      <ol style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.45;">
+        <li><b style="font-weight: 600;">What Mark sent does (04).</b> Does it confirm, and where does he land? It's stubbed in the A handoff.</li>
+        <li><b style="font-weight: 600;">B1 edge states:</b> an empty agreed figure, a figure above the proposal, a figure below his floor, and an API error.</li>
+        <li><b style="font-weight: 600;">B on the laptop</b> is built as <a href="Quotes_Jobs_Screens.dc.html#B">B3</a>, a dialog with the edge states drawn. The read-only view of a declined quote still isn't designed.</li>
+        <li><b style="font-weight: 600;">Reopening a sent quote</b> (sent → draft, gap D3) is in the API but not in the brief. It's left out unless you want it.</li>
+      </ol>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { SText } from '@/components/atoms'
 import AppBar from '@/components/app/AppBar.vue'
 import AppTabBar from '@/components/app/AppTabBar.vue'
-import QuoteAnswerSheet from './QuoteAnswerSheet.vue'
+import QuoteAnswerDialog from './QuoteAnswerDialog.vue'
 import QuoteDeskByNeed from './QuoteDeskByNeed.vue'
 import QuoteDeskMoneyRail from './QuoteDeskMoneyRail.vue'
 import QuoteDeskRail from './QuoteDeskRail.vue'
@@ -13,7 +13,7 @@ import QuoteModeBand from './QuoteModeBand.vue'
 import QuoteOffRow from './QuoteOffRow.vue'
 import { saveState } from '@/composables/useSaveState'
 import type { QuoteBuilder } from '@/composables/useQuoteBuilder'
-import type { QuoteHeader } from '@/types/quote'
+import { quoteNumber, quoteSentLine, type QuoteHeader } from '@/types/quote'
 
 /**
  * A2 — the laptop, his view. The same quote and the same lines as the phone,
@@ -30,12 +30,16 @@ const props = defineProps<{
   /** Her answer is being written. */
   answering?: boolean
   answerError?: string | null
+  /** `Mark sent` is in flight, and what came back if it was refused. */
+  sending?: boolean
+  sendError?: string | null
 }>()
 
 defineEmits<{
   send: []
   accept: [agreedTotalPesewas: number]
   decline: [reason: string | null]
+  later: []
 }>()
 
 const b = props.builder
@@ -57,6 +61,11 @@ const status = computed(() => {
 })
 
 const alarmed = computed(() => !props.online || saveState.value === 'failed')
+
+/** `Adjei — East Legon`, as both the rail and the dialog's header say it. */
+const who = computed(() =>
+  props.area ? `${props.surname} — ${props.area}` : props.surname,
+)
 </script>
 
 <template>
@@ -152,6 +161,8 @@ const alarmed = computed(() => !props.online || saveState.value === 'failed')
         :submit-error="b.submitError.value"
         :header="header"
         :locked="b.locked.value"
+        :sending="sending"
+        :send-error="sendError"
         @edit="b.startEditing"
         @reset="b.reset"
         @submit="b.submit"
@@ -163,16 +174,22 @@ const alarmed = computed(() => !props.online || saveState.value === 'failed')
       />
     </div>
 
-    <!-- The same content as the phone's sheet, centred. -->
-    <QuoteAnswerSheet
+    <!-- B3. The same question as the phone's sheet, as a dialog over the
+         frozen quote — which stays legible behind it, so a line can be read
+         back to her while she is still on the phone. -->
+    <QuoteAnswerDialog
       v-if="b.answerOpen.value && b.money.value"
+      :who="who"
+      :sent-line="quoteSentLine(header)"
+      :quote-label="`Quote ${quoteNumber(header.id)}`"
       :proposed-pesewas="b.money.value.proposedPesewas"
       :floor-pesewas="b.money.value.costPesewas"
+      :online="online"
       :busy="answering"
       :error="answerError"
       @accept="$emit('accept', $event)"
       @decline="$emit('decline', $event)"
-      @close="b.answerOpen.value = false"
+      @later="$emit('later')"
     />
   </div>
 </template>

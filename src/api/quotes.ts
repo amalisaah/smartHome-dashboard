@@ -133,6 +133,22 @@ export const updateQuoteCharges = async (
   return toQuoteOwnerView(view)
 }
 
+/**
+ * `POST /quotes/{id}/send` — he has sent her the number.
+ *
+ * **The app sends nothing.** He writes the quote himself, in his own words, over
+ * WhatsApp; this records that he did, freezes the prices and moves the customer
+ * to `quoted`. It is the one write on this screen that cannot be taken back,
+ * which is why it is a deliberate press rather than a consequence of submitting.
+ *
+ * It answers with the whole quote and its totals, so the screen behind it is the
+ * sent one with no re-read.
+ */
+export const sendQuote = async (quoteId: number): Promise<QuoteOwnerView> => {
+  const view = await apiSend<ApiQuoteOwnerView>('POST', `/quotes/${quoteId}/send`)
+  return toQuoteOwnerView(view)
+}
+
 // --- her answer -------------------------------------------------------------
 
 /** The accepted quote, and the job the acceptance created in the same breath. */

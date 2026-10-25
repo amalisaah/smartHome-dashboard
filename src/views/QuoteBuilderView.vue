@@ -14,10 +14,12 @@ import {
   useQuoteCustomerView,
   useQuoteOwnerView,
   useQuoteRooms,
+  useSendQuote,
 } from '@/api/hooks/quotes'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
 import { useQuoteBuilder } from '@/composables/useQuoteBuilder'
+import { flashQuoteList, showQuoteTab } from '@/composables/useQuoteList'
 import { saveState } from '@/composables/useSaveState'
 
 /**
@@ -129,12 +131,44 @@ watch(saveState, (state) => {
  */
 const loading = computed(() => ownerQuery.isPending.value)
 
-/** Sending is out of scope in this handoff. */
-const sendStub = ref(false)
+const router = useRouter()
+
+// --- sending --------------------------------------------------------------
+
+const send = useSendQuote()
+
+/**
+ * Stated as what it means for the quote, not as a status code. The labour rule
+ * is the one refusal the endpoint actually has, and it is a 400 — so it is told
+ * apart from a connection that was not there, which calls for a different
+ * action entirely.
+ */
+const sendError = computed(() => {
+  if (!send.error.value) return null
+  if (!online.value) {
+    return 'No signal. Marking it sent needs a connection — try again when you have one.'
+  }
+  return 'That didn’t go through. The quote is still a draft; check labour and try again.'
+})
+
+/**
+ * Where he lands after `Mark sent` is **not designed** (lifecycle README, open
+ * decision 1). This is the first of the three options on the journey map: the
+ * list says it went, on the tab it went to.
+ */
+async function onSend() {
+  try {
+    await send.mutateAsync({ id: props.quoteId })
+    showQuoteTab('waiting')
+    flashQuoteList('Sent · waiting on her')
+    await router.push({ name: 'quotes' })
+  } catch {
+    // The rail says what happened; the quote is untouched and still a draft.
+  }
+}
 
 // --- her answer -----------------------------------------------------------
 
-const router = useRouter()
 const accept = useAcceptQuote()
 const decline = useDeclineQuote()
 
@@ -149,7 +183,9 @@ const answering = computed(() => accept.isPending.value || decline.isPending.val
 const answerError = computed(() => {
   const failure = accept.error.value ?? decline.error.value
   if (!failure) return null
-  if (!online.value) return 'No signal. Recording her answer needs a connection — try again when you have one.'
+  // Offline has its own line inside the sheet, said before he presses rather
+  // than after — so what is left here is a write that reached the server and
+  // came back refused.
   return 'That did not go through. Nothing has changed; try again.'
 })
 
@@ -161,7 +197,6 @@ const answerError = computed(() => {
 async function onAccept(agreedTotalPesewas: number) {
   try {
     const { jobId } = await accept.mutateAsync({ id: props.quoteId, agreedTotalPesewas })
-    builder.answerOpen.value = false
     await router.push({ name: 'job-detail', params: { id: jobId } })
   } catch {
     // The sheet stays open with the figure in it; `answerError` says what
@@ -171,17 +206,30 @@ async function onAccept(agreedTotalPesewas: number) {
 
 /**
  * Declining leaves nothing to do here — it goes back to the list, where the
- * quote is now under Answered. The sheet is closed first so the quote is not
- * briefly visible with the sheet still over it.
+ * quote is now under Answered.
  */
 async function onDecline(reason: string | null) {
   try {
     await decline.mutateAsync({ id: props.quoteId, reason })
-    builder.answerOpen.value = false
+    showQuoteTab('answered')
     await router.push({ name: 'quotes' })
   } catch {
     // As above: the reason he typed is still in the box.
   }
+}
+
+/**
+ * Not yet — Esc on the laptop, `‹ Quotes` on the phone.
+ *
+ * **It leaves the quote rather than closing the dialog**, because the dialog
+ * opens itself on every sent quote: closing it in place would put him on a
+ * screen with nothing live on it and the same question one reload away. The
+ * quote stays `sent`, and the list he lands on is the one it is still sitting
+ * in.
+ */
+async function onLater() {
+  showQuoteTab('waiting')
+  await router.push({ name: 'quotes' })
 }
 </script>
 
@@ -239,6 +287,7 @@ async function onDecline(reason: string | null) {
       :answer-error="answerError"
       @accept="onAccept"
       @decline="onDecline"
+      @later="onLater"
     />
 
     <QuoteDesk
@@ -251,18 +300,13 @@ async function onDecline(reason: string | null) {
       :saved-at="savedAt"
       :answering="answering"
       :answer-error="answerError"
-      @send="sendStub = true"
+      :sending="send.isPending.value"
+      :send-error="sendError"
+      @send="onSend"
       @accept="onAccept"
       @decline="onDecline"
+      @later="onLater"
     />
-
-    <!-- `Mark sent` is a navigation stub: the endpoint exists, but sending
-         freezes the quote's prices and is block B's to design. -->
-    <div v-if="sendStub" class="stub-note" role="status">
-      <SText type="cell">
-        Sending is not part of this handoff — the quote stays a draft.
-      </SText>
-    </div>
   </div>
 </template>
 
@@ -311,19 +355,4 @@ async function onDecline(reason: string | null) {
   border-radius: var(--radius-chip);
 }
 
-.stub-note {
-  position: fixed;
-  left: 50%;
-  bottom: 24px;
-  transform: translateX(-50%);
-  padding: 12px 16px;
-  background: var(--color-fg);
-  color: var(--color-bg);
-  border-radius: var(--radius-card);
-  z-index: 60;
-}
-
-.stub-note :deep(.s-text) {
-  color: var(--color-bg);
-}
 </style>

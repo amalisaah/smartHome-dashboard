@@ -21,6 +21,35 @@ import { isString, sessionValue } from '@/utils/storage'
 const storedTab = sessionValue<QuoteListTab>('quotes:tab', isQuoteListTab)
 const storedQuery = sessionValue<string>('quotes:query', isString)
 
+/**
+ * Which list to open on, said from somewhere else.
+ *
+ * A quote leaving the screen it was answered on knows where it has gone —
+ * Waiting once it is sent, Answered once she has replied — and landing him on
+ * whichever tab he happened to be on last would hide the row he just moved.
+ * It writes the same stored value the list reads, so the choice survives the
+ * navigation without being carried in the URL.
+ */
+export const showQuoteTab = (tab: QuoteListTab) => storedTab.write(tab)
+
+/**
+ * One line the list says once, on arrival — `Sent · waiting on her`.
+ *
+ * It lives out here because the thing worth confirming happened on the screen
+ * he is leaving, and the confirmation belongs on the screen he lands on: a
+ * toast on the quote would be gone before he read it.
+ */
+const flash = ref('')
+let flashTimer: ReturnType<typeof setTimeout> | null = null
+
+export const quoteListFlash = computed(() => flash.value)
+
+export function flashQuoteList(text: string) {
+  flash.value = text
+  if (flashTimer) clearTimeout(flashTimer)
+  flashTimer = setTimeout(() => (flash.value = ''), 2600)
+}
+
 export interface QuoteListColumn {
   def: QuoteListTabDef
   /** Every row in this state, whatever the search says. The header's figure. */

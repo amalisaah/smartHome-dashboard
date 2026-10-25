@@ -4,13 +4,14 @@ import { SButton, SText } from '@/components/atoms'
 import AppLayout from '@/components/app/AppLayout.vue'
 import NewQuoteDialog from '@/components/quote/NewQuoteDialog.vue'
 import NewQuoteSheet from '@/components/quote/NewQuoteSheet.vue'
+import QuoteFlashToast from '@/components/quote/QuoteFlashToast.vue'
 import QuoteListDesk from '@/components/quote/QuoteListDesk.vue'
 import QuoteListPhone from '@/components/quote/QuoteListPhone.vue'
 import QuoteModeBand from '@/components/quote/QuoteModeBand.vue'
 import { useQuoteListRows } from '@/api/hooks/quotes'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useOnline } from '@/composables/useOnline'
-import { useQuoteList } from '@/composables/useQuoteList'
+import { quoteListFlash, useQuoteList } from '@/composables/useQuoteList'
 
 /**
  * The quote list — modules 3+4, block D.
@@ -99,6 +100,9 @@ const starting = ref(false)
         <NewQuoteDialog v-if="starting" @close="starting = false" />
       </div>
     </template>
+
+    <!-- `Sent · waiting on her`, said once, on the tab the quote moved to. -->
+    <QuoteFlashToast v-if="quoteListFlash" :text="quoteListFlash" />
   </AppLayout>
 </template>
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { SButton, SText } from '@/components/atoms'
 import QuoteEditBar from './QuoteEditBar.vue'
 import QuoteLockedBar from './QuoteLockedBar.vue'
@@ -13,10 +14,10 @@ import type { ChargesDraft, QuoteHeader, QuoteMoney } from '@/types/quote'
  * boxes, because it is the end of the screen in the sense that matters — the
  * last thing, whatever is above it.
  *
- * `Mark sent` is **stubbed**: sending is out of scope in this handoff, and a
- * button that quietly did it would freeze the quote's prices.
+ * `Mark sent` freezes the quote's prices, which is why it is the one button
+ * here that does not come back: a sent quote has nothing left to send.
  */
-defineProps<{
+const props = defineProps<{
   money: QuoteMoney
   charges: ChargesDraft
   itemised: boolean
@@ -30,7 +31,21 @@ defineProps<{
   header: QuoteHeader
   /** Sent or answered: there is no way into editing, and no way to send again. */
   locked: boolean
+  /** `Mark sent` is in flight. */
+  sending?: boolean
+  /** What came back when it was refused — the labour rule is the usual one. */
+  sendError?: string | null
 }>()
+
+/**
+ * **`Show her` is gone while the quote is waiting on her.**
+ *
+ * She has the number; what is open is her answer, and B opens over this screen
+ * the moment it loads. A door back into her view would be the one thing on the
+ * screen that is not about the question being asked. It comes back once she has
+ * answered — an accepted quote is still a document he may want to show.
+ */
+const waiting = computed(() => props.header.status === 'sent')
 
 const emit = defineEmits<{
   charge: [field: keyof ChargesDraft, value: string]
@@ -85,10 +100,24 @@ const emit = defineEmits<{
         Labour not set. Sending will be refused until you type it.
       </SText>
 
-      <div class="buttons">
+      <!-- What the server said when it refused, in the same place the rule is
+           stated. The quote is untouched and still a draft. -->
+      <SText v-if="sendError && !locked" type="caption" color="risk" role="alert">
+        {{ sendError }}
+      </SText>
+
+      <!-- Nothing at all while she is deciding: there is no second send, and
+           `Show her` is not what this screen is for until she has answered. -->
+      <div v-if="!waiting" class="buttons">
         <!-- `Mark sent` is gone once it has been: the endpoint would refuse it,
              and a button whose only outcome is a refusal is not an offer. -->
-        <SButton v-if="!locked" variant="secondary" size="md" @click="emit('send')">
+        <SButton
+          v-if="!locked"
+          variant="secondary"
+          size="md"
+          :loading="sending"
+          @click="emit('send')"
+        >
           Mark sent
         </SButton>
         <button type="button" class="her" :class="{ 'her--alone': locked }" @click="emit('her')">

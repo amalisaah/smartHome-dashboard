@@ -39,7 +39,11 @@ const props = defineProps<{
   answerError?: string | null
 }>()
 
-defineEmits<{ accept: [agreedTotalPesewas: number]; decline: [reason: string | null] }>()
+defineEmits<{
+  accept: [agreedTotalPesewas: number]
+  decline: [reason: string | null]
+  later: []
+}>()
 
 const b = props.builder
 const query = ref('')
@@ -53,7 +57,7 @@ const results = computed(() => b.search(query.value))
 </script>
 
 <template>
-  <div class="phone">
+  <div class="phone" :class="{ 'phone--answering': b.answerOpen.value }">
     <QuoteModeBand phone />
 
     <!-- One scroll, from the household name down to Show her. Pinning six bands
@@ -216,14 +220,14 @@ const results = computed(() => b.search(query.value))
 
     <QuoteAnswerSheet
       v-if="b.answerOpen.value && b.money.value"
-      phone
       :proposed-pesewas="b.money.value.proposedPesewas"
       :floor-pesewas="b.money.value.costPesewas"
+      :online="online"
       :busy="answering"
       :error="answerError"
       @accept="$emit('accept', $event)"
       @decline="$emit('decline', $event)"
-      @close="b.answerOpen.value = false"
+      @later="$emit('later')"
     />
   </div>
 </template>
@@ -235,6 +239,19 @@ const results = computed(() => b.search(query.value))
   display: flex;
   flex-direction: column;
   background: var(--color-bg);
+}
+
+/*
+ * While block B is open the header rides above the scrim rather than under it.
+ *
+ * B1 draws the scrim starting below the header, and the reason is the only way
+ * off this screen: the sheet opens by itself on every sent quote and its scrim
+ * is inert, so `‹ Quotes` is "Not yet". A scrim over it would be a sheet with
+ * no door.
+ */
+.phone--answering :deep(.head) {
+  position: relative;
+  z-index: 41;
 }
 
 .controls {
