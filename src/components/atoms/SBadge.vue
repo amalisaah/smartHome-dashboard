@@ -21,6 +21,8 @@ defineProps<{
     | 'dormant'
     | 'outcome-accepted'
     | 'outcome-declined'
+    | 'change'
+    | 'change-missing'
   /**
    * `row` is the in-row flag chip: lowercase, untracked, tighter box.
    * `state` is the sentence-shaped chip — `draft · arrives 24 Sep` — at 11px.
@@ -127,6 +129,28 @@ defineProps<{
   background: transparent;
   color: var(--color-fg-2);
   border-color: var(--color-line);
+}
+
+/* What the day did to one job line — `+2`, `−1`, `swapped`, `added`.
+
+   A fill of `--bg` rather than the transparent an outlined chip usually takes,
+   because the row underneath it is tinted: on `--row-action-tint` a transparent
+   chip reads as part of the tint, and this chip's job is to be the thing in the
+   row that is not. The hue is the action one because a correction is something
+   he did, not something that went wrong. */
+.s-badge--change {
+  background: var(--color-bg);
+  color: var(--color-action);
+  border-color: var(--color-action);
+}
+
+/* The one change in risk ink: the line she did not get. `not fitted` costs her
+   a device, which is a different kind of fact from a count he corrected — so it
+   is the same chip in the one hue this system uses for what something costs. */
+.s-badge--change-missing {
+  background: var(--color-bg);
+  color: var(--color-risk);
+  border-color: var(--color-risk);
 }
 
 /* The only filled status, because it is the only settled one. */

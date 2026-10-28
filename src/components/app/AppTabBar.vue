@@ -11,10 +11,14 @@ const router = useRouter()
  * A tab owns its section and everything under it, so `/shipments/SH-015` still
  * lights Shipments. The catalogue sits at `/`, which prefixes every path, so it
  * is matched exactly.
+ *
+ * A tab with no screen of its own may still own a prefix — Jobs has no list
+ * yet but owns `/jobs/0098`, and a job page sitting under no lit section would
+ * leave him unable to say which part of the app he is in.
  */
 const isActive = (tab: AppTab) => {
-  if (!tab.to) return false
-  const path = router.resolve(tab.to).path
+  const path = tab.to ? router.resolve(tab.to).path : tab.owns
+  if (path === undefined) return false
   return path === '/' ? route.path === '/' : route.path === path || route.path.startsWith(`${path}/`)
 }
 
@@ -70,7 +74,9 @@ const tabs = computed(() => APP_TABS.map((tab) => ({ ...tab, active: isActive(ta
   cursor: default;
 }
 
-.tab--inert:hover :deep(.s-text) {
+/* It does not invite a click — but the section he is actually in still reads as
+   the section he is in, hover or no hover. */
+.tab--inert:not(.tab--active):hover :deep(.s-text) {
   color: var(--color-fg-2-soft);
 }
 

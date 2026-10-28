@@ -15,8 +15,8 @@ import HouseVisitView from '@/views/HouseVisitView.vue'
 import ItemDetailView from '@/views/ItemDetailView.vue'
 import ItemEditView from '@/views/ItemEditView.vue'
 import ItemNewView from '@/views/ItemNewView.vue'
+import JobRecordingView from '@/views/JobRecordingView.vue'
 import QuoteBuilderView from '@/views/QuoteBuilderView.vue'
-import QuoteStubView from '@/views/QuoteStubView.vue'
 import QuotesListView from '@/views/QuotesListView.vue'
 import ShipmentBuilderView from '@/views/ShipmentBuilderView.vue'
 import ShipmentsListView from '@/views/ShipmentsListView.vue'
@@ -208,8 +208,8 @@ export const router = createRouter({
       // point the job is the record, and the quote is what it came from.
       path: '/jobs/:id(\\d+)',
       name: 'job-detail',
-      component: QuoteStubView,
-      props: (route) => ({ reference: Number(route.params.id), destination: 'job' }),
+      component: JobRecordingView,
+      props: (route) => ({ jobId: Number(route.params.id) }),
     },
     {
       path: '/groups',
